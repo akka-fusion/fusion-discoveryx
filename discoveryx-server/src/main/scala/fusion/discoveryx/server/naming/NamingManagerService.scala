@@ -16,13 +16,24 @@
 
 package fusion.discoveryx.server.naming
 
-import akka.actor.typed.ActorRef
+import akka.actor.typed.{ ActorRef, ActorSystem }
+import akka.actor.typed.scaladsl.AskPattern._
 import akka.cluster.sharding.typed.ShardingEnvelope
-import akka.http.scaladsl.server.Route
-import fusion.discoveryx.server.protocol.{ ListService, NamingResponse }
+import akka.util.Timeout
+import fusion.discoveryx.server.protocol.NamingManagerCommand.Cmd
+import fusion.discoveryx.server.protocol.{ GetService, ListService, NamingManagerCommand, NamingResponse }
 
 import scala.concurrent.Future
+import scala.concurrent.duration._
 
-class NamingManagerService(namingProxy: ActorRef[ShardingEnvelope[Namings.Command]]) {
-  def listService(cmd: ListService): Future[NamingResponse] = ???
+class NamingManagerService()(implicit system: ActorSystem[_]) {
+  private implicit val timeout: Timeout = 10.seconds
+  private val namingProxy: ActorRef[ShardingEnvelope[NamingManager.Command]] = NamingManager.init(system)
+
+  def listService(cmd: ListService): Future[NamingResponse] = askManager(cmd.namespace, Cmd.ListService(cmd))
+
+  def getService(cmd: GetService): Future[NamingResponse] = askManager(cmd.namespace, Cmd.GetService(cmd))
+
+  @inline private def askManager(namespace: String, cmd: NamingManagerCommand.Cmd): Future[NamingResponse] =
+    namingProxy.ask[NamingResponse](replyTo => ShardingEnvelope(namespace, NamingManagerCommand(replyTo, cmd)))
 }

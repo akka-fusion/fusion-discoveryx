@@ -73,21 +73,31 @@ message ListService {
     int32 size = 3;
     string service_name = 4;
 }
-message NamingManagerCommand {
-    option (scalapb.message).extends = "fusion.discoveryx.server.naming.NamingManager.Command";
-    string reply_to = 1 [(scalapb.field).type = "ActorRef[fusion.discoveryx.server.naming.NamingManager.Reply]"];
-    oneof cmd {
-        ListService list_service = 2;
-    }
+
+message GetService {
+    string namespace = 1;
+    string service_name = 2;
 }
 
 message ListedService {
     repeated ServiceInfo service_infos = 1;
 }
+
+message NamingManagerCommand {
+    option (scalapb.message).extends = "fusion.discoveryx.server.naming.NamingManager.Command";
+    string reply_to = 1 [(scalapb.field).type = "ActorRef[NamingResponse]"];
+    oneof cmd {
+        ListService list_service = 2;
+        GetService get_service = 3;
+    }
+}
+
 message NamingResponse {
-    option (scalapb.message).extends = "fusion.discoveryx.server.naming.NamingManager.Reply";
+    //option (scalapb.message).extends = "fusion.discoveryx.server.naming.NamingManager.Reply";
     int32 status = 1;
+    string message = 2;
     oneof data {
-        ListedService service_infos = 2;
+        ListedService listed_service = 3;
+        ServiceInfo service_info = 4;
     }
 }

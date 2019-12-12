@@ -16,14 +16,16 @@
 
 package fusion.discoveryx.server.naming
 
+import akka.actor.typed.scaladsl.AskPattern._
+import akka.actor.typed.scaladsl.adapter._
 import akka.actor.typed.scaladsl.{ ActorContext, Behaviors }
 import akka.actor.typed.{ ActorRef, ActorSystem, Behavior, Terminated }
+import akka.cluster.pubsub.{ DistributedPubSub, DistributedPubSubMediator }
 import akka.cluster.sharding.typed.ShardingEnvelope
 import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, Entity, EntityTypeKey }
 import akka.util.Timeout
-import fusion.discoveryx.model.InstanceReply
+import fusion.discoveryx.model.{ InstanceQuery, InstanceReply }
 import fusion.discoveryx.server.protocol._
-import fusion.json.jackson.CborSerializable
 import helloscala.common.IntStatus
 
 import scala.concurrent.Future
@@ -32,35 +34,37 @@ import scala.util.{ Failure, Success }
 
 object NamingManager {
   trait Command extends Namings.Command
-  trait Reply
 
   val NAME = "namingProxy"
-  val TypeKey: EntityTypeKey[Namings.Command] = EntityTypeKey("NamingManager")
+  val TypeKey: EntityTypeKey[Command] = EntityTypeKey("NamingManager")
+  val TOPIC_NAMING_TO_MANAGER = "naming-to-manager"
 
-  def init(system: ActorSystem[_]): ActorRef[ShardingEnvelope[Namings.Command]] = {
+  def init(system: ActorSystem[_]): ActorRef[ShardingEnvelope[Command]] = {
     ClusterSharding(system).init(Entity(TypeKey)(entityContext => NamingManager(entityContext.entityId)))
   }
 
-  def apply(namespace: String): Behavior[Namings.Command] =
+  def apply(namespace: String): Behavior[Command] =
     Behaviors.setup(context => new NamingManager(namespace, context).receive())
 }
 
-class NamingManager private (namespace: String, context: ActorContext[Namings.Command]) {
-  import NamingManager._
+import NamingManager._
+class NamingManager private (namespace: String, context: ActorContext[Command]) {
+  import context.executionContext
+  private implicit val timeout: Timeout = 10.seconds
   private implicit val system: ActorSystem[_] = context.system
+
   private val namingSettings = NamingSettings(context.system)
-  private val shardRegion =
+  private val namingRegion =
     ClusterSharding(context.system).init(Entity(Namings.TypeKey)(entityContext => Namings(entityContext.entityId)))
   private var namings = List.empty[ActorRef[Namings.Command]]
 
-  def receive(): Behavior[Namings.Command] =
+  DistributedPubSub(context.system).mediator ! DistributedPubSubMediator.Subscribe(
+    NamingManager.TOPIC_NAMING_TO_MANAGER,
+    context.self.toClassic)
+
+  def receive(): Behavior[Command] =
     Behaviors
-      .receiveMessage[Namings.Command] {
-        case cmd: Heartbeat                     => send(cmd, cmd.namespace, cmd.serviceName)
-        case cmd: RegisterInstance              => sendReply(cmd, cmd.in.namespace, cmd.in.serviceName)
-        case cmd: RemoveInstance                => sendReply(cmd, cmd.in.namespace, cmd.in.serviceName)
-        case cmd: ModifyInstance                => sendReply(cmd, cmd.in.namespace, cmd.in.serviceName)
-        case cmd: QueryInstance                 => sendReply(cmd, cmd.in.namespace, cmd.in.serviceName)
+      .receiveMessage[Command] {
         case NamingManagerCommand(replyTo, cmd) => onManagerCommand(cmd, replyTo)
         case NamingRegisterToManager(namingRef) =>
           namings = namingRef :: namings.filterNot(old => old.path.name == namingRef.path.name)
@@ -73,19 +77,25 @@ class NamingManager private (namespace: String, context: ActorContext[Namings.Co
           Behaviors.same
       }
 
-  private def onManagerCommand(command: NamingManagerCommand.Cmd, replyTo: ActorRef[Reply]): Behavior[Namings.Command] =
+  private def onManagerCommand(
+      command: NamingManagerCommand.Cmd,
+      replyTo: ActorRef[NamingResponse]): Behavior[Command] =
     command match {
       case NamingManagerCommand.Cmd.ListService(cmd) => processListService(cmd, replyTo)
+      case NamingManagerCommand.Cmd.GetService(cmd)  => processGetService(cmd, replyTo)
       case other =>
         context.log.warn(s"Invalid message: $other")
         Behaviors.same
     }
 
-  import akka.actor.typed.scaladsl.AskPattern._
-  import context.executionContext
-  implicit val timeout: Timeout = 10.seconds
+  private def processGetService(cmd: GetService, replyTo: ActorRef[NamingResponse]): Behavior[Command] =
+    askNaming(cmd.namespace, cmd.serviceName, QueryInstance(InstanceQuery(cmd.namespace, cmd.serviceName)), replyTo) {
+      value =>
+        val serviceInfo = ServiceInfo(cmd.namespace, cmd.serviceName, value.data.queried.get.instances)
+        NamingResponse.Data.ServiceInfo(serviceInfo)
+    }
 
-  private def processListService(cmd: ListService, replyTo: ActorRef[Reply]): Behavior[Namings.Command] = {
+  private def processListService(cmd: ListService, replyTo: ActorRef[NamingResponse]): Behavior[Command] = {
     val page = namingSettings.findPage(cmd.page)
     val size = namingSettings.findSize(cmd.size)
     val offset = (page - 1) * size
@@ -95,7 +105,7 @@ class NamingManager private (namespace: String, context: ActorContext[Namings.Co
       }
       Future.sequence(futures).onComplete {
         case Success(serviceInfos) =>
-          replyTo ! NamingResponse(IntStatus.OK, NamingResponse.Data.ServiceInfos(ListedService(serviceInfos)))
+          replyTo ! NamingResponse(IntStatus.OK, data = NamingResponse.Data.ListedService(ListedService(serviceInfos)))
         case Failure(exception) =>
           context.log.warn(s"ListService error, $exception")
           replyTo ! NamingResponse(IntStatus.NOT_FOUND)
@@ -107,24 +117,20 @@ class NamingManager private (namespace: String, context: ActorContext[Namings.Co
     Behaviors.same
   }
 
-  private def send(cmd: Namings.Command, namespace: String, serviceName: String): Behavior[Namings.Command] = {
-    Namings.NamingServiceKey.entityId(namespace, serviceName) match {
-      case Right(entityId) => shardRegion ! ShardingEnvelope(entityId, cmd)
-      case Left(errMsg)    => context.log.error(s"ReplyCommand error: $errMsg; cmd: $cmd")
-    }
-    Behaviors.same
-  }
-
-  private def sendReply(
-      cmd: Namings.ReplyCommand,
+  private def askNaming(
       namespace: String,
-      serviceName: String): Behavior[Namings.Command] = {
+      serviceName: String,
+      cmd: Namings.ReplyCommand,
+      replyTo: ActorRef[NamingResponse])(onSuccess: InstanceReply => NamingResponse.Data): Behavior[Command] = {
     Namings.NamingServiceKey.entityId(namespace, serviceName) match {
-      case Right(entityId) => shardRegion ! ShardingEnvelope(entityId, cmd)
-      case Left(errMsg) =>
-        context.log.error(s"ReplyCommand error: $errMsg; cmd: $cmd")
-        cmd.replyTo ! InstanceReply(IntStatus.BAD_REQUEST)
+      case Right(entityId) =>
+        namingRegion.ask[InstanceReply](ref => ShardingEnvelope(entityId, cmd.withReplyTo(ref))).onComplete {
+          case Success(value) => replyTo ! NamingResponse(IntStatus.OK, data = onSuccess(value))
+          case Failure(e)     => replyTo ! NamingResponse(IntStatus.INTERNAL_ERROR, e.getMessage)
+        }
+      case Left(errMsg) => replyTo ! NamingResponse(IntStatus.BAD_REQUEST, errMsg)
     }
+
     Behaviors.same
   }
 }

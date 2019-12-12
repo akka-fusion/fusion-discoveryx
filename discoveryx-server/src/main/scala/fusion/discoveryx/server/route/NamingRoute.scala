@@ -19,19 +19,28 @@ package fusion.discoveryx.server.route
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import fusion.discoveryx.DiscoveryX
-import fusion.discoveryx.server.naming.{ NamingManager, NamingManagerService, NamingSettings }
-import fusion.discoveryx.server.protocol.ListService
+import fusion.discoveryx.server.naming.{ NamingManagerService, NamingSettings }
+import fusion.discoveryx.server.protocol.{ GetService, ListService }
 
 class NamingRoute(discoveryX: DiscoveryX, namingSettings: NamingSettings) {
-  private val namingManagerService = new NamingManagerService(NamingManager.init(discoveryX.system))
+  private val namingManagerService = new NamingManagerService()(discoveryX.system)
+
   def route: Route = pathPrefix("naming") {
-    listServiceRoute
+    listServiceRoute ~
+    getServiceRoute
   }
 
-  def listServiceRoute: Route = pathPost("list_service") {
-    import fusion.discoveryx.server.util.ProtobufJsonSupport._
+  import fusion.discoveryx.server.util.ProtobufJsonSupport._
+
+  def listServiceRoute: Route = pathPost("list") {
     entity(as[ListService]) { cmd =>
       complete(namingManagerService.listService(cmd))
+    }
+  }
+
+  def getServiceRoute: Route = pathPost("get") {
+    entity(as[GetService]) { cmd =>
+      complete(namingManagerService.getService(cmd))
     }
   }
 }

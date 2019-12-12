@@ -158,10 +158,10 @@ message InstanceHeartbeat {
 }
 
 message InstanceReply {
-
     int32 status = 1;
+    string message = 2;
     oneof data {
-        InstanceQueryResult queried = 2;
-        Instance registered = 3;
+        InstanceQueryResult queried = 3;
+        Instance registered = 4;
     }
 }

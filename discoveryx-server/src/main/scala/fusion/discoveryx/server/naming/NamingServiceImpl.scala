@@ -19,9 +19,10 @@ package fusion.discoveryx.server.naming
 import java.util.concurrent.TimeoutException
 
 import akka.NotUsed
+import akka.actor.typed.ActorSystem
 import akka.actor.typed.scaladsl.AskPattern._
-import akka.actor.typed.{ ActorRef, ActorSystem }
 import akka.cluster.sharding.typed.ShardingEnvelope
+import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, Entity }
 import akka.grpc.scaladsl.Metadata
 import akka.stream.scaladsl.Source
 import akka.util.Timeout
@@ -36,11 +37,11 @@ import helloscala.common.exception.HSBadRequestException
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-class NamingServiceImpl(namingProxy: ActorRef[ShardingEnvelope[Namings.Command]])(implicit system: ActorSystem[_])
-    extends NamingServicePowerApi
-    with StrictLogging {
+class NamingServiceImpl()(implicit system: ActorSystem[_]) extends NamingServicePowerApi with StrictLogging {
   import system.executionContext
   implicit private val timeout: Timeout = 5.seconds
+  private val namingRegion =
+    ClusterSharding(system).init(Entity(Namings.TypeKey)(entityContext => Namings(entityContext.entityId)))
 
   /**
    * 查询服务状态
@@ -53,36 +54,28 @@ class NamingServiceImpl(namingProxy: ActorRef[ShardingEnvelope[Namings.Command]]
    * 添加实例
    */
   override def registerInstance(in: InstanceRegister, metadata: Metadata): Future[InstanceReply] = {
-    namingProxy.ask[InstanceReply](replyTo => ShardingEnvelope(in.namespace, RegisterInstance(in, replyTo))).recover {
-      case _: TimeoutException => InstanceReply(IntStatus.GATEWAY_TIMEOUT)
-    }
+    askNaming(in.namespace, in.serviceName, RegisterInstance(in))
   }
 
   /**
    * 修改实例
    */
   override def modifyInstance(in: InstanceModify, metadata: Metadata): Future[InstanceReply] = {
-    namingProxy.ask[InstanceReply](replyTo => ShardingEnvelope(in.namespace, ModifyInstance(in, replyTo))).recover {
-      case _: TimeoutException => InstanceReply(IntStatus.GATEWAY_TIMEOUT)
-    }
+    askNaming(in.namespace, in.serviceName, ModifyInstance(in))
   }
 
   /**
    * 删除实例
    */
   override def removeInstance(in: InstanceRemove, metadata: Metadata): Future[InstanceReply] = {
-    namingProxy.ask[InstanceReply](replyTo => ShardingEnvelope(in.namespace, RemoveInstance(in, replyTo))).recover {
-      case _: TimeoutException => InstanceReply(IntStatus.GATEWAY_TIMEOUT)
-    }
+    askNaming(in.namespace, in.serviceName, RemoveInstance(in))
   }
 
   /**
    * 查询实例
    */
   override def queryInstance(in: InstanceQuery, metadata: Metadata): Future[InstanceReply] = {
-    namingProxy.ask[InstanceReply](replyTo => ShardingEnvelope(in.namespace, QueryInstance(in, replyTo))).recover {
-      case _: TimeoutException => InstanceReply(IntStatus.GATEWAY_TIMEOUT)
-    }
+    askNaming(in.namespace, in.serviceName, QueryInstance(in))
   }
 
   override def heartbeat(
@@ -95,14 +88,28 @@ class NamingServiceImpl(namingProxy: ActorRef[ShardingEnvelope[Namings.Command]]
       val serviceName = metadata
         .getText(Headers.SERVICE_NAME)
         .getOrElse(throw HSBadRequestException(s"Request header missing, need '${Headers.SERVICE_NAME}'."))
+      val entityId = Namings.NamingServiceKey.entityId(namespace, serviceName) match {
+        case Right(value) => value
+        case Left(errMsg) => throw new RuntimeException(errMsg)
+      }
       in.map { cmd =>
-        namingProxy ! ShardingEnvelope(namespace, Heartbeat(cmd, namespace, serviceName))
+        namingRegion ! ShardingEnvelope(entityId, Heartbeat(cmd, namespace, serviceName))
         ServerStatusBO(IntStatus.OK)
       }
     } catch {
       case e: Exception =>
         logger.warn(s"Receive heartbeat message error: $e")
         Source.single(ServerStatusBO(IntStatus.BAD_REQUEST))
+    }
+  }
+
+  private def askNaming(namespace: String, serviceName: String, cmd: Namings.ReplyCommand): Future[InstanceReply] = {
+    Namings.NamingServiceKey.entityId(namespace, serviceName) match {
+      case Right(entityId) =>
+        namingRegion.ask[InstanceReply](replyTo => ShardingEnvelope(entityId, cmd.withReplyTo(replyTo))).recover {
+          case _: TimeoutException => InstanceReply(IntStatus.GATEWAY_TIMEOUT)
+        }
+      case Left(errMsg) => Future.successful(InstanceReply(IntStatus.INTERNAL_ERROR, errMsg))
     }
   }
 }

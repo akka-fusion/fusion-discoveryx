@@ -53,8 +53,7 @@ class GrpcRoute(discoveryX: DiscoveryX, configSettings: ConfigSettings, namingSe
         Some(ConfigServiceHandler.partial(new ConfigServiceImpl(configManager)))
       } else None,
       if (namingSettings.enable) {
-        val namingProxy = NamingManager.init(discoveryX.system)
-        Some(NamingServicePowerApiHandler.partial(new NamingServiceImpl(namingProxy)))
+        Some(NamingServicePowerApiHandler.partial(new NamingServiceImpl()))
       } else None).flatten
     require(services.nonEmpty, "未找到任何 gRPC 服务")
 

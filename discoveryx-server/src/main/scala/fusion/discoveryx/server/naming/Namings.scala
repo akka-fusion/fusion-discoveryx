@@ -18,6 +18,7 @@ package fusion.discoveryx.server.naming
 
 import akka.actor.typed.scaladsl.{ AbstractBehavior, ActorContext, Behaviors, TimerScheduler }
 import akka.actor.typed.{ ActorRef, Behavior }
+import akka.cluster.pubsub.{ DistributedPubSub, DistributedPubSubMediator }
 import akka.cluster.sharding.typed.scaladsl.EntityTypeKey
 import fusion.discoveryx.DiscoveryXUtils
 import fusion.discoveryx.model._
@@ -32,6 +33,8 @@ object Namings {
   trait Command
   trait ReplyCommand extends Command {
     @transient val replyTo: ActorRef[InstanceReply]
+
+    def withReplyTo(other: ActorRef[InstanceReply]): ReplyCommand
   }
 
   private case object HealthCheckKey extends Command
@@ -39,23 +42,24 @@ object Namings {
   object NamingServiceKey {
     def entityId(namespace: String, serviceName: String): Either[String, String] = {
       if (StringUtils.isBlank(namespace) || StringUtils.isBlank(serviceName)) {
-        Left("entityId invalid, need [namespace]_[serviceName] format.")
+        Left("entityId invalid, need '[namespace] [serviceName]' format.")
       } else {
-        Right(s"${namespace}_$serviceName")
+        Right(s"$namespace $serviceName")
       }
     }
 
-    def unapply(entityId: String): Option[NamingServiceKey] = entityId.split('_') match {
+    def unapply(entityId: String): Option[NamingServiceKey] = entityId.split(' ') match {
       case Array(namespace, serviceName) => Some(new NamingServiceKey(namespace, serviceName))
       case _                             => None
     }
   }
 
   def apply(entityId: String): Behavior[Command] = Behaviors.setup[Command] { context =>
+    println(s"apply entityId is $entityId")
     val namingServiceKey = NamingServiceKey
       .unapply(entityId)
       .getOrElse(throw HSBadRequestException(
-        s"${context.self} create child error. entityId invalid, need [namespace]_[serviceName] format."))
+        s"${context.self} create child error. entityId invalid, need '[namespace] [serviceName]' format."))
     Behaviors.withTimers(timers => new Namings(namingServiceKey, timers, context))
   }
 }
@@ -69,8 +73,11 @@ class Namings private (
   private val settings = NamingSettings(context.system)
   private val internalService = new InternalService(namingServiceKey, settings)
 
+  DistributedPubSub(context.system).mediator ! DistributedPubSubMediator.Publish(
+    NamingManager.TOPIC_NAMING_TO_MANAGER,
+    NamingRegisterToManager())
   timers.startTimerWithFixedDelay(HealthCheckKey, HealthCheckKey, settings.heartbeatInterval)
-  context.log.debug(s"Namings started: $namingServiceKey")
+  context.log.info(s"Namings ${context.self.path.name} started: $namingServiceKey")
 
   override def onMessage(msg: Namings.Command): Behavior[Namings.Command] = msg match {
     case Heartbeat(in, namespace, serviceName) => processHeartbeat(in, namespace, serviceName)
@@ -95,7 +102,7 @@ class Namings private (
     val result = try {
       val items = internalService.queryInstance(in)
       val status = if (items.isEmpty) IntStatus.NOT_FOUND else IntStatus.OK
-      InstanceReply(status, InstanceReply.Data.Queried(InstanceQueryResult(items)))
+      InstanceReply(status, data = InstanceReply.Data.Queried(InstanceQueryResult(items)))
     } catch {
       case _: IllegalArgumentException => InstanceReply(IntStatus.BAD_REQUEST)
     }
@@ -127,7 +134,7 @@ class Namings private (
     val result = try {
       val inst = DiscoveryXUtils.toInstance(in)
       internalService.addInstance(inst)
-      InstanceReply(IntStatus.OK, InstanceReply.Data.Registered(inst))
+      InstanceReply(IntStatus.OK, data = InstanceReply.Data.Registered(inst))
     } catch {
       case _: IllegalArgumentException => InstanceReply(IntStatus.BAD_REQUEST)
     }
