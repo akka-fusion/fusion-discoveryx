@@ -1,0 +1,14 @@
+# Created by .ignore support plugin (hsz.mobi)
+
+/dist
+/static
+/scripts
+/.idea
+
+.eslintignore
+.gitignore
+.prettierignore
+.DS_Store
+
+yarn.lock
+deploy.sh
