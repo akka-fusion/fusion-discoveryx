@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <meta name="renderer" content="webkit">
+    <title>Love or Hate ?</title>
+<!--引用 https://codepen.io/sol0mka/pen/pbRejJ-->
+</head>
+<link href="index.css" rel="stylesheet">
+<body>
+<div id="js-modal-layer" class="layer layer--modal"></div>
+<div id="js-modal-hide-layer" class="layer layer--modal-hide"></div>
+<div class="scene" id="js-scene"></div>
+<script id="js-modal-template" type="text/template">
+    <div class="modal__text" id="js-modal-text">
+        不考虑说个 <br /> 生日快乐？
+    </div>
+    <div class="modal__buttons">
+        <div class="modal__button modal__button--love" id="js-button-love">生日快乐</div>
+        <div class="modal__button modal__button--hate" id="js-button-hate">残忍拒绝</div>
+    </div>
+</script>
+<script src="https://cdn.jsdelivr.net/mojs/0.265.6/mo.min.js"></script>
+<script type="text/javascript" src="index.js"></script>
+</body>
+</html>
