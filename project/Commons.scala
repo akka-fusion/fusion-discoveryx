@@ -14,7 +14,7 @@ object Commons {
       homepage := Some(url("https://akka-fusion.github.io/fusion-discoveryx")),
       startYear := Some(2019),
       licenses += ("Apache-2.0", new URL("https://www.apache.org/licenses/LICENSE-2.0.txt")),
-      headerLicense := Some(HeaderLicense.ALv2("2019", "helloscala.com")),
+      headerLicense := Some(HeaderLicense.ALv2("2019", "akka-fusion.com")),
       scalacOptions ++= {
         var list = Seq(
           "-encoding",
@@ -22,15 +22,8 @@ object Commons {
           "-feature",
           "-deprecation",
           "-unchecked",
-          //"-Yno-adapted-args", //akka-http heavily depends on adapted args and => Unit implicits break otherwise
-          //"-Ypartial-unification",
           "-Ywarn-dead-code",
-          //"-Yrangepos", // required by SemanticDB compiler plugin
-          //"-Ywarn-unused-import", // required by `RemoveUnused` rule
           "-Xlint")
-        //if (scalaVersion.value.startsWith("2.12")) {
-        //  list ++= Seq("-opt:l:inline", "-opt-inline-from")
-        //}
         if (buildEnv.value != BuildEnv.Developement) {
           list ++= Seq("-Xelide-below", "2001")
         }

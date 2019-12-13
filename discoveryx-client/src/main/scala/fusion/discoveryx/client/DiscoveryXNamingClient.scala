@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 helloscala.com
+ * Copyright 2019 akka-fusion.com
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import akka.grpc.GrpcClientSettings
 import akka.stream.scaladsl.Source
 import com.typesafe.scalalogging.StrictLogging
 import fusion.common.extension.FusionCoordinatedShutdown
-import fusion.discoveryx.common.{ Constants, Headers }
+import fusion.discoveryx.common.Headers
 import fusion.discoveryx.grpc.{ NamingService, NamingServiceClient }
 import fusion.discoveryx.model._
 import helloscala.common.IntStatus
@@ -33,10 +33,10 @@ import scala.concurrent.Future
 import scala.util.{ Failure, Success }
 
 object DiscoveryXNamingClient {
-  case class InstanceKey(namespace: String, serviceName: String, ip: String, port: Int)
+  case class InstanceKey(namespace: String, serviceName: String, instanceId: String)
   object InstanceKey {
-    def apply(in: Instance): InstanceKey = InstanceKey(in.namespace, in.serviceName, in.ip, in.port)
-    def apply(in: InstanceRemove): InstanceKey = InstanceKey(in.namespace, in.serviceName, in.ip, in.port)
+    def apply(in: Instance): InstanceKey = InstanceKey(in.namespace, in.serviceName, in.instanceId)
+    def apply(in: InstanceRemove): InstanceKey = InstanceKey(in.namespace, in.serviceName, in.instanceId)
   }
 
   def apply(system: ActorSystem[_]): DiscoveryXNamingClient = {
@@ -72,14 +72,13 @@ class DiscoveryXNamingClient private (val settings: NamingClientSettings, val na
   /**
    * 添加实例
    */
-  def registerInstance(in: InstanceRegister): Future[InstanceReply] = {
+  def registerInstance(in: InstanceRegister): Future[NamingReply] = {
     import system.executionContext
     namingClient.registerInstance(in).andThen {
-      case Success(reply) if reply.status == IntStatus.OK && reply.data.isRegistered =>
-        val inst = reply.data.registered.get
-        val (cancellable, source) = Source
-          .tick(settings.heartbeatInterval, settings.heartbeatInterval, InstanceHeartbeat(inst.instanceId))
-          .preMaterialize()
+      case Success(reply) if reply.status == IntStatus.OK && reply.data.isInstance =>
+        val inst = reply.data.instance.get
+        val (cancellable, source) =
+          Source.tick(settings.heartbeatInterval, settings.heartbeatInterval, InstanceHeartbeat()).preMaterialize()
         val key = InstanceKey(inst)
         heartbeatInstances.get(key).foreach(_.cancel())
         heartbeatInstances = heartbeatInstances.updated(key, cancellable)
@@ -95,12 +94,12 @@ class DiscoveryXNamingClient private (val settings: NamingClientSettings, val na
   /**
    * 修改实例
    */
-  def modifyInstance(in: InstanceModify): Future[InstanceReply] = namingClient.modifyInstance(in)
+  def modifyInstance(in: InstanceModify): Future[NamingReply] = namingClient.modifyInstance(in)
 
   /**
    * 删除实例
    */
-  def removeInstance(in: InstanceRemove): Future[InstanceReply] = {
+  def removeInstance(in: InstanceRemove): Future[NamingReply] = {
     val key = InstanceKey(in)
     heartbeatInstances.get(key).foreach(_.cancel())
     heartbeatInstances -= key
@@ -110,16 +109,16 @@ class DiscoveryXNamingClient private (val settings: NamingClientSettings, val na
   /**
    * 查询实例
    */
-  def queryInstance(in: InstanceQuery): Future[InstanceReply] = namingClient.queryInstance(in)
+  def queryInstance(in: InstanceQuery): Future[NamingReply] = namingClient.queryInstance(in)
 
   private def heartbeat(in: Source[InstanceHeartbeat, NotUsed], inst: Instance): Source[ServerStatusBO, NotUsed] = {
-    println("add header " + inst.serviceName)
     namingClient
       .heartbeat()
       .addHeader(Headers.NAMESPACE, inst.namespace)
       .addHeader(Headers.SERVICE_NAME, inst.serviceName)
       .addHeader(Headers.IP, inst.ip)
-      .addHeader(Headers.PORT, inst.port.toString)
+      .addHeader(Headers.PORT, Integer.toString(inst.port))
+      .addHeader(Headers.INSTANCE_ID, inst.instanceId)
       .invoke(in)
   }
 }

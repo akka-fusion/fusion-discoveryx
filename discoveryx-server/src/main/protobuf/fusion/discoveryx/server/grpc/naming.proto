@@ -1,0 +1,42 @@
+syntax = "proto3";
+package fusion.discoveryx.server.grpc;
+
+import "scalapb/scalapb.proto";
+import "fusion/discoveryx/model/discoveryx.proto";
+import "fusion/discoveryx/server/protocol/naming.proto";
+
+option (scalapb.options) = {
+  collection_type: "scala.collection.immutable.Seq"
+};
+
+service NamingManagerService {
+    // #ListService
+    // 查询服务列表
+    rpc ListService (fusion.discoveryx.server.protocol.ListService) returns (fusion.discoveryx.server.protocol.NamingResponse) {
+    }
+    // #ListService
+
+    // #GetService
+    // 查询单个服务
+    rpc GetService (fusion.discoveryx.server.protocol.GetService) returns (fusion.discoveryx.server.protocol.NamingResponse) {
+    }
+    // #GetService
+
+    // #CreateInstance
+    // 创建实例
+    rpc CreateInstance (fusion.discoveryx.model.InstanceRegister) returns (fusion.discoveryx.server.protocol.NamingResponse) {
+    }
+    // #CreateInstance
+
+    // #RemoveInstance
+    // 删除实例
+    rpc RemoveInstance (fusion.discoveryx.model.InstanceRemove) returns (fusion.discoveryx.server.protocol.NamingResponse) {
+    }
+    // #RemoveInstance
+
+    // #ModifyInstance
+    // 编辑实例
+    rpc ModifyInstance (fusion.discoveryx.model.InstanceModify) returns (fusion.discoveryx.server.protocol.NamingResponse) {
+    }
+    // #ModifyInstance
+}

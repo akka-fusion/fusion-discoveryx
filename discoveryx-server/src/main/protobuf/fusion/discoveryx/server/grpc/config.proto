@@ -1,0 +1,30 @@
+syntax = "proto3";
+package fusion.discoveryx.server.grpc;
+
+import "scalapb/scalapb.proto";
+import "fusion/discoveryx/model/discoveryx.proto";
+import "fusion/discoveryx/server/protocol/config.proto";
+
+option (scalapb.options) = {
+  collection_type: "scala.collection.immutable.Seq"
+};
+
+service ConfigManagerService {
+    // #ListConfig
+    // 查询配置
+    rpc ListConfig (fusion.discoveryx.server.protocol.ListConfig) returns (fusion.discoveryx.server.protocol.ConfigResponse) {
+    }
+    // #ListConfig
+
+    // #PublishConfig
+    // 发布配置
+    rpc PublishConfig (fusion.discoveryx.model.ConfigPublish) returns (fusion.discoveryx.server.protocol.ConfigResponse) {
+    }
+    // #PublishConfig
+
+    // #RemoveConfig
+    // 删除配置
+    rpc RemoveConfig (fusion.discoveryx.model.ConfigRemove) returns (fusion.discoveryx.server.protocol.ConfigResponse) {
+    }
+    // #RemoveConfig
+}

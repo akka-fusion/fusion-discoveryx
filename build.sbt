@@ -64,23 +64,25 @@ lazy val discoveryxFunctest = _project("discoveryx-functest")
 lazy val discoveryxServer = _project("discoveryx-server")
   .enablePlugins(JavaAgent, AkkaGrpcPlugin, JavaAppPackaging)
   .dependsOn(discoveryxCommon)
+  .settings(Publishing.noPublish: _*)
   .settings(
     javaAgents += _alpnAgent % "runtime;test",
     akkaGrpcCodeGeneratorSettings += "server_power_apis",
     akkaGrpcGeneratedSources := Seq(AkkaGrpc.Server),
     libraryDependencies ++= Seq(_scalapbJson4s, _akkaPersistenceTyped, _fusionProtobufV3, _fusionCore) ++ _akkaHttps ++ _akkaClusters)
 
-lazy val discoveryxClient = _project("discoveryx-client")
-  .enablePlugins(AkkaGrpcPlugin)
-  .dependsOn(discoveryxCommon)
-  .settings(
-    akkaGrpcCodeGeneratorSettings += "server_power_apis",
-    akkaGrpcGeneratedSources := Seq(AkkaGrpc.Client),
-    libraryDependencies ++= Seq())
+lazy val discoveryxClient =
+  _project("discoveryx-client")
+    .dependsOn(discoveryxCommon)
+    .settings(Publishing.publishing: _*)
+    .settings(libraryDependencies ++= Seq())
 
 lazy val discoveryxCommon = _project("discoveryx-common")
   .enablePlugins(AkkaGrpcPlugin)
+  .settings(Publishing.publishing: _*)
   .settings(
+    akkaGrpcCodeGeneratorSettings += "server_power_apis",
+    akkaGrpcGeneratedSources := Seq(AkkaGrpc.Client),
     libraryDependencies ++= Seq(
         "com.thesamet.scalapb" %% "scalapb-runtime" % scalapb.compiler.Version.scalapbVersion % "protobuf",
         _fusionCommon))
@@ -89,5 +91,4 @@ def _project(name: String, _base: String = null) =
   Project(id = name, base = file(if (_base eq null) name else _base))
     .enablePlugins(AutomateHeaderPlugin)
     .settings(basicSettings: _*)
-    .settings(Publishing.publishing: _*)
     .settings(libraryDependencies ++= Seq(_fusionTestkit % Test))

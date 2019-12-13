@@ -20,43 +20,71 @@ message ServerStatusBO {
 // Config
 ////////////////////////////////////////////////////////////////////////////////
 
+// #ConfigQuery
 message ConfigQuery {
     string namespace = 1;
     repeated string data_ids = 2;
     string group_name = 3;
 }
+// #ConfigQuery
+
+// #ConfigQueried
+// #ConfigType
+enum ConfigType {
+    TEXT = 0;
+    HOCON = 1;
+    JSON = 2;
+    YAML = 3;
+    PROPERTIES = 4;
+    INI = 5;
+}
+// #ConfigType
+
+// #ConfigItem
 message ConfigItem {
     string namespace = 1;
     string data_id = 2;
     string group_name = 3;
     string content = 4;
+    ConfigType type = 5;
 }
 message ConfigQueried {
     repeated ConfigItem configs = 1;
 }
+// #ConfigItem
+// #ConfigQueried
 
+// #ConfigPublish
 message ConfigPublish {
     string namespace = 1;
     string data_id = 2;
     string group_name = 3;
     string content = 4;
+    ConfigType type = 5;
 }
 message ConfigPublished {
     string version = 1;
     google.protobuf.StringValue old_content = 2;
 }
+// #ConfigPublish
 
+// #ConfigRemove
 message ConfigRemove {
     string namespace = 1;
     string data_id = 2;
     string group_name = 3;
 }
+// #ConfigRemove
 
+// #ConfigChangeListen
 message ConfigChangeListen {
     string namespace = 1;
     string data_id = 2;
     string group_name = 3;
 }
+// #ConfigChangeListen
+
+// #ConfigChanged
 message ConfigChanged {
     string namespace = 1;
     string data_id = 2;
@@ -66,59 +94,24 @@ message ConfigChanged {
     google.protobuf.StringValue old_content = 6;
     int32 change_type = 7; // 1: add, 2: update, 3: delete
 }
+// #ConfigChanged
 
+// #ConfigReply
 message ConfigReply {
     int32 status = 1;
+    string message = 2;
     oneof data {
-        ConfigQueried queried = 2;
-        ConfigPublished published = 3;
+        ConfigQueried queried = 3;
+        ConfigPublished published = 4;
     }
 }
+// #ConfigReply
 
 ////////////////////////////////////////////////////////////////////////////////
 // Instance
 ////////////////////////////////////////////////////////////////////////////////
 
-message InstanceRegister {
-    string namespace = 1;
-    string service_name = 2;
-    string group_name = 3;
-    string ip = 4;
-    int32 port = 5;
-    // instance weight
-    double weight = 6;
-    // instance health status
-    bool healthy = 7;
-    // If instance is enabled to accept request
-    bool enabled = 8;
-    // user extended attributes
-    map<string, string> metadata = 9;
-}
-
-message InstanceModify {
-    string namespace = 1;
-    string service_name = 2;
-    string group_name = 3;
-    string ip = 4;
-    int32 port = 5;
-    // instance weight
-    double weight = 6;
-    // instance health status
-    bool healthy = 7;
-    // If instance is enabled to accept request
-    bool enabled = 8;
-    // user extended attributes
-    map<string, string> metadata = 10;
-}
-
-message InstanceRemove {
-    string namespace = 1;
-    string service_name = 2;
-    string group_name = 3;
-    string ip = 4;
-    int32 port = 5;
-}
-
+// #Instance
 message Instance {
     // unique id of this instance.
     string instance_id = 1;
@@ -139,7 +132,56 @@ message Instance {
     // user extended attributes
     map<string, string> metadata = 10;
 }
+// #Instance
 
+// #InstanceRegister
+message InstanceRegister {
+    string namespace = 1;
+    string service_name = 2;
+    string group_name = 3;
+    string ip = 4;
+    int32 port = 5;
+    // instance weight
+    double weight = 6;
+    // instance health status
+    bool health = 7;
+    // If instance is enabled to accept request
+    bool enable = 8;
+    // user extended attributes
+    map<string, string> metadata = 9;
+}
+// #InstanceRegister
+
+// #InstanceModify
+message InstanceModify {
+    string namespace = 1;
+    string service_name = 2;
+    string instance_id = 3;
+    google.protobuf.StringValue group_name = 4;
+    google.protobuf.StringValue ip = 5;
+    google.protobuf.Int32Value port = 6;
+    // instance weight
+    google.protobuf.DoubleValue weight = 7;
+    // instance health status
+    google.protobuf.BoolValue health = 8;
+    // If instance is enabled to accept request
+    google.protobuf.BoolValue enable = 9;
+    // user extended attributes
+    map<string, string> metadata = 10;
+    // true：replace old metadata, false: merge old metadata
+    bool replace_metadata = 11;
+}
+// #InstanceModify
+
+// #InstanceRemove
+message InstanceRemove {
+    string namespace = 1;
+    string service_name = 2;
+    string instance_id = 3;
+}
+// #InstanceRemove
+
+// #InstanceQuery
 message InstanceQuery {
     string namespace = 1;
     string service_name = 2;
@@ -152,16 +194,20 @@ message InstanceQuery {
 message InstanceQueryResult {
     repeated Instance instances = 2;
 }
+// #InstanceQuery
 
+// #InstanceHeartbeat
 message InstanceHeartbeat {
-    string instance_id = 1;
 }
+// #InstanceHeartbeat
 
-message InstanceReply {
-
+// #NamingReply
+message NamingReply {
     int32 status = 1;
+    string message = 2;
     oneof data {
-        InstanceQueryResult queried = 2;
-        Instance registered = 3;
+        InstanceQueryResult queried = 3;
+        Instance instance = 4;
     }
 }
+// #NamingReply
