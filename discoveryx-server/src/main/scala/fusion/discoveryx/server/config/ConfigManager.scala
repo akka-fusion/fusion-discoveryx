@@ -16,72 +16,49 @@
 
 package fusion.discoveryx.server.config
 
-import java.util.UUID
-
-import akka.actor.typed.{ ActorRef, Behavior }
+import akka.actor.typed.{ ActorRef, ActorSystem, Behavior, Terminated }
 import akka.actor.typed.scaladsl.{ ActorContext, Behaviors }
-import akka.stream.scaladsl.SourceQueueWithComplete
-import fusion.discoveryx.model.{ ConfigChangeListen, ConfigChanged }
-import fusion.discoveryx.server.config.data.{ ConfigContent, NamespaceKey }
-import fusion.json.jackson.CborSerializable
-
-import scala.collection.immutable
+import akka.cluster.sharding.typed.ShardingEnvelope
+import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, Entity, EntityTypeKey }
+import fusion.discoveryx.server.protocol.ConfigManagerCommand.Cmd
+import fusion.discoveryx.server.protocol.{ ConfigManagerCommand, ConfigResponse }
+import helloscala.common.IntStatus
 
 object ConfigManager {
-  sealed trait Command
+  trait Command
 
-  case class GetContent(
-      namespace: String,
-      dataIds: immutable.Seq[String],
-      replyTo: ActorRef[immutable.Seq[ConfigContent]])
-      extends Command
+  val TypeKey: EntityTypeKey[Command] = EntityTypeKey("ConfigManager")
 
-  case class UpdateContent(namespace: String, dataId: String, content: String, replyTo: ActorRef[Configs.ModifyReply])
-      extends Command
-  case class RemoveContent(namespace: String, dataId: String, replyTo: ActorRef[Configs.ModifyReply]) extends Command
-  case class AllContent(namespace: String, replyTo: ActorRef[immutable.Seq[ConfigContent]]) extends Command
+  def init(system: ActorSystem[_]): ActorRef[ShardingEnvelope[Command]] =
+    ClusterSharding(system).init(Entity(TypeKey)(entityContext => apply(entityContext.entityId)))
 
-  case class RegisterChangeListener(
-      listenerId: UUID,
-      in: ConfigChangeListen,
-      queue: SourceQueueWithComplete[ConfigChanged])
-      extends Command
+  def apply(entityId: String): Behavior[Command] =
+    Behaviors.setup(context => new ConfigManager(entityId, context).init())
+}
 
-  val NAME = "configManager"
+import fusion.discoveryx.server.config.ConfigManager._
+class ConfigManager private (namespace: String, context: ActorContext[Command]) {
+  private var dataIds = Vector.empty[ActorRef[ConfigEntity.Command]]
 
-  //val ConfigManagerServiceKey = ServiceKey[Command](NAME)
-
-  def apply(): Behavior[Command] = Behaviors.setup { context =>
-    //context.system.receptionist ! Receptionist.Register(ConfigManagerServiceKey, context.self)
-    active(context, Map())
-  }
-
-  private def active(
-      context: ActorContext[Command],
-      children: Map[String, ActorRef[Configs.Command]]): Behavior[Command] = {
-    def activeThan(namespace: String, childFunc: ActorRef[Configs.Command] => Unit): Behavior[Command] = {
-      children.get(namespace) match {
-        case Some(child) =>
-          childFunc(child)
-          Behaviors.same
-        case None =>
-          val child = context.spawn(Configs(NamespaceKey(namespace)), namespace)
-          childFunc(child)
-          active(context, children.updated(namespace, child))
+  def init(): Behavior[Command] =
+    Behaviors
+      .receiveMessage[Command] {
+        case ConfigManagerCommand(replyTo, cmd) => onManagerCommand(cmd, replyTo)
       }
-    }
+      .receiveSignal {
+        case (_, Terminated(ref)) =>
+          dataIds = dataIds.filterNot(_ == ref)
+          Behaviors.same
+      }
 
-    Behaviors.receiveMessagePartial {
-      case GetContent(namespace, dataIds, replyTo) =>
-        activeThan(namespace, _ ! Configs.GetContent(dataIds, replyTo))
-      case UpdateContent(namespace, dataId, content, replyTo) =>
-        activeThan(namespace, _ ! Configs.UpdateContent(dataId, content, replyTo))
-      case RemoveContent(namespace, dataId, replyTo) =>
-        activeThan(namespace, _ ! Configs.RemoveContent(dataId, replyTo))
-      case AllContent(namespace, replyTo) =>
-        activeThan(namespace, _ ! Configs.AllContent(replyTo))
-      case RegisterChangeListener(listenerId, in, queue) =>
-        activeThan(in.namespace, _ ! Configs.RegisterListener(listenerId, in.dataId, queue))
+  private def onManagerCommand(cmd: ConfigManagerCommand.Cmd, replyTo: ActorRef[ConfigResponse]): Behavior[Command] = {
+    cmd match {
+      case Cmd.List(cmd)    =>
+      case Cmd.Get(cmd)     =>
+      case Cmd.Publish(cmd) =>
+      case Cmd.Remove(cmd)  =>
+      case Cmd.Empty        => replyTo ! ConfigResponse(IntStatus.BAD_REQUEST, "Invalid command.")
     }
+    Behaviors.same
   }
 }

@@ -20,13 +20,12 @@ message ServerStatusBO {
 // Config
 ////////////////////////////////////////////////////////////////////////////////
 
-// #ConfigQuery
-message ConfigQuery {
+// #ConfigGet
+message ConfigGet {
     string namespace = 1;
-    repeated string data_ids = 2;
-    string group_name = 3;
+    string data_id = 2;
 }
-// #ConfigQuery
+// #ConfigGet
 
 // #ConfigQueried
 // #ConfigType
@@ -80,18 +79,15 @@ message ConfigRemove {
 message ConfigChangeListen {
     string namespace = 1;
     string data_id = 2;
-    string group_name = 3;
 }
 // #ConfigChangeListen
 
 // #ConfigChanged
 message ConfigChanged {
-    string namespace = 1;
-    string data_id = 2;
-    string group_name = 3;
-    string content = 4;
-    int32 version = 5;
-    google.protobuf.StringValue old_content = 6;
+    fusion.discoveryx.model.ConfigItem config = 1 [(scalapb.field).no_box = true];
+    fusion.discoveryx.model.ConfigItem old = 2;
+    int32 version = 3;
+    bool exit = 4;
     int32 change_type = 7; // 1: add, 2: update, 3: delete
 }
 // #ConfigChanged
@@ -101,8 +97,9 @@ message ConfigReply {
     int32 status = 1;
     string message = 2;
     oneof data {
-        ConfigQueried queried = 3;
-        ConfigPublished published = 4;
+        ConfigItem config = 3;
+        ConfigQueried queried = 4;
+        ConfigPublished published = 5;
     }
 }
 // #ConfigReply

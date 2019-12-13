@@ -269,7 +269,7 @@ rpc GetService (fusion.discoveryx.server.protocol.GetService) returns (fusion.di
 rpc RemoveInstance (fusion.discoveryx.model.InstanceRemove) returns (fusion.discoveryx.server.protocol.NamingResponse) {
 }</code></pre>
 <p><strong>请求</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L177-L181" target="_blank" title="Go to snippet source"></a><code class="language-proto">message InstanceRemove {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L174-L178" target="_blank" title="Go to snippet source"></a><code class="language-proto">message InstanceRemove {
     string namespace = 1;
     string service_name = 2;
     string instance_id = 3;
@@ -290,7 +290,7 @@ rpc RemoveInstance (fusion.discoveryx.model.InstanceRemove) returns (fusion.disc
 rpc ModifyInstance (fusion.discoveryx.model.InstanceModify) returns (fusion.discoveryx.server.protocol.NamingResponse) {
 }</code></pre>
 <p><strong>请求</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L156-L173" target="_blank" title="Go to snippet source"></a><code class="language-proto">message InstanceModify {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L153-L170" target="_blank" title="Go to snippet source"></a><code class="language-proto">message InstanceModify {
     string namespace = 1;
     string service_name = 2;
     string instance_id = 3;

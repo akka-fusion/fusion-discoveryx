@@ -205,7 +205,7 @@ service ConfigService {
     }
 
     // 查询配置
-    rpc QueryConfig (fusion.discoveryx.model.ConfigQuery) returns (fusion.discoveryx.model.ConfigReply) {
+    rpc QueryConfig (fusion.discoveryx.model.ConfigGet) returns (fusion.discoveryx.model.ConfigReply) {
     }
 
     // 发布配置
@@ -260,25 +260,25 @@ service NamingService {
 <h3><a href="#queryconfig-查询配置" name="queryconfig-查询配置" class="anchor"><span class="anchor-link"></span></a>QueryConfig 查询配置</h3>
 <p><strong>gRPC</strong></p>
 <pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/grpc/discoveryx.proto#L15-L17" target="_blank" title="Go to snippet source"></a><code class="language-proto">// 查询配置
-rpc QueryConfig (fusion.discoveryx.model.ConfigQuery) returns (fusion.discoveryx.model.ConfigReply) {
+rpc QueryConfig (fusion.discoveryx.model.ConfigGet) returns (fusion.discoveryx.model.ConfigReply) {
 }</code></pre>
 <p><strong>请求</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L24-L28" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ConfigQuery {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L24-L27" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ConfigGet {
     string namespace = 1;
-    repeated string data_ids = 2;
-    string group_name = 3;
+    string data_id = 2;
 }</code></pre>
 <p><strong>响应</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L100-L107" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ConfigReply {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L96-L104" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ConfigReply {
     int32 status = 1;
     string message = 2;
     oneof data {
-        ConfigQueried queried = 3;
-        ConfigPublished published = 4;
+        ConfigItem config = 3;
+        ConfigQueried queried = 4;
+        ConfigPublished published = 5;
     }
 }</code></pre>
 <p><code>oneof</code>的<code>queried</code>字段将返回已注册实例信息，如下：</p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L33-L53" target="_blank" title="Go to snippet source"></a><code class="language-proto">enum ConfigType {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L32-L52" target="_blank" title="Go to snippet source"></a><code class="language-proto">enum ConfigType {
     TEXT = 0;
     HOCON = 1;
     JSON = 2;
@@ -303,7 +303,7 @@ message ConfigQueried {
 rpc PublishConfig (fusion.discoveryx.model.ConfigPublish) returns (fusion.discoveryx.model.ConfigReply) {
 }</code></pre>
 <p><strong>请求</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L58-L68" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ConfigPublish {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L57-L67" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ConfigPublish {
     string namespace = 1;
     string data_id = 2;
     string group_name = 3;
@@ -315,12 +315,13 @@ message ConfigPublished {
     google.protobuf.StringValue old_content = 2;
 }</code></pre>
 <p><strong>响应</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L100-L107" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ConfigReply {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L96-L104" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ConfigReply {
     int32 status = 1;
     string message = 2;
     oneof data {
-        ConfigQueried queried = 3;
-        ConfigPublished published = 4;
+        ConfigItem config = 3;
+        ConfigQueried queried = 4;
+        ConfigPublished published = 5;
     }
 }</code></pre>
 <h3><a href="#removeconfig-删除配置" name="removeconfig-删除配置" class="anchor"><span class="anchor-link"></span></a>RemoveConfig 删除配置</h3>
@@ -329,18 +330,19 @@ message ConfigPublished {
 rpc RemoveConfig (fusion.discoveryx.model.ConfigRemove) returns (fusion.discoveryx.model.ConfigReply) {
 }</code></pre>
 <p><strong>请求</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L72-L76" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ConfigRemove {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L71-L75" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ConfigRemove {
     string namespace = 1;
     string data_id = 2;
     string group_name = 3;
 }</code></pre>
 <p><strong>响应</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L100-L107" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ConfigReply {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L96-L104" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ConfigReply {
     int32 status = 1;
     string message = 2;
     oneof data {
-        ConfigQueried queried = 3;
-        ConfigPublished published = 4;
+        ConfigItem config = 3;
+        ConfigQueried queried = 4;
+        ConfigPublished published = 5;
     }
 }</code></pre>
 <h3><a href="#listenerconfig-监听配置变化" name="listenerconfig-监听配置变化" class="anchor"><span class="anchor-link"></span></a>ListenerConfig 监听配置变化</h3>
@@ -349,19 +351,16 @@ rpc RemoveConfig (fusion.discoveryx.model.ConfigRemove) returns (fusion.discover
 rpc ListenerConfig (fusion.discoveryx.model.ConfigChangeListen) returns (stream fusion.discoveryx.model.ConfigChanged) {
 }</code></pre>
 <p><strong>请求</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L80-L84" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ConfigChangeListen {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L79-L82" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ConfigChangeListen {
     string namespace = 1;
     string data_id = 2;
-    string group_name = 3;
 }</code></pre>
 <p><strong>响应</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L88-L96" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ConfigChanged {
-    string namespace = 1;
-    string data_id = 2;
-    string group_name = 3;
-    string content = 4;
-    int32 version = 5;
-    google.protobuf.StringValue old_content = 6;
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L86-L92" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ConfigChanged {
+    fusion.discoveryx.model.ConfigItem config = 1 [(scalapb.field).no_box = true];
+    fusion.discoveryx.model.ConfigItem old = 2;
+    int32 version = 3;
+    bool exit = 4;
     int32 change_type = 7; // 1: add, 2: update, 3: delete
 }</code></pre>
 <h2><a href="#naming-服务发现-" name="naming-服务发现-" class="anchor"><span class="anchor-link"></span></a>Naming（服务发现）</h2>
@@ -376,7 +375,7 @@ rpc ListenerConfig (fusion.discoveryx.model.ConfigChangeListen) returns (stream 
 rpc RegisterInstance (fusion.discoveryx.model.InstanceRegister) returns (fusion.discoveryx.model.NamingReply) {
 }</code></pre>
 <p><strong>请求</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L138-L152" target="_blank" title="Go to snippet source"></a><code class="language-proto">message InstanceRegister {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L135-L149" target="_blank" title="Go to snippet source"></a><code class="language-proto">message InstanceRegister {
     string namespace = 1;
     string service_name = 2;
     string group_name = 3;
@@ -392,7 +391,7 @@ rpc RegisterInstance (fusion.discoveryx.model.InstanceRegister) returns (fusion.
     map&lt;string, string&gt; metadata = 9;
 }</code></pre>
 <p><strong>响应</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L205-L212" target="_blank" title="Go to snippet source"></a><code class="language-proto">message NamingReply {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L202-L209" target="_blank" title="Go to snippet source"></a><code class="language-proto">message NamingReply {
     int32 status = 1;
     string message = 2;
     oneof data {
@@ -402,7 +401,7 @@ rpc RegisterInstance (fusion.discoveryx.model.InstanceRegister) returns (fusion.
 }</code></pre>
 <h4><a href="#instance" name="instance" class="anchor"><span class="anchor-link"></span></a>Instance</h4>
 <p><code>oneof</code>的<code>instance</code>字段将返回已注册实例信息，如下：</p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L115-L134" target="_blank" title="Go to snippet source"></a><code class="language-proto">message Instance {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L112-L131" target="_blank" title="Go to snippet source"></a><code class="language-proto">message Instance {
     // unique id of this instance.
     string instance_id = 1;
     // Service information of instance
@@ -428,14 +427,14 @@ rpc RegisterInstance (fusion.discoveryx.model.InstanceRegister) returns (fusion.
 rpc RemoveInstance (fusion.discoveryx.model.InstanceRemove) returns (fusion.discoveryx.model.NamingReply) {
 }</code></pre>
 <p><strong>请求</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L177-L181" target="_blank" title="Go to snippet source"></a><code class="language-proto">message InstanceRemove {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L174-L178" target="_blank" title="Go to snippet source"></a><code class="language-proto">message InstanceRemove {
     string namespace = 1;
     string service_name = 2;
     string instance_id = 3;
 }</code></pre>
 <p><strong>响应</strong></p>
 <p>删除实例没有<code>oneof</code>字段返回。</p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L205-L212" target="_blank" title="Go to snippet source"></a><code class="language-proto">message NamingReply {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L202-L209" target="_blank" title="Go to snippet source"></a><code class="language-proto">message NamingReply {
     int32 status = 1;
     string message = 2;
     oneof data {
@@ -449,7 +448,7 @@ rpc RemoveInstance (fusion.discoveryx.model.InstanceRemove) returns (fusion.disc
 rpc QueryInstance (fusion.discoveryx.model.InstanceQuery) returns (fusion.discoveryx.model.NamingReply) {
 }</code></pre>
 <p><strong>请求</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L185-L196" target="_blank" title="Go to snippet source"></a><code class="language-proto">message InstanceQuery {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L182-L193" target="_blank" title="Go to snippet source"></a><code class="language-proto">message InstanceQuery {
     string namespace = 1;
     string service_name = 2;
     string group_name = 3;
@@ -462,7 +461,7 @@ message InstanceQueryResult {
     repeated Instance instances = 2;
 }</code></pre>
 <p><strong>响应</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L205-L212" target="_blank" title="Go to snippet source"></a><code class="language-proto">message NamingReply {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L202-L209" target="_blank" title="Go to snippet source"></a><code class="language-proto">message NamingReply {
     int32 status = 1;
     string message = 2;
     oneof data {
@@ -477,7 +476,7 @@ message InstanceQueryResult {
 rpc ModifyInstance (fusion.discoveryx.model.InstanceModify) returns (fusion.discoveryx.model.NamingReply) {
 }</code></pre>
 <p><strong>请求</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L156-L173" target="_blank" title="Go to snippet source"></a><code class="language-proto">message InstanceModify {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L153-L170" target="_blank" title="Go to snippet source"></a><code class="language-proto">message InstanceModify {
     string namespace = 1;
     string service_name = 2;
     string instance_id = 3;
@@ -496,7 +495,7 @@ rpc ModifyInstance (fusion.discoveryx.model.InstanceModify) returns (fusion.disc
     bool replace_metadata = 11;
 }</code></pre>
 <p><strong>响应</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L205-L212" target="_blank" title="Go to snippet source"></a><code class="language-proto">message NamingReply {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L202-L209" target="_blank" title="Go to snippet source"></a><code class="language-proto">message NamingReply {
     int32 status = 1;
     string message = 2;
     oneof data {

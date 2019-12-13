@@ -26,13 +26,16 @@ import akka.stream.{ Materializer, SystemMaterializer }
 import fusion.common.FusionProtocol
 import fusion.discoveryx.DiscoveryX
 import fusion.discoveryx.grpc.ConfigServiceHandler
-import fusion.discoveryx.server.config.{ ConfigManager, ConfigServiceImpl, ConfigSettings }
+import fusion.discoveryx.server.config.{ ConfigManager, ConfigManagerServiceImpl, ConfigServiceImpl, ConfigSettings }
+import fusion.discoveryx.server.grpc.ConfigManagerServiceHandler
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
 class ConfigRoute(discoveryX: DiscoveryX, configSettings: ConfigSettings) {
   implicit val system: ActorSystem[FusionProtocol.Command] = discoveryX.system
+  private val configService = new ConfigServiceImpl()
+  private val configManagerService = new ConfigManagerServiceImpl()
 
   def openRoute: Route = pathPrefix("config") {
     complete(StatusCodes.NotImplemented)
@@ -41,13 +44,9 @@ class ConfigRoute(discoveryX: DiscoveryX, configSettings: ConfigSettings) {
     complete(StatusCodes.NotImplemented)
   }
 
-  val grpcHandler: PartialFunction[HttpRequest, Future[HttpResponse]] = {
+  val grpcHandler: List[PartialFunction[HttpRequest, Future[HttpResponse]]] = {
     implicit val mat: Materializer = SystemMaterializer(system).materializer
     implicit val classicSystem: actor.ActorSystem = discoveryX.classicSystem
-    val configManager: ActorRef[ConfigManager.Command] = discoveryX.spawnActorSync(
-      Behaviors.supervise(ConfigManager()).onFailure(SupervisorStrategy.restart),
-      ConfigManager.NAME,
-      2.seconds)
-    ConfigServiceHandler.partial(new ConfigServiceImpl(configManager))
+    ConfigServiceHandler.partial(configService) :: ConfigManagerServiceHandler.partial(configManagerService) :: Nil
   }
 }

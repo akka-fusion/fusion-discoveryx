@@ -16,10 +16,9 @@
 
 package fusion.discoveryx.server.naming
 
-import akka.actor.typed.{ ActorRef, ActorSystem }
 import akka.actor.typed.scaladsl.AskPattern._
+import akka.actor.typed.{ ActorRef, ActorSystem }
 import akka.cluster.sharding.typed.ShardingEnvelope
-import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.util.Timeout
 import fusion.discoveryx.model.{ InstanceModify, InstanceRegister, InstanceRemove }
 import fusion.discoveryx.server.grpc.NamingManagerService

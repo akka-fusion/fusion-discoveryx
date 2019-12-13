@@ -37,7 +37,7 @@ class Routes(discoveryX: DiscoveryX, configSettings: ConfigSettings, namingSetti
     val c = new ConfigRoute(discoveryX, configSettings)
     openRoutes ::= c.openRoute
     managementRoutes ::= c.managementRoute
-    grpcHandlers ::= c.grpcHandler
+    grpcHandlers :::= c.grpcHandler
   }
   if (namingSettings.enable) {
     val n = new NamingRoute(discoveryX, namingSettings)

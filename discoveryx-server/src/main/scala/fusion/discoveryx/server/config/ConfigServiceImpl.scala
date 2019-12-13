@@ -16,55 +16,65 @@
 
 package fusion.discoveryx.server.config
 
-import java.util.UUID
-
 import akka.NotUsed
-import akka.actor.typed.{ ActorRef, ActorSystem }
+import akka.actor.typed.ActorSystem
 import akka.actor.typed.scaladsl.AskPattern._
+import akka.cluster.sharding.typed.ShardingEnvelope
+import akka.stream.OverflowStrategy
 import akka.stream.scaladsl.Source
-import akka.stream.{ Materializer, OverflowStrategy }
+import akka.stream.typed.scaladsl.ActorSource
 import akka.util.Timeout
 import fusion.discoveryx.grpc.ConfigService
 import fusion.discoveryx.model._
-import fusion.discoveryx.server.config.data.ConfigContent
+import fusion.discoveryx.server.config.ConfigEntity.ChangeEvent
+import fusion.discoveryx.server.protocol.{
+  ChangeType,
+  ChangedConfigEvent,
+  ConfigStopEvent,
+  GetConfig,
+  PublishConfig,
+  RegisterChangeListener,
+  RemoveConfig
+}
 import helloscala.common.IntStatus
+import helloscala.common.exception.HSInternalErrorException
+import helloscala.common.util.Utils
 
-import scala.collection.immutable
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-class ConfigServiceImpl(configManager: ActorRef[ConfigManager.Command])(implicit system: ActorSystem[_])
-    extends ConfigService {
-  import system.executionContext
+class ConfigServiceImpl()(implicit system: ActorSystem[_]) extends ConfigService {
   implicit private val timeout: Timeout = 5.seconds
+  private val configEntity = ConfigEntity.init(system)
 
   override def serverStatus(in: ServerStatusQuery): Future[ServerStatusBO] =
     Future.successful(ServerStatusBO(IntStatus.OK))
 
-  override def queryConfig(in: ConfigQuery): Future[ConfigReply] = {
-    configManager
-      .ask[immutable.Seq[ConfigContent]](replyTo => ConfigManager.GetContent(in.namespace, in.dataIds, replyTo))
-      .map { contents =>
-        val queried = ConfigQueried(contents.map(c => ConfigItem(c.namespace, "DEFAULT", c.dataId, c.content)))
-        ConfigReply(IntStatus.OK, data = ConfigReply.Data.Queried(queried))
-      }
-  }
+  override def queryConfig(in: ConfigGet): Future[ConfigReply] =
+    askConfig(in.namespace, in.dataId, GetConfig(in))
 
-  override def publishConfig(in: ConfigPublish): Future[ConfigReply] = {
-    configManager
-      .ask[Configs.ModifyReply](replyTo => ConfigManager.UpdateContent(in.namespace, in.dataId, in.content, replyTo))
-      .map(reply => ConfigReply(reply.status))
-  }
+  override def publishConfig(in: ConfigPublish): Future[ConfigReply] =
+    askConfig(in.namespace, in.dataId, PublishConfig(in))
 
-  override def removeConfig(in: ConfigRemove): Future[ConfigReply] = {
-    configManager
-      .ask[Configs.ModifyReply](replyTo => ConfigManager.RemoveContent(in.namespace, in.dataId, replyTo))
-      .map(reply => ConfigReply(reply.status))
-  }
+  override def removeConfig(in: ConfigRemove): Future[ConfigReply] =
+    askConfig(in.namespace, in.dataId, RemoveConfig(in))
 
   override def listenerConfig(in: ConfigChangeListen): Source[ConfigChanged, NotUsed] = {
-    val (queue, source) = Source.queue[ConfigChanged](8, OverflowStrategy.dropHead).preMaterialize()
-    configManager ! ConfigManager.RegisterChangeListener(UUID.randomUUID(), in, queue)
-    source
+    val entityId = ConfigEntity.ConfigKey.makeEntityId(in.namespace, in.dataId)
+    val (ref, source) = ActorSource
+      .actorRef[ChangedConfigEvent](
+        { case ChangedConfigEvent(_, _, ChangeType.CHANGE_EXIT) => },
+        changed => throw HSInternalErrorException(s"Throw error: $changed."),
+        2,
+        OverflowStrategy.dropHead)
+      .preMaterialize()
+    configEntity ! ShardingEnvelope(entityId, RegisterChangeListener(ref, Utils.timeBasedUuid().toString))
+    source.map(event => ConfigChanged(event.config, event.old))
   }
+
+  @inline private def askConfig(
+      namespace: String,
+      dataId: String,
+      cmd: ConfigEntity.ReplyCommand): Future[ConfigReply] =
+    configEntity.ask[ConfigReply](replyTo => ShardingEnvelope(namespace, cmd.withReplyTo(replyTo)))
 }

@@ -50,7 +50,7 @@ class DiscoveryXConfigService private (val configClient: ConfigServiceClient)(im
   /**
    * 查询配置
    */
-  def queryConfig(in: ConfigQuery): Future[ConfigReply] = configClient.queryConfig(in)
+  def queryConfig(in: ConfigGet): Future[ConfigReply] = configClient.queryConfig(in)
 
   /**
    * 发布配置
