@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 helloscala.com
+ * Copyright 2019 akka-fusion.com
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package fusion.discoveryx.server.route
 
-import akka.http.scaladsl.model.headers.`Timeout-Access`
-import akka.http.scaladsl.model.{ HttpEntity, HttpRequest, Uri }
+import akka.grpc.scaladsl.ServiceHandler
+import akka.http.scaladsl.model.{ HttpRequest, HttpResponse }
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import com.typesafe.scalalogging.StrictLogging
@@ -26,32 +26,40 @@ import fusion.discoveryx.common.Constants
 import fusion.discoveryx.server.config.ConfigSettings
 import fusion.discoveryx.server.naming.NamingSettings
 
+import scala.concurrent.Future
+
 class Routes(discoveryX: DiscoveryX, configSettings: ConfigSettings, namingSettings: NamingSettings)
     extends StrictLogging {
-  def route: Route =
-    pathPrefix("fusion" / Constants.DISCOVERYX / "v1") {
-      new NamingRoute(discoveryX, namingSettings).route ~
-      new ConfigRoute(discoveryX, configSettings).route
-    } ~ new GrpcRoute(discoveryX, configSettings, namingSettings).route
-
-  def logRequest = mapRequest { req =>
-    curlLogging(req)
+  private var openRoutes: List[Route] = Nil
+  private var managementRoutes: List[Route] = Nil
+  private var grpcHandlers: List[PartialFunction[HttpRequest, Future[HttpResponse]]] = Nil
+  if (configSettings.enable) {
+    val c = new ConfigRoute(discoveryX, configSettings)
+    openRoutes ::= c.openRoute
+    managementRoutes ::= c.managementRoute
+    grpcHandlers ::= c.grpcHandler
   }
+  if (namingSettings.enable) {
+    val n = new NamingRoute(discoveryX, namingSettings)
+    openRoutes ::= n.openRoute
+    managementRoutes ::= n.managementRoute
+    grpcHandlers :::= n.grpcHandler
+  }
+  private val grpcHandler = ServiceHandler.concatOrNotFound(grpcHandlers: _*)
 
-  def curlLogging(req: HttpRequest): HttpRequest = {
-    logger.whenDebugEnabled {
-      val entity = req.entity match {
-        case HttpEntity.Empty => ""
-        case _                => "\n" + req.entity
+  val route: Route = {
+    pathPrefix("fusion" / Constants.DISCOVERYX) {
+      pathPrefix("v1") {
+        concat(openRoutes: _*)
+      } ~
+      pathPrefix("management") {
+        concat(managementRoutes: _*)
       }
-      val headers = req.headers.filterNot(_.name() == `Timeout-Access`.name)
-      logger.info(s"""HttpRequest
-                   |${req.protocol.value} ${req.method.value} ${req.uri}
-                   |search: ${toString(req.uri.query())}
-                   |header: ${headers.mkString("\n        ")}$entity""".stripMargin)
+    } ~
+    extractRequest { request =>
+      onSuccess(grpcHandler(request)) { response =>
+        complete(response)
+      }
     }
-    req
   }
-
-  def toString(query: Uri.Query): String = query.map { case (name, value) => s"$name=$value" }.mkString("&")
 }

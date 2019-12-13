@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 helloscala.com
+ * Copyright 2019 akka-fusion.com
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package fusion.discoveryx.client
 import java.util.concurrent.TimeUnit
 
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
-import fusion.discoveryx.model.{ InstanceQuery, InstanceRegister, InstanceRemove, ServerStatusQuery }
+import fusion.discoveryx.model.{ Instance, InstanceQuery, InstanceRegister, InstanceRemove, ServerStatusQuery }
 import helloscala.common.IntStatus
 import org.scalatest.{ OptionValues, WordSpecLike }
 
@@ -30,23 +30,25 @@ class DiscoveryXNamingClientTest extends ScalaTestWithActorTestKit with WordSpec
   private val groupName = "default"
 
   "DiscoveryXNamingService" must {
+    var inst: Instance = null
     "serverStatus" in {
       val result = namingClient.serverStatus(ServerStatusQuery()).futureValue
       result.status should be(IntStatus.OK)
     }
     "registerInstance" in {
       val in =
-        InstanceRegister(namespace, serviceName, groupName, "127.0.0.1", 8000, healthy = true)
+        InstanceRegister(namespace, serviceName, groupName, "127.0.0.1", 8000, enable = true)
       val reply = namingClient.registerInstance(in).futureValue
       println(reply)
       reply.status should be(IntStatus.OK)
     }
     "registerInstance2" in {
       val in =
-        InstanceRegister(namespace, serviceName, groupName, "127.0.0.1", 8002, healthy = true)
+        InstanceRegister(namespace, serviceName, groupName, "127.0.0.1", 8002, enable = true)
       val reply = namingClient.registerInstance(in).futureValue
       println(reply)
       reply.status should be(IntStatus.OK)
+      inst = reply.data.instance.value
     }
     "queryInstance all healthy" in {
       val in = InstanceQuery(namespace, serviceName, groupName, allHealthy = true)
@@ -63,8 +65,9 @@ class DiscoveryXNamingClientTest extends ScalaTestWithActorTestKit with WordSpec
       queried.instances should have size 1
     }
     "removeInstance" in {
+      inst should not be null
       val reply =
-        namingClient.removeInstance(InstanceRemove(namespace, serviceName, groupName, "127.0.0.1", 8002)).futureValue
+        namingClient.removeInstance(InstanceRemove(namespace, serviceName, inst.instanceId)).futureValue
       reply.status should be(IntStatus.OK)
     }
     "queryInstance all healthy again" in {

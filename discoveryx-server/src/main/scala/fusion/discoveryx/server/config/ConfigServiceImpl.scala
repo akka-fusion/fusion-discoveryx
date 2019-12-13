@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 helloscala.com
+ * Copyright 2019 akka-fusion.com
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ class ConfigServiceImpl(configManager: ActorRef[ConfigManager.Command])(implicit
       .ask[immutable.Seq[ConfigContent]](replyTo => ConfigManager.GetContent(in.namespace, in.dataIds, replyTo))
       .map { contents =>
         val queried = ConfigQueried(contents.map(c => ConfigItem(c.namespace, "DEFAULT", c.dataId, c.content)))
-        ConfigReply(IntStatus.OK, ConfigReply.Data.Queried(queried))
+        ConfigReply(IntStatus.OK, data = ConfigReply.Data.Queried(queried))
       }
   }
 

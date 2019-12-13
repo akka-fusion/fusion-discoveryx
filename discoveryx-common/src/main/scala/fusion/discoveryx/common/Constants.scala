@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 helloscala.com
+ * Copyright 2019 akka-fusion.com
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,4 +26,5 @@ object Headers {
   val SERVICE_NAME = "x-discoveryx-service-name"
   val IP = "x-discoveryx-ip"
   val PORT = "x-discoveryx-port"
+  val INSTANCE_ID = "x-discoveryx-instance-id"
 }

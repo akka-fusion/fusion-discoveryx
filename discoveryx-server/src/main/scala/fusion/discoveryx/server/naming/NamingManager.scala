@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 helloscala.com
+ * Copyright 2019 akka-fusion.com
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import akka.cluster.pubsub.{ DistributedPubSub, DistributedPubSubMediator }
 import akka.cluster.sharding.typed.ShardingEnvelope
 import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, Entity, EntityTypeKey }
 import akka.util.Timeout
-import fusion.discoveryx.model.{ InstanceQuery, InstanceReply }
+import fusion.discoveryx.model.{ InstanceModify, InstanceQuery, InstanceRegister, InstanceRemove, NamingReply }
 import fusion.discoveryx.server.protocol._
 import helloscala.common.IntStatus
 
@@ -56,7 +56,7 @@ class NamingManager private (namespace: String, context: ActorContext[Command]) 
   private val namingSettings = NamingSettings(context.system)
   private val namingRegion =
     ClusterSharding(context.system).init(Entity(Namings.TypeKey)(entityContext => Namings(entityContext.entityId)))
-  private var namings = List.empty[ActorRef[Namings.Command]]
+  private var namings = Vector.empty[ActorRef[Namings.Command]]
 
   DistributedPubSub(context.system).mediator ! DistributedPubSubMediator.Subscribe(
     NamingManager.TOPIC_NAMING_TO_MANAGER,
@@ -67,7 +67,8 @@ class NamingManager private (namespace: String, context: ActorContext[Command]) 
       .receiveMessage[Command] {
         case NamingManagerCommand(replyTo, cmd) => onManagerCommand(cmd, replyTo)
         case NamingRegisterToManager(namingRef) =>
-          namings = namingRef :: namings.filterNot(old => old.path.name == namingRef.path.name)
+          context.log.debug(s"NamingRegisterToManager($namingRef)")
+          namings = namings.filterNot(old => old.path.name == namingRef.path.name) :+ namingRef
           context.watch(namingRef)
           Behaviors.same
       }
@@ -81,12 +82,28 @@ class NamingManager private (namespace: String, context: ActorContext[Command]) 
       command: NamingManagerCommand.Cmd,
       replyTo: ActorRef[NamingResponse]): Behavior[Command] =
     command match {
-      case NamingManagerCommand.Cmd.ListService(cmd) => processListService(cmd, replyTo)
-      case NamingManagerCommand.Cmd.GetService(cmd)  => processGetService(cmd, replyTo)
-      case other =>
-        context.log.warn(s"Invalid message: $other")
+      case NamingManagerCommand.Cmd.ListService(cmd)    => processListService(cmd, replyTo)
+      case NamingManagerCommand.Cmd.GetService(cmd)     => processGetService(cmd, replyTo)
+      case NamingManagerCommand.Cmd.InstanceCreate(cmd) => processCreateInstance(cmd, replyTo)
+      case NamingManagerCommand.Cmd.InstanceModify(cmd) => processModifyInstance(cmd, replyTo)
+      case NamingManagerCommand.Cmd.InstanceRemove(cmd) => processRemoveInstance(cmd, replyTo)
+      case NamingManagerCommand.Cmd.Empty =>
+        context.log.warn(s"Invalid message: ${NamingManagerCommand.Cmd.Empty}")
         Behaviors.same
     }
+
+  private def processCreateInstance(cmd: InstanceRegister, replyTo: ActorRef[NamingResponse]): Behavior[Command] =
+    askNaming(cmd.namespace, cmd.serviceName, RegisterInstance(cmd), replyTo) { value =>
+      NamingResponse.Data.Instance(value.getInstance)
+    }
+
+  private def processModifyInstance(cmd: InstanceModify, replyTo: ActorRef[NamingResponse]): Behavior[Command] =
+    askNaming(cmd.namespace, cmd.serviceName, ModifyInstance(cmd), replyTo) { value =>
+      NamingResponse.Data.Instance(value.getInstance)
+    }
+
+  private def processRemoveInstance(cmd: InstanceRemove, replyTo: ActorRef[NamingResponse]): Behavior[Command] =
+    askNaming(cmd.namespace, cmd.serviceName, RemoveInstance(cmd), replyTo)(_ => NamingResponse.Data.Empty)
 
   private def processGetService(cmd: GetService, replyTo: ActorRef[NamingResponse]): Behavior[Command] =
     askNaming(cmd.namespace, cmd.serviceName, QueryInstance(InstanceQuery(cmd.namespace, cmd.serviceName)), replyTo) {
@@ -100,7 +117,10 @@ class NamingManager private (namespace: String, context: ActorContext[Command]) 
     val size = namingSettings.findSize(cmd.size)
     val offset = (page - 1) * size
     if (offset < namings.size) {
-      val futures = namings.slice(offset, offset + size).map { naming =>
+      val ns = namings.slice(offset, offset + size)
+      println(s"namings: $ns - $namings")
+      println(s"[$offset,$size] $cmd $replyTo")
+      val futures = ns.map { naming =>
         naming.ask[ServiceInfo](ref => QueryServiceInfo(ref))
       }
       Future.sequence(futures).onComplete {
@@ -111,7 +131,7 @@ class NamingManager private (namespace: String, context: ActorContext[Command]) 
           replyTo ! NamingResponse(IntStatus.NOT_FOUND)
       }
     } else {
-      replyTo ! NamingResponse(IntStatus.NOT_FOUND)
+      replyTo ! NamingResponse(IntStatus.NOT_FOUND, s"offset: $offset, but namings size is ${namings.size}")
     }
 
     Behaviors.same
@@ -121,13 +141,24 @@ class NamingManager private (namespace: String, context: ActorContext[Command]) 
       namespace: String,
       serviceName: String,
       cmd: Namings.ReplyCommand,
-      replyTo: ActorRef[NamingResponse])(onSuccess: InstanceReply => NamingResponse.Data): Behavior[Command] = {
+      replyTo: ActorRef[NamingResponse])(onSuccess: NamingReply => NamingResponse.Data): Behavior[Command] = {
     Namings.NamingServiceKey.entityId(namespace, serviceName) match {
       case Right(entityId) =>
-        namingRegion.ask[InstanceReply](ref => ShardingEnvelope(entityId, cmd.withReplyTo(ref))).onComplete {
-          case Success(value) => replyTo ! NamingResponse(IntStatus.OK, data = onSuccess(value))
-          case Failure(e)     => replyTo ! NamingResponse(IntStatus.INTERNAL_ERROR, e.getMessage)
-        }
+        namingRegion
+          .ask[NamingReply] { ref =>
+            val command = cmd.withReplyTo(ref)
+            context.log.info(s"Send to naming command: $command")
+            ShardingEnvelope(entityId, command)
+          }
+          .onComplete {
+            case Success(value) =>
+              context.log.info(s"Send to naming return: $value")
+              replyTo ! NamingResponse(
+                value.status,
+                value.message,
+                data = if (IntStatus.isSuccess(value.status)) onSuccess(value) else NamingResponse.Data.Empty)
+            case Failure(e) => replyTo ! NamingResponse(IntStatus.INTERNAL_ERROR, e.getMessage)
+          }
       case Left(errMsg) => replyTo ! NamingResponse(IntStatus.BAD_REQUEST, errMsg)
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 helloscala.com
+ * Copyright 2019 akka-fusion.com
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,11 +21,11 @@ import fusion.discoveryx.DiscoveryXUtils
 import fusion.discoveryx.model.{ Instance, InstanceHeartbeat, InstanceModify, InstanceQuery }
 import fusion.discoveryx.server.protocol.NamingServiceKey
 
-final private[discoveryx] class InternalInstance(private val underlying: Instance, settings: NamingSettings)
+final private[discoveryx] class InternalInstance(private val inst: Instance, settings: NamingSettings)
     extends Ordered[InternalInstance]
     with Equals {
   @transient private val UNHEALTHY_CHECK_THRESHOLD_MILLIS = settings.heartbeatInterval.toMillis + 2000
-  @transient val instanceId: String = underlying.instanceId
+  @transient val instanceId: String = inst.instanceId
 
   @transient var lastTickTimestamp: Long = System.currentTimeMillis()
 
@@ -38,17 +38,17 @@ final private[discoveryx] class InternalInstance(private val underlying: Instanc
 
   def withInstance(in: Instance): InternalInstance = new InternalInstance(in, settings)
 
-  def toInstance: Instance = underlying.copy(healthy = healthy)
+  def toInstance: Instance = inst.copy(healthy = healthy)
 
   override def compare(that: InternalInstance): Int = {
-    if (that.underlying.weight > underlying.weight) 1
-    else if (that.underlying.weight < underlying.weight) -1
-    else that.underlying.instanceId.compare(underlying.instanceId)
+    if (that.inst.weight > inst.weight) 1
+    else if (that.inst.weight < inst.weight) -1
+    else that.inst.instanceId.compare(inst.instanceId)
   }
 
   override def canEqual(that: Any): Boolean = {
     this == that || (that match {
-      case other: InternalInstance => other.underlying.instanceId == underlying.instanceId
+      case other: InternalInstance => other.inst.instanceId == inst.instanceId
       case _                       => false
     })
   }
@@ -56,7 +56,7 @@ final private[discoveryx] class InternalInstance(private val underlying: Instanc
   override def equals(obj: Any): Boolean = canEqual(obj)
 
   override def toString =
-    s"InternalInstance(${underlying.instanceId}, ${underlying.namespace}, ${underlying.groupName}, ${underlying.serviceName}, ${underlying.ip}, ${underlying.port}, $healthy, $lastTickTimestamp)"
+    s"InternalInstance(${inst.instanceId}, ${inst.namespace}, ${inst.groupName}, ${inst.serviceName}, ${inst.ip}, ${inst.port}, $healthy, $lastTickTimestamp)"
 }
 
 final private[discoveryx] class InternalService(namingServiceKey: NamingServiceKey, settings: NamingSettings)
@@ -74,28 +74,31 @@ final private[discoveryx] class InternalService(namingServiceKey: NamingServiceK
     selects.map(_.toInstance)
   }
 
-  def addInstance(inst: Instance): InternalService = {
+  def addInstance(inst: Instance): Instance = {
+    val internalInstance = new InternalInstance(inst, settings)
     val items = instIds.get(inst.instanceId) match {
-      case Some(idx) => instances.updated(idx, new InternalInstance(inst, settings))
-      case None      => new InternalInstance(inst, settings) +: instances
+      case Some(idx) => instances.updated(idx, internalInstance)
+      case None      => internalInstance +: instances
     }
     saveInstances(items)
     logger.debug(s"addInstance($inst) after; curHealthyIdx: $curHealthyIdx; instIds: $instIds; $instances")
-    this
+    internalInstance.toInstance
   }
 
   def modifyInstance(in: InstanceModify): Option[Instance] = {
-    val instId = DiscoveryXUtils.makeInstanceId(in.serviceName, in.serviceName, in.ip, in.port)
-    instIds.get(instId).map { idx =>
+    instIds.get(in.instanceId).map { idx =>
       val internal = instances(idx)
-      val older = internal.toInstance
-      val newest = older.copy(
-        weight = if (in.weight > 0.0) in.weight else older.weight,
-        healthy = in.healthy,
-        enabled = in.enabled,
-        metadata = in.metadata)
-      saveInstances(instances.updated(idx, internal.withInstance(newest)))
-      newest
+      val old = internal.toInstance
+      val inst = old.copy(
+        groupName = in.groupName.getOrElse(old.groupName),
+        ip = in.ip.getOrElse(old.ip),
+        port = in.port.getOrElse(old.port),
+        weight = in.weight.getOrElse(old.weight),
+        healthy = in.health.getOrElse(old.healthy),
+        enabled = in.enable.getOrElse(old.enabled),
+        metadata = if (in.replaceMetadata) in.metadata else old.metadata ++ in.metadata)
+      saveInstances(instances.updated(idx, internal.withInstance(inst)))
+      inst
     }
   }
 
@@ -109,6 +112,8 @@ final private[discoveryx] class InternalService(namingServiceKey: NamingServiceK
   }
 
   def allInstance(): Vector[InternalInstance] = instances
+
+  def allRealInstance(): Vector[Instance] = allInstance().map(_.toInstance)
 
   def allHealthy(): Vector[InternalInstance] = instances.filter(_.healthy)
 
@@ -127,12 +132,12 @@ final private[discoveryx] class InternalService(namingServiceKey: NamingServiceK
     }
   }
 
-  def processHeartbeat(in: InstanceHeartbeat): InternalService = {
-    instIds.get(in.instanceId) match {
+  def processHeartbeat(instanceId: String): InternalService = {
+    instIds.get(instanceId) match {
       case Some(idx) =>
         val inst = instances(idx).refresh()
-        logger.debug(s"Process heartbeat success, in: $in, instance: $inst")
-      case None => logger.warn(s"服务未注册，${in.instanceId}")
+        logger.debug(s"Successfully processed heartbeat request, instance: $inst.")
+      case None => logger.warn(s"Service not registered, instanceId: $instanceId.")
     }
     this
   }

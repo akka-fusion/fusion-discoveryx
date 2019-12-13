@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 helloscala.com
+ * Copyright 2019 akka-fusion.com
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,28 +53,28 @@ class NamingServiceImpl()(implicit system: ActorSystem[_]) extends NamingService
   /**
    * 添加实例
    */
-  override def registerInstance(in: InstanceRegister, metadata: Metadata): Future[InstanceReply] = {
+  override def registerInstance(in: InstanceRegister, metadata: Metadata): Future[NamingReply] = {
     askNaming(in.namespace, in.serviceName, RegisterInstance(in))
   }
 
   /**
    * 修改实例
    */
-  override def modifyInstance(in: InstanceModify, metadata: Metadata): Future[InstanceReply] = {
+  override def modifyInstance(in: InstanceModify, metadata: Metadata): Future[NamingReply] = {
     askNaming(in.namespace, in.serviceName, ModifyInstance(in))
   }
 
   /**
    * 删除实例
    */
-  override def removeInstance(in: InstanceRemove, metadata: Metadata): Future[InstanceReply] = {
+  override def removeInstance(in: InstanceRemove, metadata: Metadata): Future[NamingReply] = {
     askNaming(in.namespace, in.serviceName, RemoveInstance(in))
   }
 
   /**
    * 查询实例
    */
-  override def queryInstance(in: InstanceQuery, metadata: Metadata): Future[InstanceReply] = {
+  override def queryInstance(in: InstanceQuery, metadata: Metadata): Future[NamingReply] = {
     askNaming(in.namespace, in.serviceName, QueryInstance(in))
   }
 
@@ -88,12 +88,15 @@ class NamingServiceImpl()(implicit system: ActorSystem[_]) extends NamingService
       val serviceName = metadata
         .getText(Headers.SERVICE_NAME)
         .getOrElse(throw HSBadRequestException(s"Request header missing, need '${Headers.SERVICE_NAME}'."))
+      val instanceId = metadata
+        .getText(Headers.INSTANCE_ID)
+        .getOrElse(throw HSBadRequestException(s"Request header missing, need '${Headers.INSTANCE_ID}'."))
       val entityId = Namings.NamingServiceKey.entityId(namespace, serviceName) match {
         case Right(value) => value
-        case Left(errMsg) => throw new RuntimeException(errMsg)
+        case Left(errMsg) => throw HSBadRequestException(errMsg)
       }
-      in.map { cmd =>
-        namingRegion ! ShardingEnvelope(entityId, Heartbeat(cmd, namespace, serviceName))
+      in.map { _ =>
+        namingRegion ! ShardingEnvelope(entityId, Heartbeat(namespace, serviceName, instanceId))
         ServerStatusBO(IntStatus.OK)
       }
     } catch {
@@ -103,13 +106,13 @@ class NamingServiceImpl()(implicit system: ActorSystem[_]) extends NamingService
     }
   }
 
-  private def askNaming(namespace: String, serviceName: String, cmd: Namings.ReplyCommand): Future[InstanceReply] = {
+  private def askNaming(namespace: String, serviceName: String, cmd: Namings.ReplyCommand): Future[NamingReply] = {
     Namings.NamingServiceKey.entityId(namespace, serviceName) match {
       case Right(entityId) =>
-        namingRegion.ask[InstanceReply](replyTo => ShardingEnvelope(entityId, cmd.withReplyTo(replyTo))).recover {
-          case _: TimeoutException => InstanceReply(IntStatus.GATEWAY_TIMEOUT)
+        namingRegion.ask[NamingReply](replyTo => ShardingEnvelope(entityId, cmd.withReplyTo(replyTo))).recover {
+          case _: TimeoutException => NamingReply(IntStatus.GATEWAY_TIMEOUT)
         }
-      case Left(errMsg) => Future.successful(InstanceReply(IntStatus.INTERNAL_ERROR, errMsg))
+      case Left(errMsg) => Future.successful(NamingReply(IntStatus.INTERNAL_ERROR, errMsg))
     }
   }
 }
