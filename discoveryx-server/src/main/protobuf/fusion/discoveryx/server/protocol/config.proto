@@ -1,6 +1,7 @@
 syntax = "proto3";
 package fusion.discoveryx.server.protocol;
 
+import "google/protobuf/wrappers.proto";
 import "scalapb/scalapb.proto";
 import "fusion/define.proto";
 import "fusion/discoveryx/model/discoveryx.proto";
@@ -13,12 +14,85 @@ option (scalapb.options) = {
   import: "fusion.protobuf.ActorRefCompanion._"
 };
 
-message ListConfig {
+message ConfigKey {
+    option (scalapb.message).extends = "fusion.discoveryx.server.config.ConfigEntity.Command";
     string namespace = 1;
     string data_id = 2;
-    string group_name = 3;
+}
+
+message RegisterChangeListener {
+    option (scalapb.message).extends = "fusion.discoveryx.server.config.ConfigEntity.Command";
+    string reply_to = 1 [(scalapb.field).type = "ActorRef[ChangedConfigEvent]"];
+    string listener_id = 2;
+}
+
+message GetConfig {
+    option (scalapb.message).extends = "fusion.discoveryx.server.config.ConfigEntity.ReplyCommand";
+    fusion.discoveryx.model.ConfigGet in = 1 [(scalapb.field).no_box = true];
+    string reply_to = 2 [(scalapb.field).type = "ActorRef[fusion.discoveryx.model.ConfigReply]"];
+}
+
+message PublishConfig {
+    option (scalapb.message).extends = "fusion.discoveryx.server.config.ConfigEntity.ReplyCommand";
+    fusion.discoveryx.model.ConfigPublish in = 1 [(scalapb.field).no_box = true];
+    string reply_to = 2 [(scalapb.field).type = "ActorRef[fusion.discoveryx.model.ConfigReply]"];
+}
+
+message RemoveConfig {
+    option (scalapb.message).extends = "fusion.discoveryx.server.config.ConfigEntity.ReplyCommand";
+    fusion.discoveryx.model.ConfigRemove in = 1 [(scalapb.field).no_box = true];
+    string reply_to = 2 [(scalapb.field).type = "ActorRef[fusion.discoveryx.model.ConfigReply]"];
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// ConfigEntity Events
+////////////////////////////////////////////////////////////////////////////////
+
+message ConfigStopEvent {
+    option (scalapb.message).extends = "fusion.discoveryx.server.config.ConfigEntity.Event";
+}
+
+enum ChangeType {
+    CHANGE_SAVE = 0;
+    CHANGE_ADD = 2;
+    CHANGE_REMOVE = 3;
+    CHANGE_EXIT = 4;
+}
+
+message ChangedConfigEvent {
+    option (scalapb.message).extends = "fusion.discoveryx.server.config.ConfigEntity.ChangeEvent";
+    fusion.discoveryx.model.ConfigItem config = 1 [(scalapb.field).no_box = true];
+    fusion.discoveryx.model.ConfigItem old = 2;
+    ChangeType type = 3;
+}
+
+message RemoveConfigEvent {
+    option (scalapb.message).extends = "fusion.discoveryx.server.config.ConfigEntity.ChangeEvent";
+    string namespace = 1;
+    string data_id = 2;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// ConfigManager
+////////////////////////////////////////////////////////////////////////////////
+
+message ListConfig {
+    string namespace = 1;
+    google.protobuf.StringValue data_id = 2;
+    google.protobuf.StringValue group_name = 3;
     int32 page = 4;
     int32 size = 5;
+}
+
+message ConfigManagerCommand {
+    option (scalapb.message).extends = "fusion.discoveryx.server.config.ConfigManager.Command";
+    string reply_to = 1 [(scalapb.field).type = "ActorRef[ConfigResponse]"];
+    oneof cmd {
+        ListConfig list = 2;
+        fusion.discoveryx.model.ConfigGet get = 3;
+        fusion.discoveryx.model.ConfigPublish publish = 4;
+        fusion.discoveryx.model.ConfigRemove remove = 5;
+    }
 }
 
 message ConfigResponse {
@@ -29,3 +103,22 @@ message ConfigResponse {
         fusion.discoveryx.model.ConfigItem config = 4;
     }
 }
+
+message InternalConfigKeys {
+    option (scalapb.message).extends = "fusion.discoveryx.server.config.ConfigManager.Command";
+    repeated ConfigKey configKeys = 1;
+}
+
+message InternalRemoveKey {
+    option (scalapb.message).extends = "fusion.discoveryx.server.config.ConfigManager.Command";
+    ConfigKey configKeys = 1 [(scalapb.field).no_box = true];
+}
+
+//message ConfigKeyEvent {
+//    ConfigKey key = 1 [(scalapb.field).no_box = true];
+//    ChangedConfigEvent event = 2 [(scalapb.field).no_box = true];
+//}
+//message InitialConfigKeyEvents {
+//    option (scalapb.message).extends = "fusion.discoveryx.server.config.ConfigManager.Command";
+//    repeated ConfigKeyEvent keyEvents = 1;
+//}

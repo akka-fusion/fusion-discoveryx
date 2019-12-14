@@ -21,7 +21,7 @@ REST URL路径由 **REST URL前缀** + 服务名组织，均使用 **POST** 方�
 
 **请求**
 
-@@snip [model](../../../../../discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto) { #ConfigQuery }
+@@snip [model](../../../../../discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto) { #ConfigGet }
 
 **响应**
 

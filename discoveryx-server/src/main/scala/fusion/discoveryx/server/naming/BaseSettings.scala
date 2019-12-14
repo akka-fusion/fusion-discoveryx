@@ -16,20 +16,17 @@
 
 package fusion.discoveryx.server.naming
 
-import akka.actor.typed.ActorSystem
-import com.typesafe.config.Config
-import fusion.discoveryx.common.Constants
 import helloscala.common.Configuration
 
-import scala.concurrent.duration.FiniteDuration
+trait BaseSettings {
+  val c: Configuration
 
-final class NamingSettings(configuration: Configuration) extends BaseSettings {
-  override val c = configuration.getConfiguration(s"${Constants.DISCOVERYX}.server.naming")
-  val enable: Boolean = c.getBoolean("enable")
-  val heartbeatInterval: FiniteDuration = c.get[FiniteDuration]("heartbeat-interval")
-}
+  def defaultPage: Int = c.getInt("default-page")
+  def defaultSize: Int = c.getInt("default-size")
 
-object NamingSettings {
-  def apply(system: ActorSystem[_]): NamingSettings = apply(system.settings.config)
-  def apply(config: Config): NamingSettings = new NamingSettings(Configuration(config))
+  def findSize(size: Int): Int = if (size < defaultSize) defaultSize else size
+
+  def findPage(page: Int): Int = if (page < defaultPage) defaultPage else page
+
+  def findOffset(page: Int, size: Int): Int = if (page > 0) (page - 1) * size else 0
 }

@@ -16,72 +16,112 @@
 
 package fusion.discoveryx.server.config
 
-import java.util.UUID
-
-import akka.actor.typed.{ ActorRef, Behavior }
+import akka.actor.typed.scaladsl.AskPattern._
 import akka.actor.typed.scaladsl.{ ActorContext, Behaviors }
-import akka.stream.scaladsl.SourceQueueWithComplete
-import fusion.discoveryx.model.{ ConfigChangeListen, ConfigChanged }
-import fusion.discoveryx.server.config.data.{ ConfigContent, NamespaceKey }
-import fusion.json.jackson.CborSerializable
+import akka.actor.typed.{ ActorRef, ActorSystem, Behavior }
+import akka.cluster.sharding.typed.ShardingEnvelope
+import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, Entity, EntityTypeKey }
+import akka.util.Timeout
+import fusion.discoveryx.model.{ ConfigGet, ConfigQueried, ConfigReply }
+import fusion.discoveryx.server.protocol.ConfigManagerCommand.Cmd
+import fusion.discoveryx.server.protocol.ConfigResponse.Data
+import fusion.discoveryx.server.protocol._
+import helloscala.common.IntStatus
 
-import scala.collection.immutable
+import scala.concurrent.Future
+import scala.concurrent.duration._
 
 object ConfigManager {
-  sealed trait Command
+  trait Command
 
-  case class GetContent(
-      namespace: String,
-      dataIds: immutable.Seq[String],
-      replyTo: ActorRef[immutable.Seq[ConfigContent]])
-      extends Command
+  val TypeKey: EntityTypeKey[Command] = EntityTypeKey("ConfigManager")
 
-  case class UpdateContent(namespace: String, dataId: String, content: String, replyTo: ActorRef[Configs.ModifyReply])
-      extends Command
-  case class RemoveContent(namespace: String, dataId: String, replyTo: ActorRef[Configs.ModifyReply]) extends Command
-  case class AllContent(namespace: String, replyTo: ActorRef[immutable.Seq[ConfigContent]]) extends Command
+  def init(system: ActorSystem[_]): ActorRef[ShardingEnvelope[Command]] =
+    ClusterSharding(system).init(Entity(TypeKey)(entityContext => apply(entityContext.entityId)))
 
-  case class RegisterChangeListener(
-      listenerId: UUID,
-      in: ConfigChangeListen,
-      queue: SourceQueueWithComplete[ConfigChanged])
-      extends Command
+  def apply(entityId: String): Behavior[Command] =
+    Behaviors.setup(context => new ConfigManager(entityId, context).init())
+}
 
-  val NAME = "configManager"
+import fusion.discoveryx.server.config.ConfigManager._
+class ConfigManager private (namespace: String, context: ActorContext[Command]) {
+  import context.executionContext
+  private implicit val system = context.system
+  private val settings = ConfigSettings(context.system)
+  private val configEntity = ConfigEntity.init(system)
+  private var configKeys = Vector.empty[ConfigKey]
 
-  //val ConfigManagerServiceKey = ServiceKey[Command](NAME)
+  def init(): Behavior[Command] =
+    Behaviors.receiveMessage[Command] {
+      case ConfigManagerCommand(replyTo, cmd) =>
+        onManagerCommand(cmd).foreach(replyTo ! _)
+        Behaviors.same
+      case InternalConfigKeys(keys) =>
+        for (key <- keys if !configKeys.contains(key)) {
+          configKeys :+= key
+        }
+        Behaviors.same
+      case InternalRemoveKey(key) =>
+        configKeys = configKeys.filterNot(_ == key)
+        Behaviors.same
+    }
 
-  def apply(): Behavior[Command] = Behaviors.setup { context =>
-    //context.system.receptionist ! Receptionist.Register(ConfigManagerServiceKey, context.self)
-    active(context, Map())
+  implicit val timeout: Timeout = 5.seconds
+
+  private def onManagerCommand: Cmd => Future[ConfigResponse] = {
+    case Cmd.List(cmd) => processList(cmd)
+    case Cmd.Get(cmd)  => askConfig(cmd.dataId, GetConfig(cmd), _.config.map(Data.Config).getOrElse(Data.Empty))
+    case Cmd.Publish(cmd) =>
+      askConfig(
+        cmd.dataId,
+        PublishConfig(cmd),
+        _.config
+          .map { item =>
+            context.self ! InternalConfigKeys(ConfigKey(item.namespace, item.dataId) :: Nil)
+            Data.Config(item)
+          }
+          .getOrElse(Data.Empty))
+    case Cmd.Remove(cmd) => askConfig(cmd.dataId, RemoveConfig(cmd), _ => Data.Empty)
+    case Cmd.Empty       => Future.successful(ConfigResponse(IntStatus.BAD_REQUEST, "Invalid command."))
   }
 
-  private def active(
-      context: ActorContext[Command],
-      children: Map[String, ActorRef[Configs.Command]]): Behavior[Command] = {
-    def activeThan(namespace: String, childFunc: ActorRef[Configs.Command] => Unit): Behavior[Command] = {
-      children.get(namespace) match {
-        case Some(child) =>
-          childFunc(child)
-          Behaviors.same
-        case None =>
-          val child = context.spawn(Configs(NamespaceKey(namespace)), namespace)
-          childFunc(child)
-          active(context, children.updated(namespace, child))
-      }
+  private def processList(cmd: ListConfig): Future[ConfigResponse] = {
+    val size = settings.findPage(cmd.size)
+    val offset = settings.findOffset(settings.findPage(cmd.page), size)
+    context.log.info(s"dataIds: $configKeys")
+    if (offset < configKeys.size) {
+      val futures = configKeys.view
+        .slice(offset, offset + size)
+        .map { configKey =>
+          configEntity.ask[ConfigReply](
+            replyTo =>
+              ShardingEnvelope(
+                ConfigEntity.ConfigKey.makeEntityId(configKey),
+                GetConfig(ConfigGet(cmd.namespace), replyTo)))
+        }
+        .toVector
+      Future
+        .sequence(futures)
+        .map(replies => ConfigResponse(IntStatus.OK, data = Data.Listed(ConfigQueried(replies.flatMap(_.data.config)))))
+        .recover { case e => ConfigResponse(IntStatus.INTERNAL_ERROR, e.getMessage) }
+    } else {
+      Future.successful(ConfigResponse(IntStatus.OK, data = Data.Listed(ConfigQueried())))
     }
+  }
 
-    Behaviors.receiveMessagePartial {
-      case GetContent(namespace, dataIds, replyTo) =>
-        activeThan(namespace, _ ! Configs.GetContent(dataIds, replyTo))
-      case UpdateContent(namespace, dataId, content, replyTo) =>
-        activeThan(namespace, _ ! Configs.UpdateContent(dataId, content, replyTo))
-      case RemoveContent(namespace, dataId, replyTo) =>
-        activeThan(namespace, _ ! Configs.RemoveContent(dataId, replyTo))
-      case AllContent(namespace, replyTo) =>
-        activeThan(namespace, _ ! Configs.AllContent(replyTo))
-      case RegisterChangeListener(listenerId, in, queue) =>
-        activeThan(in.namespace, _ ! Configs.RegisterListener(listenerId, in.dataId, queue))
-    }
+  private def askConfig(
+      dataId: String,
+      cmd: ConfigEntity.ReplyCommand,
+      onSuccess: ConfigReply.Data => ConfigResponse.Data): Future[ConfigResponse] = {
+    configEntity
+      .ask[ConfigReply](replyTo =>
+        ShardingEnvelope(ConfigEntity.ConfigKey.makeEntityId(namespace, dataId), cmd.withReplyTo(replyTo)))
+      .map {
+        case value if IntStatus.isSuccess(value.status) => ConfigResponse(value.status, data = onSuccess(value.data))
+        case value                                      => ConfigResponse(value.status, value.message)
+      }
+      .recover {
+        case exception => ConfigResponse(IntStatus.INTERNAL_ERROR, exception.getMessage)
+      }
   }
 }

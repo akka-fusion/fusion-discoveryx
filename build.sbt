@@ -67,9 +67,15 @@ lazy val discoveryxServer = _project("discoveryx-server")
   .settings(Publishing.noPublish: _*)
   .settings(
     javaAgents += _alpnAgent % "runtime;test",
-    akkaGrpcCodeGeneratorSettings += "server_power_apis",
     akkaGrpcGeneratedSources := Seq(AkkaGrpc.Server),
-    libraryDependencies ++= Seq(_scalapbJson4s, _akkaPersistenceTyped, _fusionProtobufV3, _fusionCore) ++ _akkaHttps ++ _akkaClusters)
+    libraryDependencies ++= Seq(
+        _scalapbJson4s,
+        _postgresql,
+        _fusionProtobufV3,
+        _fusionCore,
+        _akkaPersistenceQuery,
+        _akkaPersistenceJdbc,
+        _akkaPersistenceTyped) ++ _akkaHttps ++ _akkaClusters)
 
 lazy val discoveryxClient =
   _project("discoveryx-client")
@@ -82,7 +88,6 @@ lazy val discoveryxCommon = _project("discoveryx-common")
   .settings(Publishing.publishing: _*)
   .settings(
     akkaGrpcCodeGeneratorSettings += "server_power_apis",
-    akkaGrpcGeneratedSources := Seq(AkkaGrpc.Client),
     libraryDependencies ++= Seq(
         "com.thesamet.scalapb" %% "scalapb-runtime" % scalapb.compiler.Version.scalapbVersion % "protobuf",
         _fusionCommon))

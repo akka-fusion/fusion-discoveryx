@@ -35,7 +35,7 @@ object Dependencies {
   val versionMybatisPlus = "3.1.2"
   val versionLombok = "1.18.8"
   val versionMySQL = "8.0.16"
-  val versionPostgres = "42.2.8"
+  val versionPostgres = "42.2.9"
   val versionRequests = "0.2.0"
   val versionFastparse = "2.1.3"
   val versionOsLib = "0.3.0"
@@ -71,6 +71,7 @@ object Dependencies {
   val _akkaSerializationJackson = "com.typesafe.akka" %% "akka-serialization-jackson" % versionAkka
   val _akkaProtobufV3 = "com.typesafe.akka" %% "akka-protobuf-v3" % versionAkka
   val _akkaPersistenceTyped = "com.typesafe.akka" %% "akka-persistence-typed" % versionAkka
+  val _akkaPersistenceQuery = "com.typesafe.akka" %% "akka-persistence-query" % versionAkka
   val _akkaTypedTestkit = "com.typesafe.akka" %% "akka-actor-testkit-typed" % versionAkka
   val _akkaStreamTestkit = "com.typesafe.akka" %% "akka-stream-testkit" % versionAkka
 

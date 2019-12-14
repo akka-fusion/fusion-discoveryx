@@ -34,8 +34,7 @@ object Commons {
       shellPrompt := { s =>
         Project.extract(s).currentProject.id + " > "
       },
-      resolvers += Resolver.bintrayRepo("akka", "snapshots"),
-      resolvers += "hongkazhijiz.com sbt".at("https://artifactory.hongkazhijia.com/artifactory/sbt-release"),
+      resolvers += "hongkazhijia.com sbt".at("https://artifactory.hongkazhijia.com/artifactory/sbt-release"),
       fork in run := true,
       fork in Test := true,
       parallelExecution in Test := false,
