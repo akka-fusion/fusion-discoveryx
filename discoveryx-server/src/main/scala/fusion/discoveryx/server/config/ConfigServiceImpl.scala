@@ -26,16 +26,7 @@ import akka.stream.typed.scaladsl.ActorSource
 import akka.util.Timeout
 import fusion.discoveryx.grpc.ConfigService
 import fusion.discoveryx.model._
-import fusion.discoveryx.server.config.ConfigEntity.ChangeEvent
-import fusion.discoveryx.server.protocol.{
-  ChangeType,
-  ChangedConfigEvent,
-  ConfigStopEvent,
-  GetConfig,
-  PublishConfig,
-  RegisterChangeListener,
-  RemoveConfig
-}
+import fusion.discoveryx.server.protocol._
 import helloscala.common.IntStatus
 import helloscala.common.exception.HSInternalErrorException
 import helloscala.common.util.Utils

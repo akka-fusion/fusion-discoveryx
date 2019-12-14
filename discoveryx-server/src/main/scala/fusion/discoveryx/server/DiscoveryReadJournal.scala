@@ -14,20 +14,14 @@
  * limitations under the License.
  */
 
-package fusion.discoveryx.server.config
+package fusion.discoveryx.server
 
 import akka.actor.typed.ActorSystem
-import com.typesafe.config.Config
-import fusion.discoveryx.common.Constants
-import fusion.discoveryx.server.naming.BaseSettings
-import helloscala.common.Configuration
+import akka.persistence.jdbc.query.scaladsl.JdbcReadJournal
+import akka.persistence.query.PersistenceQuery
 
-final class ConfigSettings(configuration: Configuration) extends BaseSettings {
-  val c = configuration.getConfiguration(s"${Constants.DISCOVERYX}.server.config")
-  val enable = c.getBoolean("enable")
-}
-
-object ConfigSettings {
-  def apply(system: ActorSystem[_]): ConfigSettings = apply(system.settings.config)
-  def apply(config: Config): ConfigSettings = new ConfigSettings(Configuration(config))
+object DiscoveryReadJournal {
+  def readJournal(system: ActorSystem[_]): DiscoveryXReadJournal = {
+    PersistenceQuery(system).readJournalFor[JdbcReadJournal](JdbcReadJournal.Identifier)
+  }
 }

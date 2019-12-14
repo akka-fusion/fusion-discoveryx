@@ -115,7 +115,7 @@ class NamingManager private (namespace: String, context: ActorContext[Command]) 
   private def processListService(cmd: ListService, replyTo: ActorRef[NamingResponse]): Behavior[Command] = {
     val page = namingSettings.findPage(cmd.page)
     val size = namingSettings.findSize(cmd.size)
-    val offset = (page - 1) * size
+    val offset = namingSettings.findOffset(page, size)
     if (offset < namings.size) {
       val ns = namings.slice(offset, offset + size)
       println(s"namings: $ns - $namings")

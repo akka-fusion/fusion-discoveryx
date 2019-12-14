@@ -70,11 +70,12 @@ lazy val discoveryxServer = _project("discoveryx-server")
     akkaGrpcGeneratedSources := Seq(AkkaGrpc.Server),
     libraryDependencies ++= Seq(
         _scalapbJson4s,
-        _akkaPersistenceTyped,
+        _postgresql,
+        _fusionProtobufV3,
+        _fusionCore,
         _akkaPersistenceQuery,
         _akkaPersistenceJdbc,
-        _fusionProtobufV3,
-        _fusionCore) ++ _akkaHttps ++ _akkaClusters)
+        _akkaPersistenceTyped) ++ _akkaHttps ++ _akkaClusters)
 
 lazy val discoveryxClient =
   _project("discoveryx-client")

@@ -16,13 +16,20 @@
 
 package fusion.discoveryx.server.config
 
-import akka.actor.typed.{ ActorRef, ActorSystem, Behavior, Terminated }
+import akka.actor.typed.scaladsl.AskPattern._
 import akka.actor.typed.scaladsl.{ ActorContext, Behaviors }
+import akka.actor.typed.{ ActorRef, ActorSystem, Behavior }
 import akka.cluster.sharding.typed.ShardingEnvelope
 import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, Entity, EntityTypeKey }
+import akka.util.Timeout
+import fusion.discoveryx.model.{ ConfigGet, ConfigQueried, ConfigReply }
 import fusion.discoveryx.server.protocol.ConfigManagerCommand.Cmd
-import fusion.discoveryx.server.protocol.{ ConfigManagerCommand, ConfigResponse }
+import fusion.discoveryx.server.protocol.ConfigResponse.Data
+import fusion.discoveryx.server.protocol._
 import helloscala.common.IntStatus
+
+import scala.concurrent.Future
+import scala.concurrent.duration._
 
 object ConfigManager {
   trait Command
@@ -38,27 +45,83 @@ object ConfigManager {
 
 import fusion.discoveryx.server.config.ConfigManager._
 class ConfigManager private (namespace: String, context: ActorContext[Command]) {
-  private var dataIds = Vector.empty[ActorRef[ConfigEntity.Command]]
+  import context.executionContext
+  private implicit val system = context.system
+  private val settings = ConfigSettings(context.system)
+  private val configEntity = ConfigEntity.init(system)
+  private var configKeys = Vector.empty[ConfigKey]
 
   def init(): Behavior[Command] =
-    Behaviors
-      .receiveMessage[Command] {
-        case ConfigManagerCommand(replyTo, cmd) => onManagerCommand(cmd, replyTo)
-      }
-      .receiveSignal {
-        case (_, Terminated(ref)) =>
-          dataIds = dataIds.filterNot(_ == ref)
-          Behaviors.same
-      }
-
-  private def onManagerCommand(cmd: ConfigManagerCommand.Cmd, replyTo: ActorRef[ConfigResponse]): Behavior[Command] = {
-    cmd match {
-      case Cmd.List(cmd)    =>
-      case Cmd.Get(cmd)     =>
-      case Cmd.Publish(cmd) =>
-      case Cmd.Remove(cmd)  =>
-      case Cmd.Empty        => replyTo ! ConfigResponse(IntStatus.BAD_REQUEST, "Invalid command.")
+    Behaviors.receiveMessage[Command] {
+      case ConfigManagerCommand(replyTo, cmd) =>
+        onManagerCommand(cmd).foreach(replyTo ! _)
+        Behaviors.same
+      case InternalConfigKeys(keys) =>
+        for (key <- keys if !configKeys.contains(key)) {
+          configKeys :+= key
+        }
+        Behaviors.same
+      case InternalRemoveKey(key) =>
+        configKeys = configKeys.filterNot(_ == key)
+        Behaviors.same
     }
-    Behaviors.same
+
+  implicit val timeout: Timeout = 5.seconds
+
+  private def onManagerCommand: Cmd => Future[ConfigResponse] = {
+    case Cmd.List(cmd) => processList(cmd)
+    case Cmd.Get(cmd)  => askConfig(cmd.dataId, GetConfig(cmd), _.config.map(Data.Config).getOrElse(Data.Empty))
+    case Cmd.Publish(cmd) =>
+      askConfig(
+        cmd.dataId,
+        PublishConfig(cmd),
+        _.config
+          .map { item =>
+            context.self ! InternalConfigKeys(ConfigKey(item.namespace, item.dataId) :: Nil)
+            Data.Config(item)
+          }
+          .getOrElse(Data.Empty))
+    case Cmd.Remove(cmd) => askConfig(cmd.dataId, RemoveConfig(cmd), _ => Data.Empty)
+    case Cmd.Empty       => Future.successful(ConfigResponse(IntStatus.BAD_REQUEST, "Invalid command."))
+  }
+
+  private def processList(cmd: ListConfig): Future[ConfigResponse] = {
+    val size = settings.findPage(cmd.size)
+    val offset = settings.findOffset(settings.findPage(cmd.page), size)
+    context.log.info(s"dataIds: $configKeys")
+    if (offset < configKeys.size) {
+      val futures = configKeys.view
+        .slice(offset, offset + size)
+        .map { configKey =>
+          configEntity.ask[ConfigReply](
+            replyTo =>
+              ShardingEnvelope(
+                ConfigEntity.ConfigKey.makeEntityId(configKey),
+                GetConfig(ConfigGet(cmd.namespace), replyTo)))
+        }
+        .toVector
+      Future
+        .sequence(futures)
+        .map(replies => ConfigResponse(IntStatus.OK, data = Data.Listed(ConfigQueried(replies.flatMap(_.data.config)))))
+        .recover { case e => ConfigResponse(IntStatus.INTERNAL_ERROR, e.getMessage) }
+    } else {
+      Future.successful(ConfigResponse(IntStatus.OK, data = Data.Listed(ConfigQueried())))
+    }
+  }
+
+  private def askConfig(
+      dataId: String,
+      cmd: ConfigEntity.ReplyCommand,
+      onSuccess: ConfigReply.Data => ConfigResponse.Data): Future[ConfigResponse] = {
+    configEntity
+      .ask[ConfigReply](replyTo =>
+        ShardingEnvelope(ConfigEntity.ConfigKey.makeEntityId(namespace, dataId), cmd.withReplyTo(replyTo)))
+      .map {
+        case value if IntStatus.isSuccess(value.status) => ConfigResponse(value.status, data = onSuccess(value.data))
+        case value                                      => ConfigResponse(value.status, value.message)
+      }
+      .recover {
+        case exception => ConfigResponse(IntStatus.INTERNAL_ERROR, exception.getMessage)
+      }
   }
 }

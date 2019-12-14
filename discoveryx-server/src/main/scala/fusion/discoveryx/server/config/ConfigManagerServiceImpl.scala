@@ -20,15 +20,16 @@ import akka.actor.typed.scaladsl.AskPattern._
 import akka.actor.typed.{ ActorRef, ActorSystem }
 import akka.cluster.sharding.typed.ShardingEnvelope
 import akka.util.Timeout
-import fusion.discoveryx.model.{ ConfigPublish, ConfigGet, ConfigRemove }
+import com.typesafe.scalalogging.StrictLogging
+import fusion.discoveryx.model.{ ConfigGet, ConfigPublish, ConfigRemove }
 import fusion.discoveryx.server.grpc.ConfigManagerService
 import fusion.discoveryx.server.protocol.ConfigManagerCommand.Cmd
-import fusion.discoveryx.server.protocol.{ ConfigManagerCommand, ConfigResponse, GetConfig, ListConfig }
+import fusion.discoveryx.server.protocol._
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-class ConfigManagerServiceImpl()(implicit system: ActorSystem[_]) extends ConfigManagerService {
+class ConfigManagerServiceImpl()(implicit system: ActorSystem[_]) extends ConfigManagerService with StrictLogging {
   private implicit val timeout: Timeout = 10.seconds
   private val configManager: ActorRef[ShardingEnvelope[ConfigManager.Command]] = ConfigManager.init(system)
 

@@ -1,6 +1,7 @@
 syntax = "proto3";
 package fusion.discoveryx.server.protocol;
 
+import "google/protobuf/wrappers.proto";
 import "scalapb/scalapb.proto";
 import "fusion/define.proto";
 import "fusion/discoveryx/model/discoveryx.proto";
@@ -65,14 +66,20 @@ message ChangedConfigEvent {
     ChangeType type = 3;
 }
 
+message RemoveConfigEvent {
+    option (scalapb.message).extends = "fusion.discoveryx.server.config.ConfigEntity.ChangeEvent";
+    string namespace = 1;
+    string data_id = 2;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // ConfigManager
 ////////////////////////////////////////////////////////////////////////////////
 
 message ListConfig {
     string namespace = 1;
-    string data_id = 2;
-    string group_name = 3;
+    google.protobuf.StringValue data_id = 2;
+    google.protobuf.StringValue group_name = 3;
     int32 page = 4;
     int32 size = 5;
 }
@@ -96,3 +103,22 @@ message ConfigResponse {
         fusion.discoveryx.model.ConfigItem config = 4;
     }
 }
+
+message InternalConfigKeys {
+    option (scalapb.message).extends = "fusion.discoveryx.server.config.ConfigManager.Command";
+    repeated ConfigKey configKeys = 1;
+}
+
+message InternalRemoveKey {
+    option (scalapb.message).extends = "fusion.discoveryx.server.config.ConfigManager.Command";
+    ConfigKey configKeys = 1 [(scalapb.field).no_box = true];
+}
+
+//message ConfigKeyEvent {
+//    ConfigKey key = 1 [(scalapb.field).no_box = true];
+//    ChangedConfigEvent event = 2 [(scalapb.field).no_box = true];
+//}
+//message InitialConfigKeyEvents {
+//    option (scalapb.message).extends = "fusion.discoveryx.server.config.ConfigManager.Command";
+//    repeated ConfigKeyEvent keyEvents = 1;
+//}

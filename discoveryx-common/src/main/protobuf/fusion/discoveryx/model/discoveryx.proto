@@ -71,7 +71,6 @@ message ConfigPublished {
 message ConfigRemove {
     string namespace = 1;
     string data_id = 2;
-    string group_name = 3;
 }
 // #ConfigRemove
 

@@ -20,21 +20,13 @@ import akka.actor.typed.scaladsl.{ ActorContext, Behaviors }
 import akka.actor.typed.{ ActorRef, ActorSystem, Behavior }
 import akka.cluster.sharding.typed.ShardingEnvelope
 import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, Entity, EntityContext, EntityTypeKey }
-import akka.persistence.jdbc.query.scaladsl.JdbcReadJournal
-import akka.persistence.query.PersistenceQuery
 import akka.persistence.typed.PersistenceId
 import akka.persistence.typed.scaladsl.{ Effect, EventSourcedBehavior }
 import fusion.discoveryx.model.{ ConfigItem, ConfigReply }
-import fusion.discoveryx.server.protocol.{
-  ChangeType,
-  ChangedConfigEvent,
-  ConfigKey,
-  GetConfig,
-  PublishConfig,
-  RegisterChangeListener,
-  RemoveConfig
-}
+import fusion.discoveryx.server.DiscoveryReadJournal
+import fusion.discoveryx.server.protocol._
 import helloscala.common.IntStatus
+import helloscala.common.exception.HSInternalErrorException
 
 object ConfigEntity {
   trait Command
@@ -48,6 +40,7 @@ object ConfigEntity {
   val TypeKey: EntityTypeKey[Command] = EntityTypeKey("configEntity")
 
   object ConfigKey {
+    def makeEntityId(key: fusion.discoveryx.server.protocol.ConfigKey) = s"${key.namespace} ${key.dataId}"
     def makeEntityId(namespace: String, dataId: String) = s"$namespace $dataId"
     def unapply(entityId: String): Option[ConfigKey] = entityId.split(' ') match {
       case Array(namespace, dataId) => Some(new ConfigKey(namespace, dataId))
@@ -60,19 +53,17 @@ object ConfigEntity {
 
   def apply(entityContext: EntityContext[Command]): Behavior[Command] =
     Behaviors.setup(context =>
-      Behaviors.withStash(16)(stash =>
-        Behaviors.receiveMessage[Command] {
-          case fusion.discoveryx.server.protocol.ConfigKey(namespace, dataId) =>
-            stash.unstashAll(
-              new ConfigEntity(
-                PersistenceId(entityContext.entityTypeKey.name, entityContext.entityId),
-                namespace,
-                dataId,
-                context).eventSourcedBehavior())
-          case message =>
-            stash.stash(message)
-            Behaviors.same
-        }))
+      ConfigEntity.ConfigKey.unapply(entityContext.entityId) match {
+        case Some(configKey) =>
+          new ConfigEntity(
+            PersistenceId(entityContext.entityTypeKey.name, entityContext.entityId),
+            configKey.namespace,
+            configKey.dataId,
+            context).eventSourcedBehavior()
+        case _ =>
+          throw HSInternalErrorException(
+            s"Invalid entityId, need '[namespace] [dataId]'，but is ${entityContext.entityId}")
+      })
 }
 
 import fusion.discoveryx.server.config.ConfigEntity._
@@ -82,20 +73,21 @@ class ConfigEntity private (
     dataId: String,
     context: ActorContext[Command]) {
   private implicit val system = context.system
-  private val readJournal = PersistenceQuery(context.system).readJournalFor[JdbcReadJournal](JdbcReadJournal.Identifier)
+  private val readJournal = DiscoveryReadJournal.readJournal(system)
 
   def eventSourcedBehavior(): EventSourcedBehavior[Command, Event, ConfigItem] =
     EventSourcedBehavior[Command, Event, ConfigItem](
       persistenceId,
       ConfigItem.defaultInstance,
       commandHandler,
-      eventHandler).withTagger(_ => Set(namespace, dataId))
+      eventHandler).withTagger(_ => Set(ConfigEntity.TypeKey.name, namespace))
 
   def commandHandler(configItem: ConfigItem, cmd: Command): Effect[Event, ConfigItem] = cmd match {
-    case GetConfig(in, replyTo) =>
+    case GetConfig(_, replyTo) =>
       Effect.reply(replyTo)(ConfigReply(IntStatus.OK, data = ConfigReply.Data.Config(configItem)))
 
     case PublishConfig(in, replyTo) =>
+      context.log.debug(s"PublishConfig($in, $replyTo)")
       val item = ConfigItem(in.namespace, in.dataId, in.groupName, in.content, in.`type`)
       val old = if (configItem == ConfigItem.defaultInstance) None else Some(configItem)
       val event = ChangedConfigEvent(item, old, if (old.isEmpty) ChangeType.CHANGE_ADD else ChangeType.CHANGE_SAVE)
@@ -110,18 +102,21 @@ class ConfigEntity private (
         case _                                            => ConfigReply(IntStatus.INTERNAL_ERROR)
       }
 
-    case RegisterChangeListener(replyTo, listenerId) =>
+    case RegisterChangeListener(replyTo, _) =>
       readJournal.eventsByPersistenceId(persistenceId.id, 0, Long.MaxValue).runForeach { envelope =>
         envelope.event match {
           case evt: ChangedConfigEvent => replyTo ! evt
-          case _                       => // do nothing
+          case other                   => context.log.debug(s"Other journal event: $other")
         }
       }
       Effect.none
   }
 
-  def eventHandler(configItem: ConfigItem, event: Event): ConfigItem = event match {
-    // TODO How delete state ?
-    case ChangedConfigEvent(item, _, _) => item
+  def eventHandler(configItem: ConfigItem, event: Event): ConfigItem = {
+    //context.log.debug(s"eventHandler($configItem, $event)")
+    event match {
+      // TODO How delete state ?
+      case ChangedConfigEvent(item, _, _) => item
+    }
   }
 }
