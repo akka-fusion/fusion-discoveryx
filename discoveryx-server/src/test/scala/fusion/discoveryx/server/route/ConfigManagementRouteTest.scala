@@ -16,8 +16,6 @@
 
 package fusion.discoveryx.server.route
 
-import java.util.concurrent.TimeUnit
-
 import akka.http.scaladsl.model.StatusCodes
 import com.typesafe.scalalogging.StrictLogging
 import fusion.discoveryx.model.{ ConfigGet, ConfigItem, ConfigPublish, ConfigRemove }

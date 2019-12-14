@@ -20,8 +20,12 @@ import akka.actor.typed.ActorSystem
 import akka.persistence.jdbc.query.scaladsl.JdbcReadJournal
 import akka.persistence.query.PersistenceQuery
 
-object DiscoveryReadJournal {
-  def readJournal(system: ActorSystem[_]): DiscoveryXReadJournal = {
+class DiscoveryPersistenceQuery private (system: ActorSystem[_]) {
+  def readJournal: DiscoveryXReadJournal = {
     PersistenceQuery(system).readJournalFor[JdbcReadJournal](JdbcReadJournal.Identifier)
   }
+}
+
+object DiscoveryPersistenceQuery {
+  def apply(system: ActorSystem[_]): DiscoveryPersistenceQuery = new DiscoveryPersistenceQuery(system)
 }

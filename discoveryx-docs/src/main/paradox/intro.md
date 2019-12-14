@@ -6,9 +6,10 @@
 
 ## 技术
 
-- 开放API: Akka gRPC
-- 集群序例化：Protobuf
-- 配置持久化：Akka Persistence
-- 容错与扩展：Akka Cluster Sharding
-- REST：Akka HTTP
- 
+| 功能       | 使用技术              |
+| ---------- | --------------------- |
+| 开放API    | Akka gRPC             |
+| 集群序例化 | Protobuf              |
+| 配置持久化 | Akka Persistence      |
+| 容错与扩展 | Akka Cluster Sharding |
+| REST       | Akka HTTP             |

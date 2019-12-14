@@ -18,7 +18,7 @@ package fusion.discoveryx.server.route
 
 import akka.actor
 import akka.actor.typed.ActorSystem
-import akka.grpc.scaladsl.{ MetadataImpl, ServiceHandler }
+import akka.grpc.scaladsl.MetadataImpl
 import akka.http.scaladsl.model.{ HttpRequest, HttpResponse }
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route

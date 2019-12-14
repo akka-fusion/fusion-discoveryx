@@ -23,7 +23,7 @@ import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, Entity, EntityCon
 import akka.persistence.typed.PersistenceId
 import akka.persistence.typed.scaladsl.{ Effect, EventSourcedBehavior }
 import fusion.discoveryx.model.{ ConfigItem, ConfigReply }
-import fusion.discoveryx.server.DiscoveryReadJournal
+import fusion.discoveryx.server.DiscoveryPersistenceQuery
 import fusion.discoveryx.server.protocol._
 import helloscala.common.IntStatus
 import helloscala.common.exception.HSInternalErrorException
@@ -73,7 +73,7 @@ class ConfigEntity private (
     dataId: String,
     context: ActorContext[Command]) {
   private implicit val system = context.system
-  private val readJournal = DiscoveryReadJournal.readJournal(system)
+  private val readJournal = DiscoveryPersistenceQuery(system).readJournal
 
   def eventSourcedBehavior(): EventSourcedBehavior[Command, Event, ConfigItem] =
     EventSourcedBehavior[Command, Event, ConfigItem](

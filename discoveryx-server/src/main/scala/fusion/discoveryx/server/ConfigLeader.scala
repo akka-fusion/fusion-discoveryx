@@ -33,7 +33,7 @@ object ConfigLeader {
   def apply(): Behavior[String] = Behaviors.setup[String] { context =>
     implicit val system = context.system
     val configManager: ActorRef[ShardingEnvelope[ConfigManager.Command]] = ConfigManager.init(system)
-    val readJournal = DiscoveryReadJournal.readJournal(system)
+    val readJournal = DiscoveryPersistenceQuery(system).readJournal
     readJournal
       .persistenceIds()
       .mapConcat { persistenceId =>
