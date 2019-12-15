@@ -10,7 +10,6 @@ option (scalapb.options) = {
   collection_type: "scala.collection.immutable.Seq"
   import: "akka.actor.typed.ActorRef"
   import: "fusion.discoveryx.server.config.ConfigManager._"
-  import: "fusion.discoveryx.server.config.Configs._"
   import: "fusion.protobuf.ActorRefCompanion._"
 };
 
@@ -22,7 +21,7 @@ message ConfigKey {
 
 message RegisterChangeListener {
     option (scalapb.message).extends = "fusion.discoveryx.server.config.ConfigEntity.Command";
-    string reply_to = 1 [(scalapb.field).type = "ActorRef[ChangedConfigEvent]"];
+    string reply_to = 1 [(scalapb.field).type = "ActorRef[fusion.discoveryx.server.config.ConfigEntity.Event]"];
     string listener_id = 2;
 }
 
@@ -34,7 +33,7 @@ message GetConfig {
 
 message PublishConfig {
     option (scalapb.message).extends = "fusion.discoveryx.server.config.ConfigEntity.ReplyCommand";
-    fusion.discoveryx.model.ConfigPublish in = 1 [(scalapb.field).no_box = true];
+    fusion.discoveryx.model.ConfigItem in = 1 [(scalapb.field).no_box = true];
     string reply_to = 2 [(scalapb.field).type = "ActorRef[fusion.discoveryx.model.ConfigReply]"];
 }
 
@@ -48,28 +47,26 @@ message RemoveConfig {
 // ConfigEntity Events
 ////////////////////////////////////////////////////////////////////////////////
 
-message ConfigStopEvent {
+//message ConfigStopEvent {
+//    option (scalapb.message).extends = "fusion.discoveryx.server.config.ConfigEntity.Event";
+//}
+
+message ChangedConfigEvent {
+    option (scalapb.message).extends = "fusion.discoveryx.server.config.ConfigEntity.Event";
+    fusion.discoveryx.model.ConfigItem config = 1;
+    fusion.discoveryx.model.ChangeType type = 2;
+}
+
+message RemovedConfigEvent {
     option (scalapb.message).extends = "fusion.discoveryx.server.config.ConfigEntity.Event";
 }
 
-enum ChangeType {
-    CHANGE_SAVE = 0;
-    CHANGE_ADD = 2;
-    CHANGE_REMOVE = 3;
-    CHANGE_EXIT = 4;
-}
+////////////////////////////////////////////////////////////////////////////////
+// ConfigState
+////////////////////////////////////////////////////////////////////////////////
 
-message ChangedConfigEvent {
-    option (scalapb.message).extends = "fusion.discoveryx.server.config.ConfigEntity.ChangeEvent";
-    fusion.discoveryx.model.ConfigItem config = 1 [(scalapb.field).no_box = true];
-    fusion.discoveryx.model.ConfigItem old = 2;
-    ChangeType type = 3;
-}
-
-message RemoveConfigEvent {
-    option (scalapb.message).extends = "fusion.discoveryx.server.config.ConfigEntity.ChangeEvent";
-    string namespace = 1;
-    string data_id = 2;
+message ConfigState {
+    fusion.discoveryx.model.ConfigItem configItem = 1;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -90,7 +87,7 @@ message ConfigManagerCommand {
     oneof cmd {
         ListConfig list = 2;
         fusion.discoveryx.model.ConfigGet get = 3;
-        fusion.discoveryx.model.ConfigPublish publish = 4;
+        fusion.discoveryx.model.ConfigItem publish = 4;
         fusion.discoveryx.model.ConfigRemove remove = 5;
     }
 }

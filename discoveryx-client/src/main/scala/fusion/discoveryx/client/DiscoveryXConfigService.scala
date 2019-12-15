@@ -55,7 +55,7 @@ class DiscoveryXConfigService private (val configClient: ConfigServiceClient)(im
   /**
    * 发布配置
    */
-  def publishConfig(in: ConfigPublish): Future[ConfigReply] = configClient.publishConfig(in)
+  def publishConfig(in: ConfigItem): Future[ConfigReply] = configClient.publishConfig(in)
 
   /**
    * 删除配置

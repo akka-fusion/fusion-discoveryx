@@ -22,8 +22,14 @@ import akka.cluster.sharding.typed.ShardingEnvelope
 import akka.persistence.query.Offset
 import akka.persistence.typed.PersistenceId
 import akka.stream.scaladsl.BroadcastHub
+import fusion.discoveryx.model.ChangeType
 import fusion.discoveryx.server.config.{ ConfigEntity, ConfigManager }
-import fusion.discoveryx.server.protocol.{ ChangeType, ChangedConfigEvent, InternalConfigKeys, InternalRemoveKey }
+import fusion.discoveryx.server.protocol.{
+  ChangedConfigEvent,
+  InternalConfigKeys,
+  InternalRemoveKey,
+  RemovedConfigEvent
+}
 
 import scala.concurrent.duration._
 
@@ -64,9 +70,10 @@ object ConfigLeader {
     eventSource.runForeach {
       case (configKey, envelope) =>
         envelope.event match {
-          case event: ChangedConfigEvent if event.`type` == ChangeType.CHANGE_REMOVE =>
+          case event: ChangedConfigEvent if event.`type` == ChangeType.CHANGE_REMOVE => // TODO ?
             configManager ! ShardingEnvelope(configKey.namespace, InternalRemoveKey(configKey))
-          case _ => // do nothing
+          case _: RemovedConfigEvent => // do nothing
+            configManager ! ShardingEnvelope(configKey.namespace, InternalRemoveKey(configKey))
         }
     }
 

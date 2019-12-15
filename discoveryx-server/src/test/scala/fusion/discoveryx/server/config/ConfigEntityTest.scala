@@ -16,20 +16,19 @@
 
 package fusion.discoveryx.server.config
 
+import java.util.concurrent.TimeUnit
+
 import akka.actor.testkit.typed.scaladsl.{ ActorTestKit, ScalaTestWithActorTestKit }
-import akka.cluster.sharding.typed.ShardingEnvelope
-import fusion.discoveryx.model.{ ConfigPublish, ConfigReply }
-import fusion.discoveryx.server.protocol.PublishConfig
-import org.scalatest.WordSpecLike
 import akka.actor.typed.scaladsl.AskPattern._
-import akka.persistence.jdbc.query.scaladsl.JdbcReadJournal
-import akka.persistence.query.PersistenceQuery
-import akka.stream.scaladsl.Sink
+import akka.cluster.sharding.typed.ShardingEnvelope
 import akka.util.Timeout
 import com.typesafe.config.ConfigFactory
 import fusion.discoveryx.common.Constants
+import fusion.discoveryx.model.{ ConfigItem, ConfigReply }
+import fusion.discoveryx.server.protocol.PublishConfig
 import fusion.discoveryx.server.util.ProtobufJson4s
 import helloscala.common.config.FusionConfigFactory
+import org.scalatest.WordSpecLike
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -53,11 +52,8 @@ class ConfigEntityTest
       |  }
       |}""".stripMargin
 
-    "init" in {
-      val readJournal = PersistenceQuery(system).readJournalFor[JdbcReadJournal](JdbcReadJournal.Identifier)
-      val f = readJournal.currentPersistenceIds().runWith(Sink.seq)
-      val ids = Await.result(f, 20.seconds)
-      println(ids)
+    "init timeout" in {
+      TimeUnit.SECONDS.sleep(10)
     }
 
     "publishConfig" in {
@@ -65,7 +61,7 @@ class ConfigEntityTest
       val future = configEntity.ask[ConfigReply] { replyTo =>
         ShardingEnvelope(
           ConfigEntity.ConfigKey.makeEntityId(namespace, dataId),
-          PublishConfig(ConfigPublish(namespace, dataId, content = content), replyTo))
+          PublishConfig(ConfigItem(namespace, dataId, content = content), replyTo))
       }
       val reply = Await.result(future, Duration.Inf)
       println(ProtobufJson4s.toJsonPrettyString(reply))

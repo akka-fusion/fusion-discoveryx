@@ -18,7 +18,7 @@ package fusion.discoveryx.server.route
 
 import akka.http.scaladsl.model.StatusCodes
 import com.typesafe.scalalogging.StrictLogging
-import fusion.discoveryx.model.{ ConfigGet, ConfigItem, ConfigPublish, ConfigRemove }
+import fusion.discoveryx.model.{ ConfigGet, ConfigItem, ConfigRemove }
 import fusion.discoveryx.server.config.ConfigSettings
 import fusion.discoveryx.server.protocol.{ ConfigResponse, ListConfig }
 import fusion.discoveryx.server.util.ProtobufJson4s
@@ -42,7 +42,7 @@ class ConfigManagementRouteTest extends WordSpec with FusionRouteTest with Stric
     var configItem: ConfigItem = null
 
     "publishConfig" in {
-      val in = ConfigPublish(namespace, dataId, content = content)
+      val in = ConfigItem(namespace, dataId, content = content)
       Post("/config/publishConfig", in) ~> route ~> check {
         status shouldBe StatusCodes.OK
         val configResponse = responseAs[ConfigResponse]
