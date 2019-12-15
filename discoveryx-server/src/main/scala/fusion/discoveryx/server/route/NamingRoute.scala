@@ -28,7 +28,8 @@ import fusion.discoveryx.DiscoveryX
 import fusion.discoveryx.grpc.NamingServicePowerApiHandler
 import fusion.discoveryx.model.{ InstanceModify, InstanceQuery, InstanceRegister, InstanceRemove }
 import fusion.discoveryx.server.grpc.NamingManagerServiceHandler
-import fusion.discoveryx.server.naming.{ NamingManagerServiceImpl, NamingServiceImpl, NamingSettings }
+import fusion.discoveryx.server.naming.service.NamingManagerServiceImpl
+import fusion.discoveryx.server.naming.{ NamingServiceImpl, NamingSettings }
 import fusion.discoveryx.server.protocol.{ GetService, ListService }
 
 import scala.concurrent.Future

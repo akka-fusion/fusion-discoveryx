@@ -17,8 +17,7 @@
 package fusion.discoveryx.server.naming
 
 import com.typesafe.scalalogging.StrictLogging
-import fusion.discoveryx.DiscoveryXUtils
-import fusion.discoveryx.model.{ Instance, InstanceHeartbeat, InstanceModify, InstanceQuery }
+import fusion.discoveryx.model.{ Instance, InstanceModify, InstanceQuery }
 import fusion.discoveryx.server.protocol.NamingServiceKey
 
 final private[discoveryx] class InternalInstance(private val inst: Instance, settings: NamingSettings)

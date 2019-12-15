@@ -24,12 +24,7 @@ import akka.persistence.typed.PersistenceId
 import akka.stream.scaladsl.BroadcastHub
 import fusion.discoveryx.model.ChangeType
 import fusion.discoveryx.server.config.{ ConfigEntity, ConfigManager }
-import fusion.discoveryx.server.protocol.{
-  ChangedConfigEvent,
-  InternalConfigKeys,
-  InternalRemoveKey,
-  RemovedConfigEvent
-}
+import fusion.discoveryx.server.protocol.{ ChangedConfigEvent, InternalConfigKeys, InternalRemoveKey }
 
 import scala.concurrent.duration._
 
@@ -40,8 +35,10 @@ object ConfigLeader {
     implicit val system = context.system
     val configManager: ActorRef[ShardingEnvelope[ConfigManager.Command]] = ConfigManager.init(system)
     val readJournal = DiscoveryPersistenceQuery(system).readJournal
+
+    // 初始化所有ConfigManager，并让ConfigManager拥有所有自己的dataId的记录
     readJournal
-      .persistenceIds()
+      .currentPersistenceIds()
       .mapConcat { persistenceId =>
         persistenceId.split("\\" + PersistenceId.DefaultSeparator) match {
           case Array(typeName, ConfigEntity.ConfigKey(configKey)) if typeName == ConfigEntity.TypeKey.name =>
@@ -56,6 +53,7 @@ object ConfigLeader {
           configManager ! ShardingEnvelope(namespace, InternalConfigKeys(keys))
         }
       }
+
     val eventSource = readJournal
       .eventsByTag(ConfigEntity.TypeKey.name, Offset.noOffset)
       .mapConcat { envelop =>
@@ -70,10 +68,11 @@ object ConfigLeader {
     eventSource.runForeach {
       case (configKey, envelope) =>
         envelope.event match {
-          case event: ChangedConfigEvent if event.`type` == ChangeType.CHANGE_REMOVE => // TODO ?
+          case event: ChangedConfigEvent if event.`type` == ChangeType.CHANGE_REMOVE =>
             configManager ! ShardingEnvelope(configKey.namespace, InternalRemoveKey(configKey))
-          case _: RemovedConfigEvent => // do nothing
-            configManager ! ShardingEnvelope(configKey.namespace, InternalRemoveKey(configKey))
+          case _: ChangedConfigEvent => // TODO 每次都发请求，是否有更好的方案？
+            configManager ! ShardingEnvelope(configKey.namespace, InternalConfigKeys(configKey :: Nil))
+          case _ => // do nothing
         }
     }
 

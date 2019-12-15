@@ -16,16 +16,15 @@
 
 package fusion.discoveryx.server.config
 
-import java.util.concurrent.TimeUnit
-
 import akka.actor.testkit.typed.scaladsl.{ ActorTestKit, ScalaTestWithActorTestKit }
 import akka.actor.typed.scaladsl.AskPattern._
 import akka.cluster.sharding.typed.ShardingEnvelope
 import akka.util.Timeout
 import com.typesafe.config.ConfigFactory
+import fusion.core.extension.FusionCore
 import fusion.discoveryx.common.Constants
-import fusion.discoveryx.model.{ ConfigItem, ConfigReply }
-import fusion.discoveryx.server.protocol.PublishConfig
+import fusion.discoveryx.model.{ ConfigGet, ConfigItem, ConfigRemove, ConfigReply, ConfigType }
+import fusion.discoveryx.server.protocol.{ GetConfig, PublishConfig, RemoveConfig }
 import fusion.discoveryx.server.util.ProtobufJson4s
 import helloscala.common.config.FusionConfigFactory
 import org.scalatest.WordSpecLike
@@ -40,6 +39,9 @@ class ConfigEntityTest
         FusionConfigFactory.arrangeConfig(ConfigFactory.load("application-test.conf"), Constants.DISCOVERYX, "akka")))
     with WordSpecLike {
   override implicit def timeout: Timeout = 10.seconds
+  override implicit val patience: PatienceConfig = PatienceConfig(timeout.duration, 15.millis)
+
+  FusionCore(system)
   private val configEntity = ConfigEntity.init(system)
 
   "ConfigEntity" must {
@@ -48,19 +50,41 @@ class ConfigEntityTest
     val content =
       """discoveryx {
       |  server {
-      |    enable = true
+      |    enable = false
       |  }
       |}""".stripMargin
 
-    "init timeout" in {
-      TimeUnit.SECONDS.sleep(10)
+    "PublishConfig" in {
+      val in = ConfigItem(namespace, "play", content = content, `type` = ConfigType.HOCON)
+      val reply = configEntity
+        .ask[ConfigReply](replyTo =>
+          ShardingEnvelope(ConfigEntity.makeEntityId(in.namespace, in.dataId), PublishConfig(in, replyTo)))
+        .futureValue
+      println(ProtobufJson4s.toJsonPrettyString(reply))
+    }
+
+    "GetConfig" in {
+      val reply = configEntity
+        .ask[ConfigReply](replyTo =>
+          ShardingEnvelope(ConfigEntity.makeEntityId(namespace, dataId), GetConfig(ConfigGet(), replyTo)))
+        .futureValue
+      println(ProtobufJson4s.toJsonPrettyString(reply))
+    }
+
+    "RemoveConfig" in {
+      val in = ConfigRemove(namespace, dataId)
+      val reply = configEntity
+        .ask[ConfigReply](replyTo =>
+          ShardingEnvelope(ConfigEntity.makeEntityId(in.namespace, in.dataId), RemoveConfig(in, replyTo)))
+        .futureValue
+      println(ProtobufJson4s.toJsonPrettyString(reply))
     }
 
     "publishConfig" in {
       println(system.settings.config.getObject("akka-persistence-jdbc.shared-databases"))
       val future = configEntity.ask[ConfigReply] { replyTo =>
         ShardingEnvelope(
-          ConfigEntity.ConfigKey.makeEntityId(namespace, dataId),
+          ConfigEntity.makeEntityId(namespace, dataId),
           PublishConfig(ConfigItem(namespace, dataId, content = content), replyTo))
       }
       val reply = Await.result(future, Duration.Inf)

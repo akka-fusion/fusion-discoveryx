@@ -28,7 +28,8 @@ import fusion.discoveryx.DiscoveryX
 import fusion.discoveryx.grpc.ConfigServiceHandler
 import fusion.discoveryx.model.{ ConfigGet, ConfigItem, ConfigRemove }
 import fusion.discoveryx.server.ConfigLeader
-import fusion.discoveryx.server.config.{ ConfigManagerServiceImpl, ConfigServiceImpl, ConfigSettings }
+import fusion.discoveryx.server.config.service.{ ConfigManagerServiceImpl, ConfigServiceImpl }
+import fusion.discoveryx.server.config.ConfigSettings
 import fusion.discoveryx.server.grpc.ConfigManagerServiceHandler
 import fusion.discoveryx.server.protocol.ListConfig
 

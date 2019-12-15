@@ -8,9 +8,6 @@ import "fusion/discoveryx/model/discoveryx.proto";
 
 option (scalapb.options) = {
   collection_type: "scala.collection.immutable.Seq"
-  import: "akka.actor.typed.ActorRef"
-  import: "fusion.discoveryx.server.config.ConfigManager._"
-  import: "fusion.protobuf.ActorRefCompanion._"
 };
 
 message ConfigKey {
@@ -21,26 +18,34 @@ message ConfigKey {
 
 message RegisterChangeListener {
     option (scalapb.message).extends = "fusion.discoveryx.server.config.ConfigEntity.Command";
-    string reply_to = 1 [(scalapb.field).type = "ActorRef[fusion.discoveryx.server.config.ConfigEntity.Event]"];
+    option (scalapb.message).companion_extends = "fusion.protobuf.ActorRefCompanion";
+
+    string reply_to = 1 [(scalapb.field).type = "akka.actor.typed.ActorRef[fusion.discoveryx.server.config.ConfigEntity.Event]"];
     string listener_id = 2;
 }
 
 message GetConfig {
     option (scalapb.message).extends = "fusion.discoveryx.server.config.ConfigEntity.ReplyCommand";
+    option (scalapb.message).companion_extends = "fusion.protobuf.ActorRefCompanion";
+
     fusion.discoveryx.model.ConfigGet in = 1 [(scalapb.field).no_box = true];
-    string reply_to = 2 [(scalapb.field).type = "ActorRef[fusion.discoveryx.model.ConfigReply]"];
+    string reply_to = 2 [(scalapb.field).type = "akka.actor.typed.ActorRef[fusion.discoveryx.model.ConfigReply]"];
 }
 
 message PublishConfig {
     option (scalapb.message).extends = "fusion.discoveryx.server.config.ConfigEntity.ReplyCommand";
+    option (scalapb.message).companion_extends = "fusion.protobuf.ActorRefCompanion";
+
     fusion.discoveryx.model.ConfigItem in = 1 [(scalapb.field).no_box = true];
-    string reply_to = 2 [(scalapb.field).type = "ActorRef[fusion.discoveryx.model.ConfigReply]"];
+    string reply_to = 2 [(scalapb.field).type = "akka.actor.typed.ActorRef[fusion.discoveryx.model.ConfigReply]"];
 }
 
 message RemoveConfig {
     option (scalapb.message).extends = "fusion.discoveryx.server.config.ConfigEntity.ReplyCommand";
+    option (scalapb.message).companion_extends = "fusion.protobuf.ActorRefCompanion";
+
     fusion.discoveryx.model.ConfigRemove in = 1 [(scalapb.field).no_box = true];
-    string reply_to = 2 [(scalapb.field).type = "ActorRef[fusion.discoveryx.model.ConfigReply]"];
+    string reply_to = 2 [(scalapb.field).type = "akka.actor.typed.ActorRef[fusion.discoveryx.model.ConfigReply]"];
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -83,7 +88,9 @@ message ListConfig {
 
 message ConfigManagerCommand {
     option (scalapb.message).extends = "fusion.discoveryx.server.config.ConfigManager.Command";
-    string reply_to = 1 [(scalapb.field).type = "ActorRef[ConfigResponse]"];
+    option (scalapb.message).companion_extends = "fusion.protobuf.ActorRefCompanion";
+
+    string reply_to = 1 [(scalapb.field).type = "akka.actor.typed.ActorRef[ConfigResponse]"];
     oneof cmd {
         ListConfig list = 2;
         fusion.discoveryx.model.ConfigGet get = 3;
@@ -110,12 +117,3 @@ message InternalRemoveKey {
     option (scalapb.message).extends = "fusion.discoveryx.server.config.ConfigManager.Command";
     ConfigKey configKeys = 1 [(scalapb.field).no_box = true];
 }
-
-//message ConfigKeyEvent {
-//    ConfigKey key = 1 [(scalapb.field).no_box = true];
-//    ChangedConfigEvent event = 2 [(scalapb.field).no_box = true];
-//}
-//message InitialConfigKeyEvents {
-//    option (scalapb.message).extends = "fusion.discoveryx.server.config.ConfigManager.Command";
-//    repeated ConfigKeyEvent keyEvents = 1;
-//}

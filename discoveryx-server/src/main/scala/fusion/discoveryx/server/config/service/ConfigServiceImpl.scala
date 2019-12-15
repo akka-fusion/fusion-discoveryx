@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package fusion.discoveryx.server.config
+package fusion.discoveryx.server.config.service
 
 import akka.NotUsed
 import akka.actor.typed.ActorSystem
@@ -26,6 +26,7 @@ import akka.stream.typed.scaladsl.ActorSource
 import akka.util.Timeout
 import fusion.discoveryx.grpc.ConfigService
 import fusion.discoveryx.model._
+import fusion.discoveryx.server.config.ConfigEntity
 import fusion.discoveryx.server.protocol._
 import helloscala.common.IntStatus
 import helloscala.common.exception.HSInternalErrorException
@@ -51,7 +52,7 @@ class ConfigServiceImpl()(implicit system: ActorSystem[_]) extends ConfigService
     askConfig(in.namespace, in.dataId, RemoveConfig(in))
 
   override def listenerConfig(in: ConfigChangeListen): Source[ConfigChanged, NotUsed] = {
-    val entityId = ConfigEntity.ConfigKey.makeEntityId(in.namespace, in.dataId)
+    val entityId = ConfigEntity.makeEntityId(in.namespace, in.dataId)
     val (ref, source) = ActorSource
       .actorRef[ConfigEntity.Event](
         { case _: RemovedConfigEvent => },
