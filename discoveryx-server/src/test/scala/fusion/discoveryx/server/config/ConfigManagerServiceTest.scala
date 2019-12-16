@@ -17,6 +17,7 @@
 package fusion.discoveryx.server.config
 
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
+import fusion.discoveryx.server.config.service.ConfigManagerServiceImpl
 import fusion.discoveryx.server.protocol.ListConfig
 import fusion.discoveryx.server.util.ProtobufJson4s
 import helloscala.common.IntStatus

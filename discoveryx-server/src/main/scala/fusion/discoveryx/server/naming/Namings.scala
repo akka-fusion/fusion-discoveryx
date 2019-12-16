@@ -16,7 +16,7 @@
 
 package fusion.discoveryx.server.naming
 
-import akka.actor.typed.scaladsl.{ AbstractBehavior, ActorContext, Behaviors, TimerScheduler }
+import akka.actor.typed.scaladsl.{ ActorContext, Behaviors, TimerScheduler }
 import akka.actor.typed.{ ActorRef, Behavior }
 import akka.cluster.pubsub.{ DistributedPubSub, DistributedPubSubMediator }
 import akka.cluster.sharding.typed.scaladsl.EntityTypeKey
@@ -60,15 +60,14 @@ object Namings {
       .unapply(entityId)
       .getOrElse(throw HSBadRequestException(
         s"${context.self} create child error. entityId invalid, need '[namespace] [serviceName]' format."))
-    Behaviors.withTimers(timers => new Namings(namingServiceKey, timers, context))
+    Behaviors.withTimers(timers => new Namings(namingServiceKey, timers, context).receive())
   }
 }
 
 class Namings private (
     namingServiceKey: NamingServiceKey,
     timers: TimerScheduler[Namings.Command],
-    override protected val context: ActorContext[Namings.Command])
-    extends AbstractBehavior[Namings.Command](context) {
+    context: ActorContext[Namings.Command]) {
   import Namings._
   private val settings = NamingSettings(context.system)
   private val internalService = new InternalService(namingServiceKey, settings)
@@ -79,32 +78,32 @@ class Namings private (
   timers.startTimerWithFixedDelay(HealthCheckKey, HealthCheckKey, settings.heartbeatInterval)
   context.log.info(s"Namings started: $namingServiceKey")
 
-  override def onMessage(msg: Namings.Command): Behavior[Namings.Command] = msg match {
-    case Heartbeat(namespace, serviceName, instanceId) => processHeartbeat(namespace, serviceName, instanceId)
-    case QueryInstance(in, replyTo)                    => queryInstance(in, replyTo)
-    case RegisterInstance(in, replyTo)                 => registerInstance(in, replyTo)
-    case RemoveInstance(in, replyTo)                   => removeInstance(in, replyTo)
-    case ModifyInstance(in, replyTo)                   => modifyInstance(in, replyTo)
-    case QueryServiceInfo(replyTo)                     => queryServiceInfo(replyTo)
-    case HealthCheckKey                                => healthCheck()
+  def receive(): Behavior[Command] = Behaviors.receiveMessage {
+    case Heartbeat(_, _, instanceId)   => processHeartbeat(instanceId)
+    case QueryInstance(in, replyTo)    => queryInstance(in, replyTo)
+    case RegisterInstance(in, replyTo) => registerInstance(in, replyTo)
+    case RemoveInstance(in, replyTo)   => removeInstance(in, replyTo)
+    case ModifyInstance(in, replyTo)   => modifyInstance(in, replyTo)
+    case QueryServiceInfo(replyTo)     => queryServiceInfo(replyTo)
+    case HealthCheckKey                => healthCheck()
   }
 
   private def queryServiceInfo(replyTo: ActorRef[ServiceInfo]): Behavior[Command] = {
     replyTo ! ServiceInfo(namingServiceKey.namespace, namingServiceKey.serviceName, internalService.allRealInstance())
-    this
+    Behaviors.same
   }
 
-  private def healthCheck(): Namings = {
+  private def healthCheck(): Behavior[Command] = {
     internalService.checkHealthy()
-    this
+    Behaviors.same
   }
 
-  private def processHeartbeat(namespace: String, serviceName: String, instanceId: String): Namings = {
+  private def processHeartbeat(instanceId: String): Behavior[Command] = {
     internalService.processHeartbeat(instanceId)
-    this
+    Behaviors.same
   }
 
-  private def queryInstance(in: InstanceQuery, replyTo: ActorRef[NamingReply]): Namings = {
+  private def queryInstance(in: InstanceQuery, replyTo: ActorRef[NamingReply]): Behavior[Command] = {
     val result = try {
       val items = internalService.queryInstance(in)
       val status = if (items.isEmpty) IntStatus.NOT_FOUND else IntStatus.OK
@@ -113,10 +112,10 @@ class Namings private (
       case _: IllegalArgumentException => NamingReply(IntStatus.BAD_REQUEST)
     }
     replyTo ! result
-    this
+    Behaviors.same
   }
 
-  private def modifyInstance(in: InstanceModify, replyTo: ActorRef[NamingReply]): Namings = {
+  private def modifyInstance(in: InstanceModify, replyTo: ActorRef[NamingReply]): Behavior[Command] = {
     val result = try {
       internalService.modifyInstance(in) match {
         case Some(inst) => NamingReply(IntStatus.OK, data = NamingReply.Data.Instance(inst))
@@ -126,16 +125,16 @@ class Namings private (
       case _: IllegalArgumentException => NamingReply(IntStatus.BAD_REQUEST)
     }
     replyTo ! result
-    this
+    Behaviors.same
   }
 
-  private def removeInstance(in: InstanceRemove, replyTo: ActorRef[NamingReply]): Namings = {
+  private def removeInstance(in: InstanceRemove, replyTo: ActorRef[NamingReply]): Behavior[Command] = {
     val status = if (internalService.removeInstance(in.instanceId)) IntStatus.OK else IntStatus.NOT_FOUND
     replyTo ! NamingReply(status)
-    this
+    Behaviors.same
   }
 
-  private def registerInstance(in: InstanceRegister, replyTo: ActorRef[NamingReply]): Namings = {
+  private def registerInstance(in: InstanceRegister, replyTo: ActorRef[NamingReply]): Behavior[Command] = {
     val result = try {
       val inst = internalService.addInstance(DiscoveryXUtils.toInstance(in))
       NamingReply(IntStatus.OK, data = NamingReply.Data.Instance(inst))
@@ -143,6 +142,6 @@ class Namings private (
       case _: IllegalArgumentException => NamingReply(IntStatus.BAD_REQUEST)
     }
     replyTo ! result
-    this
+    Behaviors.same
   }
 }

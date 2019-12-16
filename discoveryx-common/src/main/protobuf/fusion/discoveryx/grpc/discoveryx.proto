@@ -2,7 +2,6 @@ syntax = "proto3";
 package fusion.discoveryx.grpc;
 
 import "fusion/discoveryx/model/discoveryx.proto";
-import "fusion/define.proto";
 
 service ConfigService {
     // #ServerStatus
@@ -19,7 +18,7 @@ service ConfigService {
 
     // #PublishConfig
     // 发布配置
-    rpc PublishConfig (fusion.discoveryx.model.ConfigPublish) returns (fusion.discoveryx.model.ConfigReply) {
+    rpc PublishConfig (fusion.discoveryx.model.ConfigItem) returns (fusion.discoveryx.model.ConfigReply) {
     }
     // #PublishConfig
 

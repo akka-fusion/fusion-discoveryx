@@ -16,6 +16,12 @@ message ServerStatusBO {
     int32 status = 1;
 }
 
+enum ChangeType {
+    CHANGE_SAVE = 0;
+    CHANGE_ADD = 2;
+    CHANGE_REMOVE = 3;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Config
 ////////////////////////////////////////////////////////////////////////////////
@@ -53,20 +59,6 @@ message ConfigQueried {
 // #ConfigItem
 // #ConfigQueried
 
-// #ConfigPublish
-message ConfigPublish {
-    string namespace = 1;
-    string data_id = 2;
-    string group_name = 3;
-    string content = 4;
-    ConfigType type = 5;
-}
-message ConfigPublished {
-    string version = 1;
-    google.protobuf.StringValue old_content = 2;
-}
-// #ConfigPublish
-
 // #ConfigRemove
 message ConfigRemove {
     string namespace = 1;
@@ -83,11 +75,9 @@ message ConfigChangeListen {
 
 // #ConfigChanged
 message ConfigChanged {
-    fusion.discoveryx.model.ConfigItem config = 1 [(scalapb.field).no_box = true];
-    fusion.discoveryx.model.ConfigItem old = 2;
-    int32 version = 3;
-    bool exit = 4;
-    int32 change_type = 7; // 1: add, 2: update, 3: delete
+    fusion.discoveryx.model.ConfigItem config = 1;
+    int32 version = 2;
+    ChangeType change_type = 3; // 1: add, 2: update, 3: delete
 }
 // #ConfigChanged
 
@@ -98,7 +88,6 @@ message ConfigReply {
     oneof data {
         ConfigItem config = 3;
         ConfigQueried queried = 4;
-        ConfigPublished published = 5;
     }
 }
 // #ConfigReply

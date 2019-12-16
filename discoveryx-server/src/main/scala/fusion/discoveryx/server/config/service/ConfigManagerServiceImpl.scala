@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
-package fusion.discoveryx.server.config
+package fusion.discoveryx.server.config.service
 
 import akka.actor.typed.scaladsl.AskPattern._
 import akka.actor.typed.{ ActorRef, ActorSystem }
 import akka.cluster.sharding.typed.ShardingEnvelope
 import akka.util.Timeout
 import com.typesafe.scalalogging.StrictLogging
-import fusion.discoveryx.model.{ ConfigGet, ConfigPublish, ConfigRemove }
+import fusion.discoveryx.model.{ ConfigGet, ConfigItem, ConfigRemove }
+import fusion.discoveryx.server.config.ConfigManager
 import fusion.discoveryx.server.grpc.ConfigManagerService
 import fusion.discoveryx.server.protocol.ConfigManagerCommand.Cmd
 import fusion.discoveryx.server.protocol._
@@ -49,7 +50,7 @@ class ConfigManagerServiceImpl()(implicit system: ActorSystem[_]) extends Config
    * #PublishConfig
    * 发布配置
    */
-  override def publishConfig(in: ConfigPublish): Future[ConfigResponse] = askConfig(in.namespace, Cmd.Publish(in))
+  override def publishConfig(in: ConfigItem): Future[ConfigResponse] = askConfig(in.namespace, Cmd.Publish(in))
 
   /**
    * #RemoveConfig

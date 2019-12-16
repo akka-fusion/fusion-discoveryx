@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package fusion.discoveryx.server.config
+package fusion.discoveryx.server.config.service
 
 import akka.NotUsed
 import akka.actor.typed.ActorSystem
@@ -26,6 +26,7 @@ import akka.stream.typed.scaladsl.ActorSource
 import akka.util.Timeout
 import fusion.discoveryx.grpc.ConfigService
 import fusion.discoveryx.model._
+import fusion.discoveryx.server.config.ConfigEntity
 import fusion.discoveryx.server.protocol._
 import helloscala.common.IntStatus
 import helloscala.common.exception.HSInternalErrorException
@@ -44,23 +45,28 @@ class ConfigServiceImpl()(implicit system: ActorSystem[_]) extends ConfigService
   override def queryConfig(in: ConfigGet): Future[ConfigReply] =
     askConfig(in.namespace, in.dataId, GetConfig(in))
 
-  override def publishConfig(in: ConfigPublish): Future[ConfigReply] =
+  override def publishConfig(in: ConfigItem): Future[ConfigReply] =
     askConfig(in.namespace, in.dataId, PublishConfig(in))
 
   override def removeConfig(in: ConfigRemove): Future[ConfigReply] =
     askConfig(in.namespace, in.dataId, RemoveConfig(in))
 
   override def listenerConfig(in: ConfigChangeListen): Source[ConfigChanged, NotUsed] = {
-    val entityId = ConfigEntity.ConfigKey.makeEntityId(in.namespace, in.dataId)
+    val entityId = ConfigEntity.makeEntityId(in.namespace, in.dataId)
     val (ref, source) = ActorSource
-      .actorRef[ChangedConfigEvent](
-        { case ChangedConfigEvent(_, _, ChangeType.CHANGE_EXIT) => },
+      .actorRef[ConfigEntity.Event](
+        { case _: RemovedConfigEvent => },
         changed => throw HSInternalErrorException(s"Throw error: $changed."),
         2,
         OverflowStrategy.dropHead)
       .preMaterialize()
     configEntity ! ShardingEnvelope(entityId, RegisterChangeListener(ref, Utils.timeBasedUuid().toString))
-    source.map(event => ConfigChanged(event.config, event.old))
+    source
+      .mapConcat {
+        case event: ChangedConfigEvent => event :: Nil
+        case _                         => Nil
+      }
+      .map(event => ConfigChanged(event.config, changeType = event.`type`))
   }
 
   @inline private def askConfig(

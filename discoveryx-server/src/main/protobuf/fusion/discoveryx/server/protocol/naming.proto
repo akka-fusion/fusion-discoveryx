@@ -8,8 +8,6 @@ import "fusion/discoveryx/model/discoveryx.proto";
 
 option (scalapb.options) = {
   collection_type: "scala.collection.immutable.Seq"
-  import: "akka.actor.typed.ActorRef"
-  import: "fusion.protobuf.ActorRefCompanion._"
 };
 
 message NamingServiceKey {
@@ -19,26 +17,30 @@ message NamingServiceKey {
 
 message RegisterInstance {
     option (scalapb.message).extends = "fusion.discoveryx.server.naming.Namings.ReplyCommand";
+    option (scalapb.message).companion_extends = "fusion.protobuf.ActorRefCompanion";
     fusion.discoveryx.model.InstanceRegister in = 1 [(scalapb.field).no_box = true];
-    string reply_to = 2 [(scalapb.field).type = "ActorRef[fusion.discoveryx.model.NamingReply]"];
+    string reply_to = 2 [(scalapb.field).type = "akka.actor.typed.ActorRef[fusion.discoveryx.model.NamingReply]"];
 }
 
 message RemoveInstance {
     option (scalapb.message).extends = "fusion.discoveryx.server.naming.Namings.ReplyCommand";
+    option (scalapb.message).companion_extends = "fusion.protobuf.ActorRefCompanion";
     fusion.discoveryx.model.InstanceRemove in = 1 [(scalapb.field).no_box = true];
-    string reply_to = 2 [(scalapb.field).type = "ActorRef[fusion.discoveryx.model.NamingReply]"];
+    string reply_to = 2 [(scalapb.field).type = "akka.actor.typed.ActorRef[fusion.discoveryx.model.NamingReply]"];
 }
 
 message ModifyInstance {
     option (scalapb.message).extends = "fusion.discoveryx.server.naming.Namings.ReplyCommand";
+    option (scalapb.message).companion_extends = "fusion.protobuf.ActorRefCompanion";
     fusion.discoveryx.model.InstanceModify in = 1 [(scalapb.field).no_box = true];
-    string reply_to = 2 [(scalapb.field).type = "ActorRef[fusion.discoveryx.model.NamingReply]"];
+    string reply_to = 2 [(scalapb.field).type = "akka.actor.typed.ActorRef[fusion.discoveryx.model.NamingReply]"];
 }
 
 message QueryInstance {
     option (scalapb.message).extends = "fusion.discoveryx.server.naming.Namings.ReplyCommand";
+    option (scalapb.message).companion_extends = "fusion.protobuf.ActorRefCompanion";
     fusion.discoveryx.model.InstanceQuery in = 1 [(scalapb.field).no_box = true];
-    string reply_to = 2 [(scalapb.field).type = "ActorRef[fusion.discoveryx.model.NamingReply]"];
+    string reply_to = 2 [(scalapb.field).type = "akka.actor.typed.ActorRef[fusion.discoveryx.model.NamingReply]"];
 }
 
 message Heartbeat {
@@ -58,7 +60,8 @@ message ServiceInfo {
 
 message QueryServiceInfo {
     option (scalapb.message).extends = "fusion.discoveryx.server.naming.Namings.Command";
-    string reply_to = 1 [(scalapb.field).type = "ActorRef[ServiceInfo]"];
+    option (scalapb.message).companion_extends = "fusion.protobuf.ActorRefCompanion";
+    string reply_to = 1 [(scalapb.field).type = "akka.actor.typed.ActorRef[ServiceInfo]"];
 }
 
 // NamingManager 使用
@@ -66,7 +69,8 @@ message QueryServiceInfo {
 // 通过 PubSub 发布 fusion.discoveryx.server.naming.Namings 自身的 ActorRef，并注册到 NamingManager
 message NamingRegisterToManager {
     option (scalapb.message).extends = "fusion.discoveryx.server.naming.NamingManager.Command";
-    string naming_ref = 1 [(scalapb.field).type = "ActorRef[fusion.discoveryx.server.naming.Namings.Command]"];
+    option (scalapb.message).companion_extends = "fusion.protobuf.ActorRefCompanion";
+    string naming_ref = 1 [(scalapb.field).type = "akka.actor.typed.ActorRef[fusion.discoveryx.server.naming.Namings.Command]"];
 }
 
 // #ListService
@@ -93,7 +97,8 @@ message GetService {
 
 message NamingManagerCommand {
     option (scalapb.message).extends = "fusion.discoveryx.server.naming.NamingManager.Command";
-    string reply_to = 1 [(scalapb.field).type = "ActorRef[NamingResponse]"];
+    option (scalapb.message).companion_extends = "fusion.protobuf.ActorRefCompanion";
+    string reply_to = 1 [(scalapb.field).type = "akka.actor.typed.ActorRef[NamingResponse]"];
     oneof cmd {
         ListService list_service = 2;
         GetService get_service = 3;

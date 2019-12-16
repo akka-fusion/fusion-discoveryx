@@ -26,9 +26,10 @@ import akka.stream.{ Materializer, SystemMaterializer }
 import fusion.common.FusionProtocol
 import fusion.discoveryx.DiscoveryX
 import fusion.discoveryx.grpc.ConfigServiceHandler
-import fusion.discoveryx.model.{ ConfigGet, ConfigPublish, ConfigRemove }
+import fusion.discoveryx.model.{ ConfigGet, ConfigItem, ConfigRemove }
 import fusion.discoveryx.server.ConfigLeader
-import fusion.discoveryx.server.config.{ ConfigManagerServiceImpl, ConfigServiceImpl, ConfigSettings }
+import fusion.discoveryx.server.config.service.{ ConfigManagerServiceImpl, ConfigServiceImpl }
+import fusion.discoveryx.server.config.ConfigSettings
 import fusion.discoveryx.server.grpc.ConfigManagerServiceHandler
 import fusion.discoveryx.server.protocol.ListConfig
 
@@ -55,7 +56,7 @@ class ConfigRoute(discoveryX: DiscoveryX, configSettings: ConfigSettings) {
       }
     } ~
     pathPost("publishConfig") {
-      entity(as[ConfigPublish]) { in =>
+      entity(as[ConfigItem]) { in =>
         complete(configService.publishConfig(in))
       }
     } ~
@@ -78,7 +79,7 @@ class ConfigRoute(discoveryX: DiscoveryX, configSettings: ConfigSettings) {
       }
     } ~
     pathPost("publishConfig") {
-      entity(as[ConfigPublish]) { in =>
+      entity(as[ConfigItem]) { in =>
         complete(configManagerService.publishConfig(in))
       }
     } ~

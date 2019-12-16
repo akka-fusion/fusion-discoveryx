@@ -93,11 +93,8 @@ class ConfigManager private (namespace: String, context: ActorContext[Command]) 
       val futures = configKeys.view
         .slice(offset, offset + size)
         .map { configKey =>
-          configEntity.ask[ConfigReply](
-            replyTo =>
-              ShardingEnvelope(
-                ConfigEntity.ConfigKey.makeEntityId(configKey),
-                GetConfig(ConfigGet(cmd.namespace), replyTo)))
+          configEntity.ask[ConfigReply](replyTo =>
+            ShardingEnvelope(ConfigEntity.makeEntityId(configKey), GetConfig(ConfigGet(cmd.namespace), replyTo)))
         }
         .toVector
       Future
@@ -115,7 +112,7 @@ class ConfigManager private (namespace: String, context: ActorContext[Command]) 
       onSuccess: ConfigReply.Data => ConfigResponse.Data): Future[ConfigResponse] = {
     configEntity
       .ask[ConfigReply](replyTo =>
-        ShardingEnvelope(ConfigEntity.ConfigKey.makeEntityId(namespace, dataId), cmd.withReplyTo(replyTo)))
+        ShardingEnvelope(ConfigEntity.makeEntityId(namespace, dataId), cmd.withReplyTo(replyTo)))
       .map {
         case value if IntStatus.isSuccess(value.status) => ConfigResponse(value.status, data = onSuccess(value.data))
         case value                                      => ConfigResponse(value.status, value.message)

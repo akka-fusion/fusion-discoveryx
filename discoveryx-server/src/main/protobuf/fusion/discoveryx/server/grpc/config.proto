@@ -24,7 +24,7 @@ service ConfigManagerService {
 
     // #PublishConfig
     // 发布配置
-    rpc PublishConfig (fusion.discoveryx.model.ConfigPublish) returns (fusion.discoveryx.server.protocol.ConfigResponse) {
+    rpc PublishConfig (fusion.discoveryx.model.ConfigItem) returns (fusion.discoveryx.server.protocol.ConfigResponse) {
     }
     // #PublishConfig
 

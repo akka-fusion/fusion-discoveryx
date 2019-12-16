@@ -17,13 +17,12 @@
 package fusion.discoveryx.server.config
 
 import akka.actor.typed.scaladsl.{ ActorContext, Behaviors }
-import akka.actor.typed.{ ActorRef, ActorSystem, Behavior }
+import akka.actor.typed.{ ActorRef, ActorSystem, Behavior, Terminated }
 import akka.cluster.sharding.typed.ShardingEnvelope
 import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, Entity, EntityContext, EntityTypeKey }
 import akka.persistence.typed.PersistenceId
-import akka.persistence.typed.scaladsl.{ Effect, EventSourcedBehavior }
-import fusion.discoveryx.model.{ ConfigItem, ConfigReply }
-import fusion.discoveryx.server.DiscoveryPersistenceQuery
+import akka.persistence.typed.scaladsl.{ Effect, EventSourcedBehavior, RetentionCriteria }
+import fusion.discoveryx.model.{ ChangeType, ConfigReply }
 import fusion.discoveryx.server.protocol._
 import helloscala.common.IntStatus
 import helloscala.common.exception.HSInternalErrorException
@@ -35,18 +34,19 @@ object ConfigEntity {
     def withReplyTo(replyTo: ActorRef[ConfigReply]): ReplyCommand
   }
   trait Event
-  trait ChangeEvent extends Event
 
   val TypeKey: EntityTypeKey[Command] = EntityTypeKey("configEntity")
 
   object ConfigKey {
-    def makeEntityId(key: fusion.discoveryx.server.protocol.ConfigKey) = s"${key.namespace} ${key.dataId}"
-    def makeEntityId(namespace: String, dataId: String) = s"$namespace $dataId"
     def unapply(entityId: String): Option[ConfigKey] = entityId.split(' ') match {
       case Array(namespace, dataId) => Some(new ConfigKey(namespace, dataId))
       case _                        => None
     }
   }
+
+  def makeEntityId(key: fusion.discoveryx.server.protocol.ConfigKey) = s"${key.namespace} ${key.dataId}"
+
+  def makeEntityId(namespace: String, dataId: String) = s"$namespace $dataId"
 
   def init(system: ActorSystem[_]): ActorRef[ShardingEnvelope[Command]] =
     ClusterSharding(system).init(Entity(TypeKey)(entityContext => apply(entityContext)))
@@ -73,50 +73,70 @@ class ConfigEntity private (
     dataId: String,
     context: ActorContext[Command]) {
   private implicit val system = context.system
-  private val readJournal = DiscoveryPersistenceQuery(system).readJournal
+  private var listeners = List.empty[ActorRef[ConfigEntity.Event]]
+  context.log.info(s"Entity startup: persistenceId: $persistenceId")
 
-  def eventSourcedBehavior(): EventSourcedBehavior[Command, Event, ConfigItem] =
-    EventSourcedBehavior[Command, Event, ConfigItem](
+  def eventSourcedBehavior(): EventSourcedBehavior[Command, ChangedConfigEvent, ConfigState] =
+    EventSourcedBehavior[Command, ChangedConfigEvent, ConfigState](
       persistenceId,
-      ConfigItem.defaultInstance,
+      ConfigState.defaultInstance,
       commandHandler,
-      eventHandler).withTagger(_ => Set(ConfigEntity.TypeKey.name, namespace))
+      eventHandler)
+      .receiveSignal {
+        case (_, Terminated(ref)) =>
+          listeners = listeners.filterNot(_ == ref)
+      }
+      .withTagger(_ => Set(ConfigEntity.TypeKey.name, namespace))
+      .withRetention(RetentionCriteria.snapshotEvery(100, 2).withDeleteEventsOnSnapshot)
+      .snapshotWhen {
+        case (_, ChangedConfigEvent(_, ChangeType.CHANGE_REMOVE), _) => true
+        case _                                                       => false
+      }
 
-  def commandHandler(configItem: ConfigItem, cmd: Command): Effect[Event, ConfigItem] = cmd match {
+  def commandHandler(state: ConfigState, cmd: Command): Effect[ChangedConfigEvent, ConfigState] = cmd match {
     case GetConfig(_, replyTo) =>
-      Effect.reply(replyTo)(ConfigReply(IntStatus.OK, data = ConfigReply.Data.Config(configItem)))
+      Effect.reply(replyTo)(state.configItem match {
+        case Some(item) => ConfigReply(IntStatus.OK, data = ConfigReply.Data.Config(item))
+        case _          => ConfigReply(IntStatus.NOT_FOUND)
+      })
 
     case PublishConfig(in, replyTo) =>
       context.log.debug(s"PublishConfig($in, $replyTo)")
-      val item = ConfigItem(in.namespace, in.dataId, in.groupName, in.content, in.`type`)
-      val old = if (configItem == ConfigItem.defaultInstance) None else Some(configItem)
-      val event = ChangedConfigEvent(item, old, if (old.isEmpty) ChangeType.CHANGE_ADD else ChangeType.CHANGE_SAVE)
-      Effect.persist(event).thenReply(replyTo) {
-        case `item` => ConfigReply(IntStatus.OK, data = ConfigReply.Data.Config(item))
-        case _      => ConfigReply(IntStatus.BAD_REQUEST)
+
+      if (state.configItem.contains(in)) {
+        Effect.reply(replyTo)(ConfigReply(IntStatus.OK, "Not need update."))
+      } else {
+        val event =
+          ChangedConfigEvent(Some(in), if (state.configItem.isEmpty) ChangeType.CHANGE_ADD else ChangeType.CHANGE_SAVE)
+        Effect.persist(event).thenReply(replyTo) {
+          case ConfigState(Some(item)) => ConfigReply(IntStatus.OK, data = ConfigReply.Data.Config(item))
+          case _                       => ConfigReply(IntStatus.BAD_REQUEST)
+        }
       }
 
     case RemoveConfig(_, replyTo) =>
-      Effect.persist(ChangedConfigEvent(old = Some(configItem), `type` = ChangeType.CHANGE_REMOVE)).thenReply(replyTo) {
-        case state if state == ConfigItem.defaultInstance => ConfigReply(IntStatus.OK)
-        case _                                            => ConfigReply(IntStatus.INTERNAL_ERROR)
-      }
+      Effect
+        .persist[ChangedConfigEvent, ConfigState](ChangedConfigEvent(`type` = ChangeType.CHANGE_REMOVE))
+        .thenRun {
+          case state if state.configItem.isEmpty => replyTo ! ConfigReply(IntStatus.OK)
+          case _                                 => replyTo ! ConfigReply(IntStatus.INTERNAL_ERROR)
+        }
+        .thenStop()
 
     case RegisterChangeListener(replyTo, _) =>
-      readJournal.eventsByPersistenceId(persistenceId.id, 0, Long.MaxValue).runForeach { envelope =>
-        envelope.event match {
-          case evt: ChangedConfigEvent => replyTo ! evt
-          case other                   => context.log.debug(s"Other journal event: $other")
-        }
-      }
+      listeners ::= replyTo
+      context.watch(replyTo)
       Effect.none
   }
 
-  def eventHandler(configItem: ConfigItem, event: Event): ConfigItem = {
-    //context.log.debug(s"eventHandler($configItem, $event)")
-    event match {
-      // TODO How delete state ?
-      case ChangedConfigEvent(item, _, _) => item
+  def eventHandler(state: ConfigState, evt: ChangedConfigEvent): ConfigState = {
+    context.log.debug(s"eventHandler($state, $evt)")
+    listeners.foreach { ref =>
+      ref ! evt
+      if (evt.`type` == ChangeType.CHANGE_REMOVE) {
+        ref ! RemovedConfigEvent()
+      }
     }
+    ConfigState(configItem = evt.config)
   }
 }

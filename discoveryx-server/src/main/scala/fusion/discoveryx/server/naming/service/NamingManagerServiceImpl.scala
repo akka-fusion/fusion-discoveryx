@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package fusion.discoveryx.server.naming
+package fusion.discoveryx.server.naming.service
 
 import akka.actor.typed.scaladsl.AskPattern._
 import akka.actor.typed.{ ActorRef, ActorSystem }
@@ -22,6 +22,7 @@ import akka.cluster.sharding.typed.ShardingEnvelope
 import akka.util.Timeout
 import fusion.discoveryx.model.{ InstanceModify, InstanceRegister, InstanceRemove }
 import fusion.discoveryx.server.grpc.NamingManagerService
+import fusion.discoveryx.server.naming.NamingManager
 import fusion.discoveryx.server.protocol.NamingManagerCommand.Cmd
 import fusion.discoveryx.server.protocol.{ GetService, ListService, NamingManagerCommand, NamingResponse }
 
