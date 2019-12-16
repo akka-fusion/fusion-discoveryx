@@ -4,41 +4,20 @@
 
 产品文档：[https://akka-fusion.github.io/fusion-discoveryx/](https://akka-fusion.github.io/fusion-discoveryx/)
 
-## test
+## 开发
 
-**数据库**
+### Docker运行环境
 
-以PostgreSQL数据库为例，运行以下脚本，并修改 [discoveryx-server/src/test/resources/application-test.conf](discoveryx-server/src/test/resources/application-test.conf) 相对数据库访问配置。
-
-```postgresql
-DROP TABLE IF EXISTS public.journal;
-
-CREATE TABLE IF NOT EXISTS public.journal
-(
-    ordering        BIGSERIAL,
-    persistence_id  VARCHAR(255) NOT NULL,
-    sequence_number BIGINT       NOT NULL,
-    deleted         BOOLEAN      DEFAULT FALSE,
-    tags            VARCHAR(255) DEFAULT NULL,
-    message         BYTEA        NOT NULL,
-    PRIMARY KEY (persistence_id, sequence_number)
-);
-
-CREATE UNIQUE INDEX journal_ordering_idx ON public.journal (ordering);
-
-DROP TABLE IF EXISTS public.snapshot;
-
-CREATE TABLE IF NOT EXISTS public.snapshot
-(
-    persistence_id  VARCHAR(255) NOT NULL,
-    sequence_number BIGINT       NOT NULL,
-    created         BIGINT       NOT NULL,
-    snapshot        BYTEA        NOT NULL,
-    PRIMARY KEY (persistence_id, sequence_number)
-);
+```shell script
+docker-compose -f docker-compose.yml up -d // --build
+docker exec fusion-discoveryx_cassandra cqlsh -f /docker-entrypoint-initdb.d/cassandra-schema.cql
 ```
 
-**服务发现测试**
+`-d`后可添加参数：`postgres`或`cassandra`只启动特定数据库。
+
+### 服务发现测试
+
+*默认使用akka-persistence-jdbc(postgres) 数据库，若需要使用akka-persistence-cassandra请将测试类的配置文件修改为`application-test_cassandra.conf`。*
 
 ```sbtshell
 > discoveryx-server/testOnly fusion.discoveryx.server.route.NamingManagementRouteTest
@@ -59,3 +38,4 @@ CREATE TABLE IF NOT EXISTS public.snapshot
 | 配置持久化 | Akka Persistence      |
 | 容错与扩展 | Akka Cluster Sharding |
 | REST       | Akka HTTP             |
+

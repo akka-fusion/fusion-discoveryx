@@ -26,15 +26,14 @@ ThisBuild / sonarUseExternalConfig := true
 
 lazy val root = Project(id = "fusion-discoveryx", base = file("."))
   .aggregate(discoveryxFunctest, discoveryxServer, discoveryxClient, discoveryxCommon)
-  .settings(Publishing.noPublish: _*)
   .settings(Environment.settings: _*)
-  .settings(aggregate in sonarScan := false)
+  .settings(skip in publish := true, aggregate in sonarScan := false)
 
 lazy val discoveryxDocs = _project("discoveryx-docs")
   .enablePlugins(ParadoxMaterialThemePlugin)
   .dependsOn(discoveryxFunctest, discoveryxServer, discoveryxClient, discoveryxCommon)
-  .settings(Publishing.noPublish: _*)
   .settings(
+    skip in publish := true,
     Compile / paradoxMaterialTheme ~= {
       _.withLanguage(java.util.Locale.SIMPLIFIED_CHINESE)
         .withColor("indigo", "red")
@@ -55,17 +54,17 @@ lazy val discoveryxDocs = _project("discoveryx-docs")
 lazy val discoveryxFunctest = _project("discoveryx-functest")
   .enablePlugins(MultiJvmPlugin)
   .dependsOn(discoveryxServer, discoveryxClient)
-  .settings(Publishing.noPublish)
   .configs(MultiJvm)
   .settings(
+    skip in publish := true,
     jvmOptions in MultiJvm := Seq("-Xmx512M"),
     libraryDependencies ++= Seq(_akkaMultiNodeTestkit % Test) ++ _akkaHttps)
 
 lazy val discoveryxServer = _project("discoveryx-server")
   .enablePlugins(JavaAgent, AkkaGrpcPlugin, JavaAppPackaging)
   .dependsOn(discoveryxCommon)
-  .settings(Publishing.noPublish: _*)
   .settings(
+    skip in publish := true,
     javaAgents += _alpnAgent % "runtime;test",
     akkaGrpcGeneratedSources := Seq(AkkaGrpc.Server),
     libraryDependencies ++= Seq(
@@ -75,7 +74,8 @@ lazy val discoveryxServer = _project("discoveryx-server")
         _fusionCore,
         _akkaPersistenceQuery,
         _akkaPersistenceJdbc,
-        _akkaPersistenceTyped) ++ _akkaHttps ++ _akkaClusters)
+        _akkaPersistenceTyped,
+        _akkaPersistenceCassandraLauncher % Test) ++ _akkaHttps ++ _akkaClusters ++ _akkaPersistenceCassandras)
 
 lazy val discoveryxClient =
   _project("discoveryx-client")

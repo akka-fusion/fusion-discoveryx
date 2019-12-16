@@ -165,10 +165,19 @@ object Dependencies {
       .excludeAll(ExclusionRule("com.typesafe.akka"))
       .cross(CrossVersion.binary)
 
-  val _akkaPersistenceCassandra =
-    ("com.typesafe.akka" %% "akka-persistence-cassandra" % "0.100")
-      .excludeAll(ExclusionRule("com.typesafe.akka"))
+  val _akkaPersistenceCassandras = Seq("com.typesafe.akka" %% "akka-persistence-cassandra" % "0.101").map(
+    _.exclude("org.scala-lang", "scala-library")
       .cross(CrossVersion.binary)
+      .exclude("com.typesafe.akka", "akka-cluster-tools")
+      .cross(CrossVersion.binary)
+      .exclude("com.typesafe.akka", "akka-cluster-tools")
+      .cross(CrossVersion.binary)
+      .exclude("com.typesafe.akka", "akka-persistence")
+      .cross(CrossVersion.binary)
+      .exclude("com.typesafe.akka", "akka-persistence-query")
+      .cross(CrossVersion.binary))
+
+  val _akkaPersistenceCassandraLauncher = "com.typesafe.akka" %% "akka-persistence-cassandra-launcher" % "0.101"
 
   val _akkaPersistenceJdbc =
     ("com.github.dnvriend" %% "akka-persistence-jdbc" % "3.5.2")

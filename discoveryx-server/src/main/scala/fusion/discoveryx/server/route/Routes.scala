@@ -28,13 +28,15 @@ import fusion.discoveryx.server.naming.NamingSettings
 
 import scala.concurrent.Future
 
-class Routes(discoveryX: DiscoveryX, configSettings: ConfigSettings, namingSettings: NamingSettings)
-    extends StrictLogging {
+class Routes(discoveryX: DiscoveryX) extends StrictLogging {
+  private implicit val system = discoveryX.system
+  private val configSettings = ConfigSettings(system)
+  private val namingSettings = NamingSettings(system)
   private var openRoutes: List[Route] = Nil
   private var managementRoutes: List[Route] = Nil
   private var grpcHandlers: List[PartialFunction[HttpRequest, Future[HttpResponse]]] = Nil
   if (configSettings.enable) {
-    val c = new ConfigRoute(discoveryX, configSettings)
+    val c = new ConfigRoute(configSettings)
     openRoutes ::= c.openRoute
     managementRoutes ::= c.managementRoute
     grpcHandlers :::= c.grpcHandler

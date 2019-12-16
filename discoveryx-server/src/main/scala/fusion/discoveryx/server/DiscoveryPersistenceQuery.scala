@@ -17,12 +17,22 @@
 package fusion.discoveryx.server
 
 import akka.actor.typed.ActorSystem
+import akka.persistence.cassandra.query.scaladsl.CassandraReadJournal
 import akka.persistence.jdbc.query.scaladsl.JdbcReadJournal
 import akka.persistence.query.PersistenceQuery
+import com.typesafe.scalalogging.StrictLogging
 
-class DiscoveryPersistenceQuery private (system: ActorSystem[_]) {
+class DiscoveryPersistenceQuery private (system: ActorSystem[_]) extends StrictLogging {
   def readJournal: DiscoveryXReadJournal = {
-    PersistenceQuery(system).readJournalFor[JdbcReadJournal](JdbcReadJournal.Identifier)
+    val reader = system.settings.config.getString("akka.persistence.journal.plugin") match {
+      case s if s.startsWith("cassandra") =>
+        PersistenceQuery(system).readJournalFor[CassandraReadJournal](CassandraReadJournal.Identifier)
+      case s if s.startsWith("jdbc") =>
+        PersistenceQuery(system).readJournalFor[JdbcReadJournal](JdbcReadJournal.Identifier)
+      case s => throw new ExceptionInInitializerError(s"无效的akka-persistence：$s！只支持：cassandra-journal、jdbc-journal。")
+    }
+    logger.debug(s"ReadJournal is $reader")
+    reader
   }
 }
 

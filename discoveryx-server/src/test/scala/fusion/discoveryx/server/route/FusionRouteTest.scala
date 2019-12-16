@@ -28,6 +28,8 @@ import org.scalatest.{ EitherValues, Matchers, OptionValues, Suite }
 
 import scala.concurrent.duration._
 
+// TODO 不依赖 DiscoveryX，依赖 SpawnFactory 即可
+
 trait FusionRouteTest extends ScalatestRouteTest with Matchers with OptionValues with EitherValues with ScalaFutures {
   this: Suite =>
   protected implicit val timeout: RouteTestTimeout = RouteTestTimeout(5.seconds.dilated)

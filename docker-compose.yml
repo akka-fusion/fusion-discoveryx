@@ -1,0 +1,28 @@
+# For detailed information about docker-compose visit https://docs.docker.com/compose/
+# To start all docker containers required to execute the tests locally run:
+# docker-compose up
+
+version: '3'
+services:
+  cassandra:
+    container_name: fusion-discoveryx_cassandra
+    build:
+      context: ./scripts/dockers/cassandra
+      dockerfile: Dockerfile
+    ports:
+      - "9042:9042"
+    volumes:
+      - ./discoveryx-server/target/database/cassandra:/var/lib/cassandra
+  postgres:
+    container_name: fusion-discoveryx_postgres
+    build:
+      context: ./scripts/dockers/postgres
+      dockerfile: Dockerfile
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: fusion_discoveryx
+      POSTGRES_USER: devuser
+      POSTGRES_PASSWORD: devPass.2019
+    volumes:
+      - ./discoveryx-server/target/database/postgres:/var/lib/postgresql/data

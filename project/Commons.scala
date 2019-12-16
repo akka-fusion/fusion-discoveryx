@@ -1,3 +1,4 @@
+import bintray.BintrayKeys._
 import com.typesafe.sbt.SbtNativePackager.autoImport.maintainer
 import de.heikoseeberger.sbtheader.HeaderPlugin.autoImport.{ HeaderLicense, headerLicense }
 import sbt.Keys._
@@ -34,6 +35,7 @@ object Commons {
       shellPrompt := { s =>
         Project.extract(s).currentProject.id + " > "
       },
+      resolvers += Resolver.sonatypeRepo("snapshots"),
       resolvers += "hongkazhijia.com sbt".at("https://artifactory.hongkazhijia.com/artifactory/sbt-release"),
       fork in run := true,
       fork in Test := true,
@@ -54,18 +56,15 @@ object Commons {
 
 object Publishing {
   lazy val publishing = Seq(
-    publishTo := (if (version.value.endsWith("-SNAPSHOT")) {
-                    Some("Helloscala_sbt-public_snapshot".at(
-                      "https://artifactory.hongkazhijia.com/artifactory/sbt-release;build.timestamp=" + new java.util.Date().getTime))
-                  } else {
-                    Some(
-                      "Helloscala_sbt-public_release".at(
-                        "https://artifactory.hongkazhijia.com/artifactory/libs-release"))
-                  }),
-    credentials += Credentials(Path.userHome / ".ivy2" / ".credentials_akka-fusion"))
-
-  lazy val noPublish =
-    Seq(publish := ((): Unit), publishLocal := ((): Unit), publishTo := None)
+    bintrayOrganization := Some("akka-fusion"),
+    bintrayRepository := "maven",
+    //    publishTo := (if (version.value.endsWith("-SNAPSHOT"))
+    //                    Some("Helloscala_sbt-public_snapshot".at("https://api.bintray.com/maven/akka-fusion/releases"))
+    //                  else Some("akka-fusion_releases".at("https://api.bintray.com/maven/akka-fusion/releases"))),
+    scmInfo := Some(
+        ScmInfo(
+          url("https://github.com/akka-fusion/akka-fusion"),
+          "scm:git:git@github.com:akka-fusion/akka-fusion.git")))
 }
 
 object Environment {

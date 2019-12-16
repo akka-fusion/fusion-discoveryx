@@ -104,7 +104,8 @@ class ConfigEntity private (
       context.log.debug(s"PublishConfig($in, $replyTo)")
 
       if (state.configItem.contains(in)) {
-        Effect.reply(replyTo)(ConfigReply(IntStatus.OK, "Not need update."))
+        Effect.reply(replyTo)(
+          ConfigReply(IntStatus.OK, "Not need update.", ConfigReply.Data.Config(state.configItem.get)))
       } else {
         val event =
           ChangedConfigEvent(Some(in), if (state.configItem.isEmpty) ChangeType.CHANGE_ADD else ChangeType.CHANGE_SAVE)

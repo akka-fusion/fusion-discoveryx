@@ -30,6 +30,7 @@ import helloscala.common.IntStatus
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
+import scala.util.{ Failure, Success }
 
 object ConfigManager {
   trait Command
@@ -54,7 +55,10 @@ class ConfigManager private (namespace: String, context: ActorContext[Command]) 
   def init(): Behavior[Command] =
     Behaviors.receiveMessage[Command] {
       case ConfigManagerCommand(replyTo, cmd) =>
-        onManagerCommand(cmd).foreach(replyTo ! _)
+        onManagerCommand(cmd).onComplete {
+          case Success(value) => replyTo ! value
+          case Failure(e)     => replyTo ! ConfigResponse(IntStatus.INTERNAL_ERROR, e.getMessage)
+        }
         Behaviors.same
       case InternalConfigKeys(keys) =>
         for (key <- keys if !configKeys.contains(key)) {
@@ -100,7 +104,6 @@ class ConfigManager private (namespace: String, context: ActorContext[Command]) 
       Future
         .sequence(futures)
         .map(replies => ConfigResponse(IntStatus.OK, data = Data.Listed(ConfigQueried(replies.flatMap(_.data.config)))))
-        .recover { case e => ConfigResponse(IntStatus.INTERNAL_ERROR, e.getMessage) }
     } else {
       Future.successful(ConfigResponse(IntStatus.OK, data = Data.Listed(ConfigQueried())))
     }
@@ -116,9 +119,6 @@ class ConfigManager private (namespace: String, context: ActorContext[Command]) 
       .map {
         case value if IntStatus.isSuccess(value.status) => ConfigResponse(value.status, data = onSuccess(value.data))
         case value                                      => ConfigResponse(value.status, value.message)
-      }
-      .recover {
-        case exception => ConfigResponse(IntStatus.INTERNAL_ERROR, exception.getMessage)
       }
   }
 }

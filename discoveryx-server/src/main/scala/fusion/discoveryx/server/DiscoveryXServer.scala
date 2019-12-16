@@ -34,15 +34,13 @@ import scala.util.{ Failure, Success }
 
 class DiscoveryXServer private (discoveryX: DiscoveryX) extends StrictLogging {
   FusionCore(discoveryX.system)
-  val configSettings = new ConfigSettings(Configuration(discoveryX.config))
-  val namingSettings = new NamingSettings(Configuration(discoveryX.config))
 
   def start(): Unit = {
     startHttp()(discoveryX.classicSystem)
   }
 
   private def startHttp()(implicit system: classic.ActorSystem): Unit = {
-    val route = new Routes(discoveryX, configSettings, namingSettings).route
+    val route = new Routes(discoveryX).route
     val config = discoveryX.config
     Http()
       .bindAndHandleAsync(

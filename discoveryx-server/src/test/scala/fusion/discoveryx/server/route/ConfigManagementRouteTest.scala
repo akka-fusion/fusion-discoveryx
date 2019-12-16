@@ -26,7 +26,7 @@ import helloscala.common.IntStatus
 import org.scalatest.WordSpec
 
 class ConfigManagementRouteTest extends WordSpec with FusionRouteTest with StrictLogging {
-  lazy private val configRoute = new ConfigRoute(discoveryX, ConfigSettings(discoveryX.system))
+  lazy private val configRoute = new ConfigRoute(ConfigSettings(discoveryX.system))(discoveryX.system)
   lazy private val route = configRoute.managementRoute
 
   "ConfigManagementRoute" must {
@@ -89,7 +89,7 @@ class ConfigManagementRouteTest extends WordSpec with FusionRouteTest with Stric
         status shouldBe StatusCodes.OK
         val configResponse = responseAs[ConfigResponse]
         println("getConfig response is " + ProtobufJson4s.toJsonString(configResponse))
-        configResponse.status should be(IntStatus.OK)
+        configResponse.status should be(IntStatus.NOT_FOUND)
       }
     }
   }

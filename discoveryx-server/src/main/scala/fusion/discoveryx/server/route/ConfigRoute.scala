@@ -23,27 +23,25 @@ import akka.http.scaladsl.model.{ HttpRequest, HttpResponse }
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.stream.{ Materializer, SystemMaterializer }
-import fusion.common.FusionProtocol
-import fusion.discoveryx.DiscoveryX
 import fusion.discoveryx.grpc.ConfigServiceHandler
 import fusion.discoveryx.model.{ ConfigGet, ConfigItem, ConfigRemove }
 import fusion.discoveryx.server.ConfigLeader
-import fusion.discoveryx.server.config.service.{ ConfigManagerServiceImpl, ConfigServiceImpl }
 import fusion.discoveryx.server.config.ConfigSettings
+import fusion.discoveryx.server.config.service.{ ConfigManagerServiceImpl, ConfigServiceImpl }
 import fusion.discoveryx.server.grpc.ConfigManagerServiceHandler
 import fusion.discoveryx.server.protocol.ListConfig
 
 import scala.concurrent.Future
 
-class ConfigRoute(discoveryX: DiscoveryX, configSettings: ConfigSettings) {
-  implicit val system: ActorSystem[FusionProtocol.Command] = discoveryX.system
+class ConfigRoute(configSettings: ConfigSettings)(implicit system: ActorSystem[_]) {
   ClusterSingleton(system).init(SingletonActor(ConfigLeader(), ConfigLeader.NAME))
   private val configService = new ConfigServiceImpl()
   private val configManagerService = new ConfigManagerServiceImpl()
 
   val grpcHandler: List[PartialFunction[HttpRequest, Future[HttpResponse]]] = {
+    import akka.actor.typed.scaladsl.adapter._
     implicit val mat: Materializer = SystemMaterializer(system).materializer
-    implicit val classicSystem: actor.ActorSystem = discoveryX.classicSystem
+    implicit val classicSystem: actor.ActorSystem = system.toClassic
     ConfigServiceHandler.partial(configService) :: ConfigManagerServiceHandler.partial(configManagerService) :: Nil
   }
 
