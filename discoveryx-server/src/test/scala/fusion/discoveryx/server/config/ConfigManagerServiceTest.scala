@@ -28,7 +28,6 @@ class ConfigManagerServiceTest extends ScalaTestWithActorTestKit with WordSpecLi
 
   "ConfigManagerService" must {
     val namespace = "me.yangbajing"
-    val dataId = "akka"
 
     "listConfig" in {
       val resp = configManagerService.listConfig(ListConfig(namespace)).futureValue

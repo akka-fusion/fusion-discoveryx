@@ -21,11 +21,11 @@ import akka.http.scaladsl.server.Route
 import akka.{ actor => classic }
 import com.typesafe.config.{ Config, ConfigFactory }
 import com.typesafe.scalalogging.StrictLogging
+import fusion.common.config.FusionConfigFactory
 import fusion.core.extension.FusionCore
 import fusion.discoveryx.DiscoveryX
 import fusion.discoveryx.common.Constants
 import fusion.discoveryx.server.route.Routes
-import helloscala.common.config.FusionConfigFactory
 
 import scala.util.{ Failure, Success }
 

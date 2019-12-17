@@ -35,12 +35,11 @@ object Commons {
       shellPrompt := { s =>
         Project.extract(s).currentProject.id + " > "
       },
+      resolvers += "Bintray akka-fusion".at("https://akka-fusion.bintray.com/maven"),
       resolvers += Resolver.sonatypeRepo("snapshots"),
-      resolvers += "hongkazhijia.com sbt".at("https://artifactory.hongkazhijia.com/artifactory/sbt-release"),
       fork in run := true,
       fork in Test := true,
-      parallelExecution in Test := false,
-      libraryDependencies ++= Seq(Dependencies._scalatest % Test)) ++ Environment.settings // ++ Formatting.settings
+      parallelExecution in Test := false) ++ Environment.settings // ++ Formatting.settings
 }
 
 object Publishing {
@@ -77,7 +76,6 @@ object Environment {
 }
 
 object Packaging {
-  // Good example https://github.com/typesafehub/activator/blob/master/project/Packaging.scala
   import Environment.{ BuildEnv, buildEnv }
   import com.typesafe.sbt.SbtNativePackager._
   import com.typesafe.sbt.packager.Keys._
@@ -88,10 +86,8 @@ object Packaging {
   val stage = TaskKey[File]("stage")
   val dist = TaskKey[File]("dist")
 
-  val settings = Seq(
-    name in Universal := s"${name.value}",
-    dist := (packageBin in Universal).value,
-    mappings in Universal += {
+  val settings =
+    Seq(name in Universal := s"${name.value}", dist := (packageBin in Universal).value, mappings in Universal += {
       val confFile = buildEnv.value match {
         case BuildEnv.Developement => "dev.conf"
         case BuildEnv.Test         => "test.conf"
@@ -99,14 +95,7 @@ object Packaging {
         case BuildEnv.Production   => "prod.conf"
       }
       (sourceDirectory(_ / "universal" / "conf").value / confFile) -> "conf/application.conf"
-    },
-    bashScriptExtraDefines ++= Seq(
-        """addJava "-Dconfig.file=${app_home}/../conf/application.conf"""",
-        """addJava "-Dpidfile.path=${app_home}/../run/%s.pid"""".format(name.value),
-        """addJava "-Dlogback.configurationFile=${app_home}/../conf/logback.xml""""),
-    bashScriptConfigLocation := Some("${app_home}/../conf/jvmopts"),
-    scriptClasspath := Seq("*"),
-    mappings in (Compile, packageDoc) := Seq())
+    }, mappings in (Compile, packageDoc) := Seq())
 
   // Create a new MergeStrategy for aop.xml files
   val aopMerge: MergeStrategy = new MergeStrategy {

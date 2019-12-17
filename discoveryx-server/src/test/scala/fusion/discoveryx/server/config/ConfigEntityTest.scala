@@ -21,12 +21,12 @@ import akka.actor.typed.scaladsl.AskPattern._
 import akka.cluster.sharding.typed.ShardingEnvelope
 import akka.util.Timeout
 import com.typesafe.config.ConfigFactory
+import fusion.common.config.FusionConfigFactory
 import fusion.core.extension.FusionCore
 import fusion.discoveryx.common.Constants
-import fusion.discoveryx.model.{ ConfigGet, ConfigItem, ConfigRemove, ConfigReply, ConfigType }
+import fusion.discoveryx.model._
 import fusion.discoveryx.server.protocol.{ GetConfig, PublishConfig, RemoveConfig }
 import fusion.discoveryx.server.util.ProtobufJson4s
-import helloscala.common.config.FusionConfigFactory
 import org.scalatest.WordSpecLike
 
 import scala.concurrent.Await
