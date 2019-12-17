@@ -22,7 +22,7 @@ import akka.actor.typed.{ ActorRef, ActorSystem, Behavior }
 import akka.cluster.sharding.typed.ShardingEnvelope
 import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, Entity, EntityTypeKey }
 import akka.util.Timeout
-import fusion.discoveryx.model.{ ConfigGet, ConfigQueried, ConfigReply }
+import fusion.discoveryx.model.{ ConfigBasic, ConfigGet, ConfigItem, ConfigQueried, ConfigReply }
 import fusion.discoveryx.server.protocol.ConfigManagerCommand.Cmd
 import fusion.discoveryx.server.protocol.ConfigResponse.Data
 import fusion.discoveryx.server.protocol._
@@ -101,13 +101,18 @@ class ConfigManager private (namespace: String, context: ActorContext[Command]) 
             ShardingEnvelope(ConfigEntity.makeEntityId(configKey), GetConfig(ConfigGet(cmd.namespace), replyTo)))
         }
         .toVector
-      Future
-        .sequence(futures)
-        .map(replies => ConfigResponse(IntStatus.OK, data = Data.Listed(ConfigQueried(replies.flatMap(_.data.config)))))
+      Future.sequence(futures).map { replies =>
+        val configs = replies.collect {
+          case reply if IntStatus.isSuccess(reply.status) && reply.data.isConfig => itemToBasic(reply.data.config.get)
+        }
+        ConfigResponse(IntStatus.OK, data = Data.Listed(ConfigQueried(configs)))
+      }
     } else {
       Future.successful(ConfigResponse(IntStatus.OK, data = Data.Listed(ConfigQueried())))
     }
   }
+
+  private def itemToBasic(item: ConfigItem) = ConfigBasic(item.dataId, item.groupName, item.`type`)
 
   private def askConfig(
       dataId: String,

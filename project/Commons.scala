@@ -40,31 +40,24 @@ object Commons {
       fork in run := true,
       fork in Test := true,
       parallelExecution in Test := false,
-      libraryDependencies ++= Seq(Dependencies._scalatest % Test),
-      maintainer := "yangbajing <yang.xunjing@qq.com>",
-      scmInfo := Some(
-          ScmInfo(
-            url("https://github.com/akka-fusion/akka-fusion.git"),
-            "scm:git@github.com:akka-fusion/akka-fusion.git")),
-      developers := List(
-          Developer(
-            id = "yangbajing",
-            name = "Yang Jing",
-            email = "yang.xunjing@qq.com",
-            url = url("https://github.com/yangbajing")))) ++ Environment.settings // ++ Formatting.settings
+      libraryDependencies ++= Seq(Dependencies._scalatest % Test)) ++ Environment.settings // ++ Formatting.settings
 }
 
 object Publishing {
   lazy val publishing = Seq(
     bintrayOrganization := Some("akka-fusion"),
     bintrayRepository := "maven",
-    //    publishTo := (if (version.value.endsWith("-SNAPSHOT"))
-    //                    Some("Helloscala_sbt-public_snapshot".at("https://api.bintray.com/maven/akka-fusion/releases"))
-    //                  else Some("akka-fusion_releases".at("https://api.bintray.com/maven/akka-fusion/releases"))),
+    maintainer := "yangbajing <yang.xunjing@qq.com>",
     scmInfo := Some(
         ScmInfo(
-          url("https://github.com/akka-fusion/akka-fusion"),
-          "scm:git:git@github.com:akka-fusion/akka-fusion.git")))
+          url("https://github.com/akka-fusion/fusion-discoveryx.git"),
+          "scm:git@github.com:akka-fusion/fusion-discoveryx.git")),
+    developers := List(
+        Developer(
+          id = "yangbajing",
+          name = "Yang Jing",
+          email = "yang.xunjing@qq.com",
+          url = url("https://github.com/yangbajing"))))
 }
 
 object Environment {

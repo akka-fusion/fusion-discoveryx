@@ -3,6 +3,7 @@ package fusion.discoveryx.grpc;
 
 import "fusion/discoveryx/model/discoveryx.proto";
 
+// #ConfigService
 service ConfigService {
     // #ServerStatus
     // 查询服务状态
@@ -34,7 +35,9 @@ service ConfigService {
     }
     // #ListenerConfig
 }
+// #ConfigService
 
+// #NamingService
 service NamingService {
     // #QueryInstance
     // 查询实例
@@ -77,3 +80,4 @@ service NamingService {
     }
     // #ServerStatus
 }
+// #NamingService

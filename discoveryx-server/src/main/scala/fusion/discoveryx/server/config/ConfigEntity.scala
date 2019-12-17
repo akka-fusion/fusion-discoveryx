@@ -72,7 +72,6 @@ class ConfigEntity private (
     namespace: String,
     dataId: String,
     context: ActorContext[Command]) {
-  private implicit val system = context.system
   private var listeners = List.empty[ActorRef[ConfigEntity.Event]]
   context.log.info(s"Entity startup: persistenceId: $persistenceId")
 

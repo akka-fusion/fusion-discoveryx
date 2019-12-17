@@ -20,7 +20,7 @@
 
 <meta name="description" content="discoveryx-docs">
 <link rel="shortcut icon" href="../assets/images/favicon.png">
-<title>开放API · Fusion DiscoveryX</title>
+<title>开放API</title>
 <link rel="stylesheet" href="../assets/stylesheets/application.451f80e5.css">
 <link rel="stylesheet" href="../assets/stylesheets/application-palette.22915126.css">
 <meta name="theme-color" content="#3f51b5" />
@@ -47,7 +47,7 @@ data-md-color-accent="red"
 <nav class="md-header-nav md-grid">
 <div class="md-flex">
 <div class="md-flex__cell md-flex__cell--shrink">
-<a href="../index.html" title="Fusion DiscoveryX" class="md-header-nav__button md-logo">
+<a href="../api/open-api.html" title="开放API" class="md-header-nav__button md-logo">
 <i class="md-icon">local_library</i>
 </a>
 </div>
@@ -56,12 +56,7 @@ data-md-color-accent="red"
 </div>
 <div class="md-flex__cell md-flex__cell--stretch">
 <div class="md-flex__ellipsis md-header-nav__title" data-md-component="title">
-<span class="md-header-nav__topic">
-Fusion DiscoveryX
-</span>
-<span class="md-header-nav__topic">
 开放API
-</span>
 </div>
 </div>
 <div class="md-flex__cell md-flex__cell--shrink">
@@ -116,12 +111,12 @@ akka-fusion/fusion-discoveryx
 <div class="md-sidebar__inner">
 <nav class="md-nav md-nav--primary" data-md-level="0" style="visibility: hidden">
 <label class="md-nav__title md-nav__title--site" for="drawer">
-<a href="../index.html" title="Fusion DiscoveryX" class="md-nav__button md-logo">
+<a href="../api/open-api.html" title="开放API" class="md-nav__button md-logo">
 <span class="md-nav__button md-logo">
 <i class="md-icon">local_library</i>
 </a>
-<a href="../index.html" title="Fusion DiscoveryX">
-Fusion DiscoveryX
+<a href="../api/open-api.html" title="开放API">
+开放API
 </a>
 </label>
 <div class="md-nav__source">
@@ -139,24 +134,8 @@ akka-fusion/fusion-discoveryx
 
 </div>
 <ul>
-  <li><a href="../intro.html" class="page">介绍</a></li>
-  <li><a href="../api/index.html" class="page">API</a>
-  <ul>
-    <li><a href="../api/open-api.html" class="active page">开放API</a></li>
-    <li><a href="../api/management-api.html" class="page">管理API</a></li>
-    <li><a href="../api/json.html" class="page">JSON 说明</a></li>
-  </ul></li>
-  <li><a href="../releases.html" class="page">版本</a></li>
 </ul>
 <nav class="md-nav md-nav--secondary">
-<label class="md-nav__title" for="__toc">Table of contents</label>
-<ul>
-  <li><a href="../api/open-api.html#开放api" class="header">开放API</a>
-  <ul>
-    <li><a href="../api/open-api.html#config-配置管理-" class="header">Config（配置管理）</a></li>
-    <li><a href="../api/open-api.html#naming-服务发现-" class="header">Naming（服务发现）</a></li>
-  </ul></li>
-</ul>
 </nav>
 
 </nav>
@@ -170,360 +149,13 @@ akka-fusion/fusion-discoveryx
 </div>
 </div>
 </div>
-<div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
-<div class="md-sidebar__scrollwrap">
-<div class="md-sidebar__inner">
-<nav class="md-nav md-nav--secondary">
-<label class="md-nav__title" for="__toc">Table of contents</label>
-<ul>
-  <li><a href="../api/open-api.html#开放api" class="header">开放API</a>
-  <ul>
-    <li><a href="../api/open-api.html#config-配置管理-" class="header">Config（配置管理）</a></li>
-    <li><a href="../api/open-api.html#naming-服务发现-" class="header">Naming（服务发现）</a></li>
-  </ul></li>
-</ul>
-</nav>
-
-</div>
-</div>
-</div>
 <div class="md-content">
 <article class="md-content__inner md-typeset">
 <div class="md-content__searchable">
 <h1><a href="#开放api" name="开放api" class="anchor"><span class="anchor-link"></span></a>开放API</h1>
-<p>Fusion DiscoveryX开放API提供了配置发布、获取、管理和服务注册、负载均衡等API，提供了gRPC和REST两种实现。</p>
-<p>gRPC服务描述定义文件如下：</p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/grpc/discoveryx.proto" target="_blank" title="Go to snippet source"></a><code class="language-proto">syntax = &quot;proto3&quot;;
-package fusion.discoveryx.grpc;
-
-import &quot;fusion/discoveryx/model/discoveryx.proto&quot;;
-import &quot;fusion/define.proto&quot;;
-
-service ConfigService {
-    // 查询服务状态
-    rpc ServerStatus (fusion.discoveryx.model.ServerStatusQuery) returns (fusion.discoveryx.model.ServerStatusBO) {
-    }
-
-    // 查询配置
-    rpc QueryConfig (fusion.discoveryx.model.ConfigGet) returns (fusion.discoveryx.model.ConfigReply) {
-    }
-
-    // 发布配置
-    rpc PublishConfig (fusion.discoveryx.model.ConfigPublish) returns (fusion.discoveryx.model.ConfigReply) {
-    }
-
-    // 删除配置
-    rpc RemoveConfig (fusion.discoveryx.model.ConfigRemove) returns (fusion.discoveryx.model.ConfigReply) {
-    }
-
-    // 监听配置变化
-    rpc ListenerConfig (fusion.discoveryx.model.ConfigChangeListen) returns (stream fusion.discoveryx.model.ConfigChanged) {
-    }
-}
-
-service NamingService {
-    // 查询实例
-    rpc QueryInstance (fusion.discoveryx.model.InstanceQuery) returns (fusion.discoveryx.model.NamingReply) {
-    }
-
-    // 注册实例
-    rpc RegisterInstance (fusion.discoveryx.model.InstanceRegister) returns (fusion.discoveryx.model.NamingReply) {
-    }
-
-    // 修改实例
-    rpc ModifyInstance (fusion.discoveryx.model.InstanceModify) returns (fusion.discoveryx.model.NamingReply) {
-    }
-
-    // 删除实例
-    rpc RemoveInstance (fusion.discoveryx.model.InstanceRemove) returns (fusion.discoveryx.model.NamingReply) {
-    }
-
-    // 实例心跳消息。namespace, serviceName, ip, port, instanceId等使用metadata（HTTP Header发送）
-    //- `x-discoveryx-namespace`：命名空间
-    //- `x-discoveryx-service-name`：服务名
-    //- `x-discoveryx-ip`：服务监听IP地址
-    //- `x-discoveryx-port`：服务监听网络端口
-    //- `x-discoveryx-instance-id`：实例ID
-    rpc Heartbeat (stream fusion.discoveryx.model.InstanceHeartbeat) returns (stream fusion.discoveryx.model.ServerStatusBO) {
-    }
-
-    // 查询服务状态
-    rpc ServerStatus (fusion.discoveryx.model.ServerStatusQuery) returns (fusion.discoveryx.model.ServerStatusBO) {
-    }
-}</code></pre>
-<h2><a href="#config-配置管理-" name="config-配置管理-" class="anchor"><span class="anchor-link"></span></a>Config（配置管理）</h2>
-<ul>
-  <li>gRPC服务地址：<code>/fusion.discoveryx.grpc.ConfigService</code></li>
-  <li>REST URL前缀：<code>/fusion/discoveryx/v1/config</code></li>
-</ul>
-<p>REST URL路径由 <strong>REST URL前缀</strong> + 服务名组织，均使用 <strong>POST</strong> 方法的请求，JSON序例化格式。如查询配置接口访问地址为：<code>POST /fusion/discoveryx/v1/config/QueryConfig</code>。Protobuf与JSON格式转换请参阅： <a href="json.html">JSON 说明</a>。</p>
-<h3><a href="#queryconfig-查询配置" name="queryconfig-查询配置" class="anchor"><span class="anchor-link"></span></a>QueryConfig 查询配置</h3>
-<p><strong>gRPC</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/grpc/discoveryx.proto#L15-L17" target="_blank" title="Go to snippet source"></a><code class="language-proto">// 查询配置
-rpc QueryConfig (fusion.discoveryx.model.ConfigGet) returns (fusion.discoveryx.model.ConfigReply) {
-}</code></pre>
-<p><strong>请求</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L24-L27" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ConfigGet {
-    string namespace = 1;
-    string data_id = 2;
-}</code></pre>
-<p><strong>响应</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L95-L103" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ConfigReply {
-    int32 status = 1;
-    string message = 2;
-    oneof data {
-        ConfigItem config = 3;
-        ConfigQueried queried = 4;
-        ConfigPublished published = 5;
-    }
-}</code></pre>
-<p><code>oneof</code>的<code>queried</code>字段将返回已注册实例信息，如下：</p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L32-L52" target="_blank" title="Go to snippet source"></a><code class="language-proto">enum ConfigType {
-    TEXT = 0;
-    HOCON = 1;
-    JSON = 2;
-    YAML = 3;
-    PROPERTIES = 4;
-    INI = 5;
-}
-
-message ConfigItem {
-    string namespace = 1;
-    string data_id = 2;
-    string group_name = 3;
-    string content = 4;
-    ConfigType type = 5;
-}
-message ConfigQueried {
-    repeated ConfigItem configs = 1;
-}</code></pre>
-<h3><a href="#publishconfig-发布配置" name="publishconfig-发布配置" class="anchor"><span class="anchor-link"></span></a>PublishConfig 发布配置</h3>
-<p><strong>gRPC</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/grpc/discoveryx.proto#L21-L23" target="_blank" title="Go to snippet source"></a><code class="language-proto">// 发布配置
-rpc PublishConfig (fusion.discoveryx.model.ConfigPublish) returns (fusion.discoveryx.model.ConfigReply) {
-}</code></pre>
-<p><strong>请求</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L57-L67" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ConfigPublish {
-    string namespace = 1;
-    string data_id = 2;
-    string group_name = 3;
-    string content = 4;
-    ConfigType type = 5;
-}
-message ConfigPublished {
-    string version = 1;
-    google.protobuf.StringValue old_content = 2;
-}</code></pre>
-<p><strong>响应</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L95-L103" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ConfigReply {
-    int32 status = 1;
-    string message = 2;
-    oneof data {
-        ConfigItem config = 3;
-        ConfigQueried queried = 4;
-        ConfigPublished published = 5;
-    }
-}</code></pre>
-<h3><a href="#removeconfig-删除配置" name="removeconfig-删除配置" class="anchor"><span class="anchor-link"></span></a>RemoveConfig 删除配置</h3>
-<p><strong>gRPC</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/grpc/discoveryx.proto#L27-L29" target="_blank" title="Go to snippet source"></a><code class="language-proto">// 删除配置
-rpc RemoveConfig (fusion.discoveryx.model.ConfigRemove) returns (fusion.discoveryx.model.ConfigReply) {
-}</code></pre>
-<p><strong>请求</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L71-L74" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ConfigRemove {
-    string namespace = 1;
-    string data_id = 2;
-}</code></pre>
-<p><strong>响应</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L95-L103" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ConfigReply {
-    int32 status = 1;
-    string message = 2;
-    oneof data {
-        ConfigItem config = 3;
-        ConfigQueried queried = 4;
-        ConfigPublished published = 5;
-    }
-}</code></pre>
-<h3><a href="#listenerconfig-监听配置变化" name="listenerconfig-监听配置变化" class="anchor"><span class="anchor-link"></span></a>ListenerConfig 监听配置变化</h3>
-<p><strong>gRPC</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/grpc/discoveryx.proto#L33-L35" target="_blank" title="Go to snippet source"></a><code class="language-proto">// 监听配置变化
-rpc ListenerConfig (fusion.discoveryx.model.ConfigChangeListen) returns (stream fusion.discoveryx.model.ConfigChanged) {
-}</code></pre>
-<p><strong>请求</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L78-L81" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ConfigChangeListen {
-    string namespace = 1;
-    string data_id = 2;
-}</code></pre>
-<p><strong>响应</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L85-L91" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ConfigChanged {
-    fusion.discoveryx.model.ConfigItem config = 1 [(scalapb.field).no_box = true];
-    fusion.discoveryx.model.ConfigItem old = 2;
-    int32 version = 3;
-    bool exit = 4;
-    int32 change_type = 7; // 1: add, 2: update, 3: delete
-}</code></pre>
-<h2><a href="#naming-服务发现-" name="naming-服务发现-" class="anchor"><span class="anchor-link"></span></a>Naming（服务发现）</h2>
-<ul>
-  <li>gRPC服务地址：<code>/fusion.discoveryx.grpc.NamingService</code></li>
-  <li>REST URL前缀：<code>/fusion/discoveryx/v1/naming</code></li>
-</ul>
-<p>REST URL路径由 <strong>REST URL前缀</strong> + 服务名组织，均使用 <strong>POST</strong> 方法的请求，JSON序例化格式。如查询实例接口访问地址为：<code>POST /fusion/discoveryx/v1/naming/QueryInstance</code>。Protobuf与JSON格式转换请参阅： <a href="json.html">JSON 说明</a>。</p>
-<h3><a href="#registerinstance-注册实例" name="registerinstance-注册实例" class="anchor"><span class="anchor-link"></span></a>RegisterInstance 注册实例</h3>
-<p><strong>gRPC</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/grpc/discoveryx.proto#L47-L49" target="_blank" title="Go to snippet source"></a><code class="language-proto">// 注册实例
-rpc RegisterInstance (fusion.discoveryx.model.InstanceRegister) returns (fusion.discoveryx.model.NamingReply) {
-}</code></pre>
-<p><strong>请求</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L134-L148" target="_blank" title="Go to snippet source"></a><code class="language-proto">message InstanceRegister {
-    string namespace = 1;
-    string service_name = 2;
-    string group_name = 3;
-    string ip = 4;
-    int32 port = 5;
-    // instance weight
-    double weight = 6;
-    // instance health status
-    bool health = 7;
-    // If instance is enabled to accept request
-    bool enable = 8;
-    // user extended attributes
-    map&lt;string, string&gt; metadata = 9;
-}</code></pre>
-<p><strong>响应</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L201-L208" target="_blank" title="Go to snippet source"></a><code class="language-proto">message NamingReply {
-    int32 status = 1;
-    string message = 2;
-    oneof data {
-        InstanceQueryResult queried = 3;
-        Instance instance = 4;
-    }
-}</code></pre>
-<h4><a href="#instance" name="instance" class="anchor"><span class="anchor-link"></span></a>Instance</h4>
-<p><code>oneof</code>的<code>instance</code>字段将返回已注册实例信息，如下：</p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L111-L130" target="_blank" title="Go to snippet source"></a><code class="language-proto">message Instance {
-    // unique id of this instance.
-    string instance_id = 1;
-    // Service information of instance
-    string namespace = 2;
-    string service_name = 3;
-    string group_name = 4;
-    // instance ip
-    string ip = 5;
-    // instance port
-    int32 port = 6;
-    // instance weight
-    double weight = 7;
-    // instance health status
-    bool healthy = 8;
-    // If instance is enabled to accept request
-    bool enabled = 9;
-    // user extended attributes
-    map&lt;string, string&gt; metadata = 10;
-}</code></pre>
-<h3><a href="#removeinstance-删除实例" name="removeinstance-删除实例" class="anchor"><span class="anchor-link"></span></a>RemoveInstance 删除实例</h3>
-<p><strong>gRPC</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/grpc/discoveryx.proto#L59-L61" target="_blank" title="Go to snippet source"></a><code class="language-proto">// 删除实例
-rpc RemoveInstance (fusion.discoveryx.model.InstanceRemove) returns (fusion.discoveryx.model.NamingReply) {
-}</code></pre>
-<p><strong>请求</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L173-L177" target="_blank" title="Go to snippet source"></a><code class="language-proto">message InstanceRemove {
-    string namespace = 1;
-    string service_name = 2;
-    string instance_id = 3;
-}</code></pre>
-<p><strong>响应</strong></p>
-<p>删除实例没有<code>oneof</code>字段返回。</p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L201-L208" target="_blank" title="Go to snippet source"></a><code class="language-proto">message NamingReply {
-    int32 status = 1;
-    string message = 2;
-    oneof data {
-        InstanceQueryResult queried = 3;
-        Instance instance = 4;
-    }
-}</code></pre>
-<h3><a href="#queryinstance-查询实例" name="queryinstance-查询实例" class="anchor"><span class="anchor-link"></span></a>QueryInstance 查询实例</h3>
-<p><strong>gRPC</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/grpc/discoveryx.proto#L41-L43" target="_blank" title="Go to snippet source"></a><code class="language-proto">// 查询实例
-rpc QueryInstance (fusion.discoveryx.model.InstanceQuery) returns (fusion.discoveryx.model.NamingReply) {
-}</code></pre>
-<p><strong>请求</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L181-L192" target="_blank" title="Go to snippet source"></a><code class="language-proto">message InstanceQuery {
-    string namespace = 1;
-    string service_name = 2;
-    string group_name = 3;
-    // only return all healthy instances
-    bool all_healthy = 4;
-    // only return one healthy instance
-    bool one_healthy = 5;
-}
-message InstanceQueryResult {
-    repeated Instance instances = 2;
-}</code></pre>
-<p><strong>响应</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L201-L208" target="_blank" title="Go to snippet source"></a><code class="language-proto">message NamingReply {
-    int32 status = 1;
-    string message = 2;
-    oneof data {
-        InstanceQueryResult queried = 3;
-        Instance instance = 4;
-    }
-}</code></pre>
-<p>查询成功<code>oneof</code>通过<code>queried</code>字段将查询匹配到的实例返回：</p>
-<h3><a href="#modifyinstance-修改实例" name="modifyinstance-修改实例" class="anchor"><span class="anchor-link"></span></a>ModifyInstance 修改实例</h3>
-<p><strong>gRPC</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/grpc/discoveryx.proto#L53-L55" target="_blank" title="Go to snippet source"></a><code class="language-proto">// 修改实例
-rpc ModifyInstance (fusion.discoveryx.model.InstanceModify) returns (fusion.discoveryx.model.NamingReply) {
-}</code></pre>
-<p><strong>请求</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L152-L169" target="_blank" title="Go to snippet source"></a><code class="language-proto">message InstanceModify {
-    string namespace = 1;
-    string service_name = 2;
-    string instance_id = 3;
-    google.protobuf.StringValue group_name = 4;
-    google.protobuf.StringValue ip = 5;
-    google.protobuf.Int32Value port = 6;
-    // instance weight
-    google.protobuf.DoubleValue weight = 7;
-    // instance health status
-    google.protobuf.BoolValue health = 8;
-    // If instance is enabled to accept request
-    google.protobuf.BoolValue enable = 9;
-    // user extended attributes
-    map&lt;string, string&gt; metadata = 10;
-    // true：replace old metadata, false: merge old metadata
-    bool replace_metadata = 11;
-}</code></pre>
-<p><strong>响应</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L201-L208" target="_blank" title="Go to snippet source"></a><code class="language-proto">message NamingReply {
-    int32 status = 1;
-    string message = 2;
-    oneof data {
-        InstanceQueryResult queried = 3;
-        Instance instance = 4;
-    }
-}</code></pre>
-<p><code>oneof</code>的<code>instance</code>字段将返回修改后的实例信息。</p>
-<h3><a href="#heartbeat-实例心跳" name="heartbeat-实例心跳" class="anchor"><span class="anchor-link"></span></a>Heartbeat 实例心跳</h3>
-<p><strong>gRPC</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/grpc/discoveryx.proto#L65-L72" target="_blank" title="Go to snippet source"></a><code class="language-proto">// 实例心跳消息。namespace, serviceName, ip, port, instanceId等使用metadata（HTTP Header发送）
-//- `x-discoveryx-namespace`：命名空间
-//- `x-discoveryx-service-name`：服务名
-//- `x-discoveryx-ip`：服务监听IP地址
-//- `x-discoveryx-port`：服务监听网络端口
-//- `x-discoveryx-instance-id`：实例ID
-rpc Heartbeat (stream fusion.discoveryx.model.InstanceHeartbeat) returns (stream fusion.discoveryx.model.ServerStatusBO) {
-}</code></pre>
-<p><code>Heartbeat</code>接口第一次调用时需要通过<code>metadata</code>（HTTP Header）传递以下内容：</p>
-<ul>
-  <li><code>x-discoveryx-namespace</code>：命名空间</li>
-  <li><code>x-discoveryx-service-name</code>：服务名</li>
-  <li><code>x-discoveryx-ip</code>：服务监听IP地址</li>
-  <li><code>x-discoveryx-port</code>：服务监听网络端口</li>
-  <li><code>x-discoveryx-instance-id</code>：实例ID</li>
-</ul>
 </div>
 <div>
-<a href="https://github.com/akka-fusion/akka-fusion.git/tree/master/discoveryx-docs/src/main/paradox/api/open-api.md" title="Edit this page" class="md-source-file md-edit">
+<a href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-docs/src/main/paradox/api/open-api.md" title="Edit this page" class="md-source-file md-edit">
 Edit this page
 </a>
 </div>
@@ -537,36 +169,6 @@ Edit this page
 </div>
 </main>
 <footer class="md-footer">
-<div class="md-footer-nav">
-<nav class="md-footer-nav__inner md-grid">
-<a href="../api/index.html" title="API" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
-<div class="md-flex__cell md-flex__cell--shrink">
-<i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
-</div>
-<div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
-<span class="md-flex__ellipsis">
-<span class="md-footer-nav__direction">
-Previous
-</span>
-API
-</span>
-</div>
-</a>
-<a href="../api/management-api.html" title="管理API" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
-<div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
-<span class="md-flex__ellipsis">
-<span class="md-footer-nav__direction">
-Next
-</span>
-管理API
-</span>
-</div>
-<div class="md-flex__cell md-flex__cell--shrink">
-<i class="md-icon md-icon--arrow-forward md-footer-nav__button"></i>
-</div>
-</a>
-</nav>
-</div>
 <div class="md-footer-meta md-typeset">
 <div class="md-footer-meta__inner md-grid">
 <div class="md-footer-copyright">

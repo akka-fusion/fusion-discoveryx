@@ -24,10 +24,7 @@ import com.typesafe.scalalogging.StrictLogging
 import fusion.core.extension.FusionCore
 import fusion.discoveryx.DiscoveryX
 import fusion.discoveryx.common.Constants
-import fusion.discoveryx.server.config.ConfigSettings
-import fusion.discoveryx.server.naming.NamingSettings
 import fusion.discoveryx.server.route.Routes
-import helloscala.common.Configuration
 import helloscala.common.config.FusionConfigFactory
 
 import scala.util.{ Failure, Success }

@@ -78,6 +78,7 @@ message ConfigState {
 // ConfigManager
 ////////////////////////////////////////////////////////////////////////////////
 
+// #ListConfig
 message ListConfig {
     string namespace = 1;
     google.protobuf.StringValue data_id = 2;
@@ -85,6 +86,7 @@ message ListConfig {
     int32 page = 4;
     int32 size = 5;
 }
+// #ListConfig
 
 message ConfigManagerCommand {
     option (scalapb.message).extends = "fusion.discoveryx.server.config.ConfigManager.Command";
@@ -99,6 +101,7 @@ message ConfigManagerCommand {
     }
 }
 
+// #ConfigResponse
 message ConfigResponse {
     int32 status = 1;
     string message = 2;
@@ -107,6 +110,7 @@ message ConfigResponse {
         fusion.discoveryx.model.ConfigItem config = 4;
     }
 }
+// #ConfigResponse
 
 message InternalConfigKeys {
     option (scalapb.message).extends = "fusion.discoveryx.server.config.ConfigManager.Command";

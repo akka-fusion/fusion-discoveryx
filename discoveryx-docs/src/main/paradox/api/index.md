@@ -6,8 +6,8 @@
 
 @@@ index
 
-- [open api](open-api.md)
-- [management api](management-api.md)
+- [open](open/index.md)
+- [management](management/index.md)
 - [json](json.md)
 
 @@@

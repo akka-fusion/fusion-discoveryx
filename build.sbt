@@ -61,15 +61,27 @@ lazy val discoveryxFunctest = _project("discoveryx-functest")
     libraryDependencies ++= Seq(_akkaMultiNodeTestkit % Test) ++ _akkaHttps)
 
 lazy val discoveryxServer = _project("discoveryx-server")
-  .enablePlugins(JavaAgent, AkkaGrpcPlugin, JavaAppPackaging)
+  .enablePlugins(JavaAgent, AkkaGrpcPlugin, JavaAppPackaging) //, LauncherJarPlugin)
   .dependsOn(discoveryxCommon)
   .settings(
     skip in publish := true,
     javaAgents += _alpnAgent % "runtime;test",
     akkaGrpcGeneratedSources := Seq(AkkaGrpc.Server),
+    mainClass in Compile := Some("fusion.discoveryx.server.FusionDiscoveryXMain"),
+    maintainer := "yang.xunjing@qq.com",
+    bashScriptExtraDefines ++= Seq(
+        """addJava "-Dconfig.file=${app_home}/../conf/application.conf"""",
+        """addJava "-Dlogback.configurationFile=${app_home}/../conf/logback.xml""""),
+    batScriptExtraDefines ++= Seq(
+        """call :add_java "-Dconfig.file=%APP_HOME%\conf\application.conf"""",
+        """call :add_java "-Dlogback.configurationFile=${app_home}/../conf/logback.xml""""),
+    scriptClasspath := Seq("*"),
     libraryDependencies ++= Seq(
         _scalapbJson4s,
-        _postgresql,
+        _postgresql % Provided,
+        _mysql % Provided,
+        _h2,
+        _hikariCP,
         _fusionProtobufV3,
         _fusionCore,
         _akkaPersistenceQuery,

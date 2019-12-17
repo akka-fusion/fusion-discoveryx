@@ -16,11 +16,16 @@ message ServerStatusBO {
     int32 status = 1;
 }
 
+// #ChangeType
 enum ChangeType {
+    // 保存
     CHANGE_SAVE = 0;
-    CHANGE_ADD = 2;
-    CHANGE_REMOVE = 3;
+    // 添加
+    CHANGE_ADD = 1;
+    // 删除
+    CHANGE_REMOVE = 2;
 }
+// #ChangeType
 
 ////////////////////////////////////////////////////////////////////////////////
 // Config
@@ -32,6 +37,16 @@ message ConfigGet {
     string data_id = 2;
 }
 // #ConfigGet
+
+// #ConfigItem
+message ConfigItem {
+    string namespace = 1;
+    string data_id = 2;
+    string group_name = 3;
+    string content = 4;
+    ConfigType type = 5;
+}
+// #ConfigItem
 
 // #ConfigQueried
 // #ConfigType
@@ -45,18 +60,15 @@ enum ConfigType {
 }
 // #ConfigType
 
-// #ConfigItem
-message ConfigItem {
-    string namespace = 1;
-    string data_id = 2;
-    string group_name = 3;
-    string content = 4;
-    ConfigType type = 5;
+message ConfigBasic {
+    string data_id = 1;
+    string group_name = 2;
+    ConfigType type = 3;
 }
 message ConfigQueried {
-    repeated ConfigItem configs = 1;
+    repeated ConfigBasic configs = 1;
+    string namespace = 2;
 }
-// #ConfigItem
 // #ConfigQueried
 
 // #ConfigRemove
@@ -77,7 +89,7 @@ message ConfigChangeListen {
 message ConfigChanged {
     fusion.discoveryx.model.ConfigItem config = 1;
     int32 version = 2;
-    ChangeType change_type = 3; // 1: add, 2: update, 3: delete
+    ChangeType change_type = 3;
 }
 // #ConfigChanged
 
