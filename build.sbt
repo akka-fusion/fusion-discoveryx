@@ -58,7 +58,7 @@ lazy val discoveryxFunctest = _project("discoveryx-functest")
   .settings(
     skip in publish := true,
     jvmOptions in MultiJvm := Seq("-Xmx512M"),
-    libraryDependencies ++= Seq(_akkaMultiNodeTestkit % Test) ++ _akkaHttps)
+    libraryDependencies ++= Seq(_akkaMultiNodeTestkit % Test))
 
 lazy val discoveryxServer = _project("discoveryx-server")
   .enablePlugins(JavaAgent, AkkaGrpcPlugin, JavaAppPackaging) //, LauncherJarPlugin)
@@ -87,8 +87,7 @@ lazy val discoveryxServer = _project("discoveryx-server")
         _fusionCore,
         _akkaPersistenceQuery,
         _akkaPersistenceJdbc,
-        _akkaPersistenceTyped,
-        _akkaPersistenceCassandraLauncher % Test) ++ _akkaHttps ++ _akkaClusters ++ _akkaPersistenceCassandras)
+        _akkaPersistenceTyped) ++ _akkaHttps ++ _akkaClusters ++ _akkaPersistenceCassandras)
 
 lazy val discoveryxClient =
   _project("discoveryx-client")

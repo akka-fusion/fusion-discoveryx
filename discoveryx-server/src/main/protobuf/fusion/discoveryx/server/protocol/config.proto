@@ -24,37 +24,26 @@ message RegisterChangeListener {
     string listener_id = 2;
 }
 
-message GetConfig {
-    option (scalapb.message).extends = "fusion.discoveryx.server.config.ConfigEntity.ReplyCommand";
-    option (scalapb.message).companion_extends = "fusion.protobuf.ActorRefCompanion";
-
-    fusion.discoveryx.model.ConfigGet in = 1 [(scalapb.field).no_box = true];
-    string reply_to = 2 [(scalapb.field).type = "akka.actor.typed.ActorRef[fusion.discoveryx.model.ConfigReply]"];
+message ConfigChangeListener {
+    string listener_id = 1;
 }
 
-message PublishConfig {
-    option (scalapb.message).extends = "fusion.discoveryx.server.config.ConfigEntity.ReplyCommand";
+message ConfigEntityCommand {
+    option (scalapb.message).extends = "fusion.discoveryx.server.config.ConfigEntity.Command";
     option (scalapb.message).companion_extends = "fusion.protobuf.ActorRefCompanion";
 
-    fusion.discoveryx.model.ConfigItem in = 1 [(scalapb.field).no_box = true];
-    string reply_to = 2 [(scalapb.field).type = "akka.actor.typed.ActorRef[fusion.discoveryx.model.ConfigReply]"];
-}
-
-message RemoveConfig {
-    option (scalapb.message).extends = "fusion.discoveryx.server.config.ConfigEntity.ReplyCommand";
-    option (scalapb.message).companion_extends = "fusion.protobuf.ActorRefCompanion";
-
-    fusion.discoveryx.model.ConfigRemove in = 1 [(scalapb.field).no_box = true];
-    string reply_to = 2 [(scalapb.field).type = "akka.actor.typed.ActorRef[fusion.discoveryx.model.ConfigReply]"];
+    string reply_to = 1 [(scalapb.field).type = "akka.actor.typed.ActorRef[fusion.discoveryx.model.ConfigReply]"];
+    oneof cmd {
+        fusion.discoveryx.model.ConfigGet get = 2;
+        fusion.discoveryx.model.ConfigItem publish = 3;
+        fusion.discoveryx.model.ConfigRemove remove = 4;
+        ConfigChangeListener listener_id = 5;
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // ConfigEntity Events
 ////////////////////////////////////////////////////////////////////////////////
-
-//message ConfigStopEvent {
-//    option (scalapb.message).extends = "fusion.discoveryx.server.config.ConfigEntity.Event";
-//}
 
 message ChangedConfigEvent {
     option (scalapb.message).extends = "fusion.discoveryx.server.config.ConfigEntity.Event";

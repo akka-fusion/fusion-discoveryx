@@ -10,8 +10,13 @@
 
 ```shell script
 docker-compose -f docker-compose.yml up -d // --build
-docker exec fusion-discoveryx_cassandra cqlsh -f /docker-entrypoint-initdb.d/cassandra-schema.cql
 ```
+
+> *若使用Cassandra做为后端存储，还需要初始化keyspace和相关表（PostgreSQL，Dockerfile已经初始化数据库表）。*
+> 
+> ```shell script
+> docker exec fusion-discoveryx_cassandra cqlsh -f /docker-entrypoint-initdb.d/cassandra-schema.cql
+> ```
 
 `-d`后可添加参数：`postgres`或`cassandra`只启动特定数据库。
 

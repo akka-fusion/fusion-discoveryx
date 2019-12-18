@@ -43,13 +43,13 @@ class ConfigServiceImpl()(implicit system: ActorSystem[_]) extends ConfigService
     Future.successful(ServerStatusBO(IntStatus.OK))
 
   override def queryConfig(in: ConfigGet): Future[ConfigReply] =
-    askConfig(in.namespace, in.dataId, GetConfig(in))
+    askConfig(in.namespace, in.dataId, ConfigEntityCommand.Cmd.Get(in))
 
   override def publishConfig(in: ConfigItem): Future[ConfigReply] =
-    askConfig(in.namespace, in.dataId, PublishConfig(in))
+    askConfig(in.namespace, in.dataId, ConfigEntityCommand.Cmd.Publish(in))
 
   override def removeConfig(in: ConfigRemove): Future[ConfigReply] =
-    askConfig(in.namespace, in.dataId, RemoveConfig(in))
+    askConfig(in.namespace, in.dataId, ConfigEntityCommand.Cmd.Remove(in))
 
   override def listenerConfig(in: ConfigChangeListen): Source[ConfigChanged, NotUsed] = {
     val entityId = ConfigEntity.makeEntityId(in.namespace, in.dataId)
@@ -69,9 +69,6 @@ class ConfigServiceImpl()(implicit system: ActorSystem[_]) extends ConfigService
       .map(event => ConfigChanged(event.config, changeType = event.`type`))
   }
 
-  @inline private def askConfig(
-      namespace: String,
-      dataId: String,
-      cmd: ConfigEntity.ReplyCommand): Future[ConfigReply] =
-    configEntity.ask[ConfigReply](replyTo => ShardingEnvelope(namespace, cmd.withReplyTo(replyTo)))
+  @inline private def askConfig(namespace: String, dataId: String, cmd: ConfigEntityCommand.Cmd): Future[ConfigReply] =
+    configEntity.ask[ConfigReply](replyTo => ShardingEnvelope(namespace, ConfigEntityCommand(replyTo, cmd)))
 }

@@ -39,6 +39,7 @@ object DiscoveryXUtils {
       in.weight,
       in.health,
       in.enable,
+      in.ephemeral,
       in.metadata)
   }
 }

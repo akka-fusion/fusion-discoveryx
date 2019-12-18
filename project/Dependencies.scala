@@ -22,17 +22,8 @@ object Dependencies {
   val _fusionProtobufV3 = "com.akka-fusion" %% "fusion-protobuf-v3" % versionFusion
   val _fusionTestkit = "com.akka-fusion" %% "fusion-testkit" % versionFusion
 
-  val _akkaActor = "com.typesafe.akka" %% "akka-actor" % versionAkka
-  val _akkaActorTyped = "com.typesafe.akka" %% "akka-actor-typed" % versionAkka
-  val _akkaStream = "com.typesafe.akka" %% "akka-stream" % versionAkka
-  val _akkaStreamTyped = "com.typesafe.akka" %% "akka-stream-typed" % versionAkka
-  val _akkaDiscovery = "com.typesafe.akka" %% "akka-discovery" % versionAkka
-  val _akkaSerializationJackson = "com.typesafe.akka" %% "akka-serialization-jackson" % versionAkka
-  val _akkaProtobufV3 = "com.typesafe.akka" %% "akka-protobuf-v3" % versionAkka
   val _akkaPersistenceTyped = "com.typesafe.akka" %% "akka-persistence-typed" % versionAkka
   val _akkaPersistenceQuery = "com.typesafe.akka" %% "akka-persistence-query" % versionAkka
-  val _akkaTypedTestkit = "com.typesafe.akka" %% "akka-actor-testkit-typed" % versionAkka
-  val _akkaStreamTestkit = "com.typesafe.akka" %% "akka-stream-testkit" % versionAkka
 
   val _akkaMultiNodeTestkit = "com.typesafe.akka" %% "akka-multi-node-testkit" % versionAkka
 
@@ -58,13 +49,6 @@ object Dependencies {
 
   val _akkaHttps = Seq(_akkaHttp, _akkaHttp2, _akkaHttpTestkit % Test)
 
-  val _akkaGrpcRuntime = ("com.lightbend.akka.grpc" %% "akka-grpc-runtime" % akka.grpc.gen.BuildInfo.version)
-    .exclude("com.typesafe", "config")
-    .exclude("com.typesafe", "ssl-config-core")
-    .cross(CrossVersion.binary)
-    .excludeAll(ExclusionRule("com.typesafe.akka"))
-    .cross(CrossVersion.binary)
-
   val _akkaPersistenceCassandras = Seq("com.typesafe.akka" %% "akka-persistence-cassandra" % "0.101").map(
     _.exclude("org.scala-lang", "scala-library")
       .cross(CrossVersion.binary)
@@ -77,8 +61,6 @@ object Dependencies {
       .exclude("com.typesafe.akka", "akka-persistence-query")
       .cross(CrossVersion.binary))
 
-  val _akkaPersistenceCassandraLauncher = "com.typesafe.akka" %% "akka-persistence-cassandra-launcher" % "0.101"
-
   val _akkaPersistenceJdbc =
     ("com.github.dnvriend" %% "akka-persistence-jdbc" % "3.5.2")
       .excludeAll(ExclusionRule("com.typesafe.akka"))
@@ -86,7 +68,6 @@ object Dependencies {
 
   val _scalapbJson4s = "com.thesamet.scalapb" %% "scalapb-json4s" % "0.10.0"
 
-  val _oshiCore = "com.github.oshi" % "oshi-core" % "4.2.1"
   val _postgresql = "org.postgresql" % "postgresql" % versionPostgres
   val _mysql = "mysql" % "mysql-connector-java" % versionMySQL
   val _h2 = "com.h2database" % "h2" % "1.4.200"

@@ -27,31 +27,24 @@ import helloscala.common.IntStatus
 import helloscala.common.exception.HSBadRequestException
 import helloscala.common.util.StringUtils
 
-object Namings {
-  val TypeKey: EntityTypeKey[Command] = EntityTypeKey[Command]("Naming")
-
+object NamingEntity {
   trait Command
-  trait ReplyCommand extends Command {
-    @transient val replyTo: ActorRef[NamingReply]
-
-    def withReplyTo(other: ActorRef[NamingReply]): ReplyCommand
-  }
 
   private case object HealthCheckKey extends Command
 
   object NamingServiceKey {
-    def entityId(namespace: String, serviceName: String): Either[String, String] = {
-      if (StringUtils.isBlank(namespace) || StringUtils.isBlank(serviceName)) {
-        Left("entityId invalid, need '[namespace] [serviceName]' format.")
-      } else {
-        Right(s"$namespace $serviceName")
-      }
-    }
-
     def unapply(entityId: String): Option[NamingServiceKey] = entityId.split(' ') match {
       case Array(namespace, serviceName) => Some(new NamingServiceKey(namespace, serviceName))
       case _                             => None
     }
+  }
+
+  val TypeKey: EntityTypeKey[Command] = EntityTypeKey[Command]("NamingEntity")
+
+  def entityId(namespace: String, serviceName: String): Either[String, String] = {
+    if (StringUtils.isBlank(namespace) || StringUtils.isBlank(serviceName))
+      Left("entityId invalid, need '[namespace] [serviceName]' format.")
+    else Right(s"$namespace $serviceName")
   }
 
   def apply(entityId: String): Behavior[Command] = Behaviors.setup[Command] { context =>
@@ -60,15 +53,15 @@ object Namings {
       .unapply(entityId)
       .getOrElse(throw HSBadRequestException(
         s"${context.self} create child error. entityId invalid, need '[namespace] [serviceName]' format."))
-    Behaviors.withTimers(timers => new Namings(namingServiceKey, timers, context).receive())
+    Behaviors.withTimers(timers => new NamingEntity(namingServiceKey, timers, context).receive())
   }
 }
 
-class Namings private (
+class NamingEntity private (
     namingServiceKey: NamingServiceKey,
-    timers: TimerScheduler[Namings.Command],
-    context: ActorContext[Namings.Command]) {
-  import Namings._
+    timers: TimerScheduler[NamingEntity.Command],
+    context: ActorContext[NamingEntity.Command]) {
+  import NamingEntity._
   private val settings = NamingSettings(context.system)
   private val internalService = new InternalService(namingServiceKey, settings)
 
@@ -79,13 +72,15 @@ class Namings private (
   context.log.info(s"Namings started: $namingServiceKey")
 
   def receive(): Behavior[Command] = Behaviors.receiveMessage {
-    case Heartbeat(_, _, instanceId)   => processHeartbeat(instanceId)
-    case QueryInstance(in, replyTo)    => queryInstance(in, replyTo)
-    case RegisterInstance(in, replyTo) => registerInstance(in, replyTo)
-    case RemoveInstance(in, replyTo)   => removeInstance(in, replyTo)
-    case ModifyInstance(in, replyTo)   => modifyInstance(in, replyTo)
-    case QueryServiceInfo(replyTo)     => queryServiceInfo(replyTo)
-    case HealthCheckKey                => healthCheck()
+    case NamingReplyCommand(replyTo, cmd) =>
+      replyTo ! processReplyCommand(cmd)
+      Behaviors.same
+    case Heartbeat(_, _, instId) =>
+      processHeartbeat(instId)
+    case QueryServiceInfo(replyTo) =>
+      queryServiceInfo(replyTo)
+    case HealthCheckKey =>
+      healthCheck()
   }
 
   private def queryServiceInfo(replyTo: ActorRef[ServiceInfo]): Behavior[Command] = {
@@ -103,20 +98,28 @@ class Namings private (
     Behaviors.same
   }
 
-  private def queryInstance(in: InstanceQuery, replyTo: ActorRef[NamingReply]): Behavior[Command] = {
-    val result = try {
+  private def processReplyCommand(cmd: NamingReplyCommand.Cmd): NamingReply = {
+    import NamingReplyCommand.Cmd
+    cmd match {
+      case Cmd.Query(value)    => queryInstance(value)
+      case Cmd.Register(value) => registerInstance(value)
+      case Cmd.Remove(value)   => removeInstance(value)
+      case Cmd.Modify(value)   => modifyInstance(value)
+      case Cmd.Empty           => NamingReply(IntStatus.BAD_REQUEST, "Invalid Cmd.")
+    }
+  }
+
+  private def queryInstance(in: InstanceQuery): NamingReply =
+    try {
       val items = internalService.queryInstance(in)
       val status = if (items.isEmpty) IntStatus.NOT_FOUND else IntStatus.OK
       NamingReply(status, data = NamingReply.Data.Queried(InstanceQueryResult(items)))
     } catch {
       case _: IllegalArgumentException => NamingReply(IntStatus.BAD_REQUEST)
     }
-    replyTo ! result
-    Behaviors.same
-  }
 
-  private def modifyInstance(in: InstanceModify, replyTo: ActorRef[NamingReply]): Behavior[Command] = {
-    val result = try {
+  private def modifyInstance(in: InstanceModify): NamingReply =
+    try {
       internalService.modifyInstance(in) match {
         case Some(inst) => NamingReply(IntStatus.OK, data = NamingReply.Data.Instance(inst))
         case None       => NamingReply(IntStatus.NOT_FOUND)
@@ -124,24 +127,16 @@ class Namings private (
     } catch {
       case _: IllegalArgumentException => NamingReply(IntStatus.BAD_REQUEST)
     }
-    replyTo ! result
-    Behaviors.same
+
+  private def removeInstance(in: InstanceRemove): NamingReply = {
+    NamingReply(if (internalService.removeInstance(in.instanceId)) IntStatus.OK else IntStatus.NOT_FOUND)
   }
 
-  private def removeInstance(in: InstanceRemove, replyTo: ActorRef[NamingReply]): Behavior[Command] = {
-    val status = if (internalService.removeInstance(in.instanceId)) IntStatus.OK else IntStatus.NOT_FOUND
-    replyTo ! NamingReply(status)
-    Behaviors.same
-  }
-
-  private def registerInstance(in: InstanceRegister, replyTo: ActorRef[NamingReply]): Behavior[Command] = {
-    val result = try {
+  private def registerInstance(in: InstanceRegister): NamingReply =
+    try {
       val inst = internalService.addInstance(DiscoveryXUtils.toInstance(in))
       NamingReply(IntStatus.OK, data = NamingReply.Data.Instance(inst))
     } catch {
       case _: IllegalArgumentException => NamingReply(IntStatus.BAD_REQUEST)
     }
-    replyTo ! result
-    Behaviors.same
-  }
 }
