@@ -20,7 +20,7 @@ import com.typesafe.scalalogging.StrictLogging
 import fusion.discoveryx.model.{ Instance, InstanceModify, InstanceQuery }
 import fusion.discoveryx.server.protocol.NamingServiceKey
 
-final private[discoveryx] class InternalInstance(private val inst: Instance, settings: NamingSettings)
+final private[discoveryx] class InternalInstance(private[naming] val inst: Instance, settings: NamingSettings)
     extends Ordered[InternalInstance]
     with Equals {
   @transient private val UNHEALTHY_CHECK_THRESHOLD_MILLIS = settings.heartbeatInterval.toMillis + 2000
@@ -131,20 +131,21 @@ final private[discoveryx] class InternalService(namingServiceKey: NamingServiceK
     }
   }
 
-  def processHeartbeat(instanceId: String): InternalService = {
-    instIds.get(instanceId) match {
-      case Some(idx) =>
-        val inst = instances(idx).refresh()
-        logger.debug(s"Successfully processed heartbeat request, instance: $inst.")
-      case None => logger.warn(s"Service not registered, instanceId: $instanceId.")
+  def processHeartbeat(instId: String): InternalService = {
+    instIds.get(instId) match {
+      case Some(idx) => instances(idx).refresh()
+      case None      => logger.warn(s"Service not registered, instanceId: $instId.")
     }
     this
   }
 
   def checkHealthy(): InternalService = {
-    for (inst <- instances if !inst.healthy) {
-      // TODO alarm or remove unhealthy instance ?
-      logger.warn(s"Instance unhealthy, is $inst")
+    instances = instances.filterNot { internal =>
+      val not = internal.inst.ephemeral && !internal.healthy
+      if (not) {
+        logger.info(s"Instance is ephemeral and unhealthy, will remove. ${internal.inst}")
+      }
+      not
     }
     this
   }

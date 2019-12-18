@@ -22,20 +22,17 @@ import akka.cluster.sharding.typed.ShardingEnvelope
 import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, Entity, EntityContext, EntityTypeKey }
 import akka.persistence.typed.PersistenceId
 import akka.persistence.typed.scaladsl.{ Effect, EventSourcedBehavior, RetentionCriteria }
-import fusion.discoveryx.model.{ ChangeType, ConfigReply }
+import fusion.discoveryx.model.{ ChangeType, ConfigItem, ConfigReply }
+import fusion.discoveryx.server.protocol.ConfigEntityCommand.Cmd
 import fusion.discoveryx.server.protocol._
 import helloscala.common.IntStatus
 import helloscala.common.exception.HSInternalErrorException
 
 object ConfigEntity {
   trait Command
-  trait ReplyCommand extends Command {
-    val replyTo: ActorRef[ConfigReply]
-    def withReplyTo(replyTo: ActorRef[ConfigReply]): ReplyCommand
-  }
   trait Event
 
-  val TypeKey: EntityTypeKey[Command] = EntityTypeKey("configEntity")
+  val TypeKey: EntityTypeKey[Command] = EntityTypeKey("ConfigEntity")
 
   object ConfigKey {
     def unapply(entityId: String): Option[ConfigKey] = entityId.split(' ') match {
@@ -93,41 +90,51 @@ class ConfigEntity private (
       }
 
   def commandHandler(state: ConfigState, cmd: Command): Effect[ChangedConfigEvent, ConfigState] = cmd match {
-    case GetConfig(_, replyTo) =>
-      Effect.reply(replyTo)(state.configItem match {
-        case Some(item) => ConfigReply(IntStatus.OK, data = ConfigReply.Data.Config(item))
-        case _          => ConfigReply(IntStatus.NOT_FOUND)
-      })
-
-    case PublishConfig(in, replyTo) =>
-      context.log.debug(s"PublishConfig($in, $replyTo)")
-
-      if (state.configItem.contains(in)) {
-        Effect.reply(replyTo)(
-          ConfigReply(IntStatus.OK, "Not need update.", ConfigReply.Data.Config(state.configItem.get)))
-      } else {
-        val event =
-          ChangedConfigEvent(Some(in), if (state.configItem.isEmpty) ChangeType.CHANGE_ADD else ChangeType.CHANGE_SAVE)
-        Effect.persist(event).thenReply(replyTo) {
-          case ConfigState(Some(item)) => ConfigReply(IntStatus.OK, data = ConfigReply.Data.Config(item))
-          case _                       => ConfigReply(IntStatus.BAD_REQUEST)
-        }
+    case ConfigEntityCommand(replyTo, cmd) =>
+      cmd match {
+        case Cmd.Get(_)      => processGet(state, replyTo)
+        case Cmd.Publish(in) => processGet(state, replyTo, in)
+        case Cmd.Remove(_)   => processRemove(replyTo)
+        case Cmd.Empty       => Effect.none
       }
-
-    case RemoveConfig(_, replyTo) =>
-      Effect
-        .persist[ChangedConfigEvent, ConfigState](ChangedConfigEvent(`type` = ChangeType.CHANGE_REMOVE))
-        .thenRun {
-          case state if state.configItem.isEmpty => replyTo ! ConfigReply(IntStatus.OK)
-          case _                                 => replyTo ! ConfigReply(IntStatus.INTERNAL_ERROR)
-        }
-        .thenStop()
 
     case RegisterChangeListener(replyTo, _) =>
       listeners ::= replyTo
       context.watch(replyTo)
       Effect.none
   }
+
+  private def processRemove(replyTo: ActorRef[ConfigReply]): Effect[ChangedConfigEvent, ConfigState] =
+    Effect
+      .persist[ChangedConfigEvent, ConfigState](ChangedConfigEvent(`type` = ChangeType.CHANGE_REMOVE))
+      .thenRun {
+        case state if state.configItem.isEmpty => replyTo ! ConfigReply(IntStatus.OK)
+        case _                                 => replyTo ! ConfigReply(IntStatus.INTERNAL_ERROR)
+      }
+      .thenStop()
+
+  private def processGet(
+      state: ConfigState,
+      replyTo: ActorRef[ConfigReply],
+      in: ConfigItem): Effect[ChangedConfigEvent, ConfigState] = {
+    if (state.configItem.contains(in)) {
+      Effect.reply(replyTo)(
+        ConfigReply(IntStatus.OK, "Not need update.", ConfigReply.Data.Config(state.configItem.get)))
+    } else {
+      val event =
+        ChangedConfigEvent(Some(in), if (state.configItem.isEmpty) ChangeType.CHANGE_ADD else ChangeType.CHANGE_SAVE)
+      Effect.persist(event).thenReply(replyTo) {
+        case ConfigState(Some(item)) => ConfigReply(IntStatus.OK, data = ConfigReply.Data.Config(item))
+        case _                       => ConfigReply(IntStatus.BAD_REQUEST)
+      }
+    }
+  }
+
+  private def processGet(state: ConfigState, replyTo: ActorRef[ConfigReply]): Effect[ChangedConfigEvent, ConfigState] =
+    Effect.reply(replyTo)(state.configItem match {
+      case Some(item) => ConfigReply(IntStatus.OK, data = ConfigReply.Data.Config(item))
+      case _          => ConfigReply(IntStatus.NOT_FOUND)
+    })
 
   def eventHandler(state: ConfigState, evt: ChangedConfigEvent): ConfigState = {
     context.log.debug(s"eventHandler($state, $evt)")

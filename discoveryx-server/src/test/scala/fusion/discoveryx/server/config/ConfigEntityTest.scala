@@ -25,7 +25,7 @@ import fusion.common.config.FusionConfigFactory
 import fusion.core.extension.FusionCore
 import fusion.discoveryx.common.Constants
 import fusion.discoveryx.model._
-import fusion.discoveryx.server.protocol.{ GetConfig, PublishConfig, RemoveConfig }
+import fusion.discoveryx.server.protocol.ConfigEntityCommand
 import fusion.discoveryx.server.util.ProtobufJson4s
 import org.scalatest.WordSpecLike
 
@@ -57,16 +57,22 @@ class ConfigEntityTest
     "PublishConfig" in {
       val in = ConfigItem(namespace, "play", content = content, `type` = ConfigType.HOCON)
       val reply = configEntity
-        .ask[ConfigReply](replyTo =>
-          ShardingEnvelope(ConfigEntity.makeEntityId(in.namespace, in.dataId), PublishConfig(in, replyTo)))
+        .ask[ConfigReply](
+          replyTo =>
+            ShardingEnvelope(
+              ConfigEntity.makeEntityId(in.namespace, in.dataId),
+              ConfigEntityCommand(replyTo, ConfigEntityCommand.Cmd.Publish(in))))
         .futureValue
       println(ProtobufJson4s.toJsonPrettyString(reply))
     }
 
     "GetConfig" in {
       val reply = configEntity
-        .ask[ConfigReply](replyTo =>
-          ShardingEnvelope(ConfigEntity.makeEntityId(namespace, dataId), GetConfig(ConfigGet(), replyTo)))
+        .ask[ConfigReply](
+          replyTo =>
+            ShardingEnvelope(
+              ConfigEntity.makeEntityId(namespace, dataId),
+              ConfigEntityCommand(replyTo, ConfigEntityCommand.Cmd.Get(ConfigGet()))))
         .futureValue
       println(ProtobufJson4s.toJsonPrettyString(reply))
     }
@@ -74,8 +80,11 @@ class ConfigEntityTest
     "RemoveConfig" in {
       val in = ConfigRemove(namespace, dataId)
       val reply = configEntity
-        .ask[ConfigReply](replyTo =>
-          ShardingEnvelope(ConfigEntity.makeEntityId(in.namespace, in.dataId), RemoveConfig(in, replyTo)))
+        .ask[ConfigReply](
+          replyTo =>
+            ShardingEnvelope(
+              ConfigEntity.makeEntityId(in.namespace, in.dataId),
+              ConfigEntityCommand(replyTo, ConfigEntityCommand.Cmd.Remove(in))))
         .futureValue
       println(ProtobufJson4s.toJsonPrettyString(reply))
     }
@@ -85,7 +94,9 @@ class ConfigEntityTest
       val future = configEntity.ask[ConfigReply] { replyTo =>
         ShardingEnvelope(
           ConfigEntity.makeEntityId(namespace, dataId),
-          PublishConfig(ConfigItem(namespace, dataId, content = content), replyTo))
+          ConfigEntityCommand(
+            replyTo,
+            ConfigEntityCommand.Cmd.Publish(ConfigItem(namespace, dataId, content = content))))
       }
       val reply = Await.result(future, Duration.Inf)
       println(ProtobufJson4s.toJsonPrettyString(reply))

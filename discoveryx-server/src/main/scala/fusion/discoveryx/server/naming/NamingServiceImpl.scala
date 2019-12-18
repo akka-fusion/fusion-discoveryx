@@ -41,7 +41,7 @@ class NamingServiceImpl()(implicit system: ActorSystem[_]) extends NamingService
   import system.executionContext
   implicit private val timeout: Timeout = 5.seconds
   private val namingRegion =
-    ClusterSharding(system).init(Entity(Namings.TypeKey)(entityContext => Namings(entityContext.entityId)))
+    ClusterSharding(system).init(Entity(NamingEntity.TypeKey)(entityContext => NamingEntity(entityContext.entityId)))
 
   /**
    * 查询服务状态
@@ -54,28 +54,28 @@ class NamingServiceImpl()(implicit system: ActorSystem[_]) extends NamingService
    * 添加实例
    */
   override def registerInstance(in: InstanceRegister, metadata: Metadata): Future[NamingReply] = {
-    askNaming(in.namespace, in.serviceName, RegisterInstance(in))
+    askNaming(in.namespace, in.serviceName, NamingReplyCommand.Cmd.Register(in))
   }
 
   /**
    * 修改实例
    */
   override def modifyInstance(in: InstanceModify, metadata: Metadata): Future[NamingReply] = {
-    askNaming(in.namespace, in.serviceName, ModifyInstance(in))
+    askNaming(in.namespace, in.serviceName, NamingReplyCommand.Cmd.Modify(in))
   }
 
   /**
    * 删除实例
    */
   override def removeInstance(in: InstanceRemove, metadata: Metadata): Future[NamingReply] = {
-    askNaming(in.namespace, in.serviceName, RemoveInstance(in))
+    askNaming(in.namespace, in.serviceName, NamingReplyCommand.Cmd.Remove(in))
   }
 
   /**
    * 查询实例
    */
   override def queryInstance(in: InstanceQuery, metadata: Metadata): Future[NamingReply] = {
-    askNaming(in.namespace, in.serviceName, QueryInstance(in))
+    askNaming(in.namespace, in.serviceName, NamingReplyCommand.Cmd.Query(in))
   }
 
   override def heartbeat(
@@ -91,7 +91,7 @@ class NamingServiceImpl()(implicit system: ActorSystem[_]) extends NamingService
       val instanceId = metadata
         .getText(Headers.INSTANCE_ID)
         .getOrElse(throw HSBadRequestException(s"Request header missing, need '${Headers.INSTANCE_ID}'."))
-      val entityId = Namings.NamingServiceKey.entityId(namespace, serviceName) match {
+      val entityId = NamingEntity.entityId(namespace, serviceName) match {
         case Right(value) => value
         case Left(errMsg) => throw HSBadRequestException(errMsg)
       }
@@ -106,10 +106,10 @@ class NamingServiceImpl()(implicit system: ActorSystem[_]) extends NamingService
     }
   }
 
-  private def askNaming(namespace: String, serviceName: String, cmd: Namings.ReplyCommand): Future[NamingReply] = {
-    Namings.NamingServiceKey.entityId(namespace, serviceName) match {
+  private def askNaming(namespace: String, serviceName: String, cmd: NamingReplyCommand.Cmd): Future[NamingReply] = {
+    NamingEntity.entityId(namespace, serviceName) match {
       case Right(entityId) =>
-        namingRegion.ask[NamingReply](replyTo => ShardingEnvelope(entityId, cmd.withReplyTo(replyTo))).recover {
+        namingRegion.ask[NamingReply](replyTo => ShardingEnvelope(entityId, NamingReplyCommand(replyTo, cmd))).recover {
           case _: TimeoutException => NamingReply(IntStatus.GATEWAY_TIMEOUT)
         }
       case Left(errMsg) => Future.successful(NamingReply(IntStatus.INTERNAL_ERROR, errMsg))

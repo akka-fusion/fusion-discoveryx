@@ -22,7 +22,7 @@ import akka.actor.typed.{ ActorRef, ActorSystem, Behavior }
 import akka.cluster.sharding.typed.ShardingEnvelope
 import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, Entity, EntityTypeKey }
 import akka.util.Timeout
-import fusion.discoveryx.model.{ ConfigBasic, ConfigGet, ConfigItem, ConfigQueried, ConfigReply }
+import fusion.discoveryx.model._
 import fusion.discoveryx.server.protocol.ConfigManagerCommand.Cmd
 import fusion.discoveryx.server.protocol.ConfigResponse.Data
 import fusion.discoveryx.server.protocol._
@@ -72,20 +72,21 @@ class ConfigManager private (namespace: String, context: ActorContext[Command]) 
 
   implicit val timeout: Timeout = 5.seconds
 
-  private def onManagerCommand: Cmd => Future[ConfigResponse] = {
+  private def onManagerCommand(command: Cmd): Future[ConfigResponse] = command match {
     case Cmd.List(cmd) => processList(cmd)
-    case Cmd.Get(cmd)  => askConfig(cmd.dataId, GetConfig(cmd), _.config.map(Data.Config).getOrElse(Data.Empty))
+    case Cmd.Get(cmd) =>
+      askConfig(cmd.dataId, ConfigEntityCommand.Cmd.Get(cmd), _.config.map(Data.Config).getOrElse(Data.Empty))
     case Cmd.Publish(cmd) =>
       askConfig(
         cmd.dataId,
-        PublishConfig(cmd),
+        ConfigEntityCommand.Cmd.Publish(cmd),
         _.config
           .map { item =>
             context.self ! InternalConfigKeys(ConfigKey(item.namespace, item.dataId) :: Nil)
             Data.Config(item)
           }
           .getOrElse(Data.Empty))
-    case Cmd.Remove(cmd) => askConfig(cmd.dataId, RemoveConfig(cmd), _ => Data.Empty)
+    case Cmd.Remove(cmd) => askConfig(cmd.dataId, ConfigEntityCommand.Cmd.Remove(cmd), _ => Data.Empty)
     case Cmd.Empty       => Future.successful(ConfigResponse(IntStatus.BAD_REQUEST, "Invalid command."))
   }
 
@@ -96,15 +97,10 @@ class ConfigManager private (namespace: String, context: ActorContext[Command]) 
     if (offset < configKeys.size) {
       val futures = configKeys.view
         .slice(offset, offset + size)
-        .map { configKey =>
-          configEntity.ask[ConfigReply](replyTo =>
-            ShardingEnvelope(ConfigEntity.makeEntityId(configKey), GetConfig(ConfigGet(cmd.namespace), replyTo)))
-        }
+        .map(configKey => askConfig(configKey, ConfigEntityCommand.Cmd.Get(ConfigGet(cmd.namespace))))
         .toVector
       Future.sequence(futures).map { replies =>
-        val configs = replies.collect {
-          case reply if IntStatus.isSuccess(reply.status) && reply.data.isConfig => itemToBasic(reply.data.config.get)
-        }
+        val configs = replies.collect { case Some(item) => itemToBasic(item) }
         ConfigResponse(IntStatus.OK, data = Data.Listed(ConfigQueried(configs)))
       }
     } else {
@@ -114,13 +110,23 @@ class ConfigManager private (namespace: String, context: ActorContext[Command]) 
 
   private def itemToBasic(item: ConfigItem) = ConfigBasic(item.dataId, item.groupName, item.`type`)
 
+  private def askConfig(configKey: ConfigKey, cmd: ConfigEntityCommand.Cmd): Future[Option[ConfigItem]] = {
+    configEntity
+      .ask[ConfigReply](replyTo =>
+        ShardingEnvelope(ConfigEntity.makeEntityId(configKey), ConfigEntityCommand(replyTo, cmd)))
+      .map {
+        case reply if IntStatus.isSuccess(reply.status) => reply.data.config
+        case _                                          => None
+      }
+  }
+
   private def askConfig(
       dataId: String,
-      cmd: ConfigEntity.ReplyCommand,
+      cmd: ConfigEntityCommand.Cmd,
       onSuccess: ConfigReply.Data => ConfigResponse.Data): Future[ConfigResponse] = {
     configEntity
       .ask[ConfigReply](replyTo =>
-        ShardingEnvelope(ConfigEntity.makeEntityId(namespace, dataId), cmd.withReplyTo(replyTo)))
+        ShardingEnvelope(ConfigEntity.makeEntityId(namespace, dataId), ConfigEntityCommand(replyTo, cmd)))
       .map {
         case value if IntStatus.isSuccess(value.status) => ConfigResponse(value.status, data = onSuccess(value.data))
         case value                                      => ConfigResponse(value.status, value.message)

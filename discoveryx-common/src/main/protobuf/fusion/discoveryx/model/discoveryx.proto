@@ -126,8 +126,10 @@ message Instance {
     bool healthy = 8;
     // If instance is enabled to accept request
     bool enabled = 9;
+    // If instance is ephemeral
+    bool ephemeral = 10;
     // user extended attributes
-    map<string, string> metadata = 10;
+    map<string, string> metadata = 11;
 }
 // #Instance
 
@@ -144,8 +146,10 @@ message InstanceRegister {
     bool health = 7;
     // If instance is enabled to accept request
     bool enable = 8;
+    // If instance is ephemeral
+    bool ephemeral = 9;
     // user extended attributes
-    map<string, string> metadata = 9;
+    map<string, string> metadata = 10;
 }
 // #InstanceRegister
 
