@@ -24,10 +24,6 @@ message RegisterChangeListener {
     string listener_id = 2;
 }
 
-message ConfigChangeListener {
-    string listener_id = 1;
-}
-
 message ConfigEntityCommand {
     option (scalapb.message).extends = "fusion.discoveryx.server.config.ConfigEntity.Command";
     option (scalapb.message).companion_extends = "fusion.protobuf.ActorRefCompanion";
@@ -37,7 +33,6 @@ message ConfigEntityCommand {
         fusion.discoveryx.model.ConfigGet get = 2;
         fusion.discoveryx.model.ConfigItem publish = 3;
         fusion.discoveryx.model.ConfigRemove remove = 4;
-        ConfigChangeListener listener_id = 5;
     }
 }
 

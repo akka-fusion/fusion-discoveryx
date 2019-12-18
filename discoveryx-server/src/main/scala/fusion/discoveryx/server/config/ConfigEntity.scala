@@ -95,6 +95,7 @@ class ConfigEntity private (
         case Cmd.Get(_)      => processGet(state, replyTo)
         case Cmd.Publish(in) => processGet(state, replyTo, in)
         case Cmd.Remove(_)   => processRemove(replyTo)
+        case Cmd.Empty       => Effect.none
       }
 
     case RegisterChangeListener(replyTo, _) =>
