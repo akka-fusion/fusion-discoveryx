@@ -174,81 +174,11 @@ message ConfigQueried {
     int32 total_elements = 5;
 }</code></pre>
 <h2><a href="#getconfig" name="getconfig" class="anchor"><span class="anchor-link"></span></a>GetConfig</h2>
-<p><strong>gRPC</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/grpc/server.proto#L22-L24" target="_blank" title="Go to snippet source"></a><code class="language-proto">// 查询单个配置
-rpc GetConfig (fusion.discoveryx.model.ConfigGet) returns (fusion.discoveryx.server.protocol.ConfigResponse) {
-}</code></pre>
-<p><strong>请求</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L35-L38" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ConfigGet {
-    string namespace = 1;
-    string data_id = 2;
-}</code></pre>
-<p><strong>响应</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/config.proto#L94-L101" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ConfigResponse {
-    int32 status = 1;
-    string message = 2;
-    oneof data {
-        fusion.discoveryx.model.ConfigQueried listed = 3;
-        fusion.discoveryx.model.ConfigItem config = 4;
-    }
-}</code></pre>
-<p><code>oneof</code>字段<code>config</code>有效：</p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L42-L48" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ConfigItem {
-    string namespace = 1;
-    string data_id = 2;
-    string group_name = 3;
-    string content = 4;
-    ConfigType type = 5;
-}</code></pre>
+<p>见 <a href="../open/config.html#getconfig">GetConfig</a> 。</p>
 <h2><a href="#publishconfig" name="publishconfig" class="anchor"><span class="anchor-link"></span></a>PublishConfig</h2>
-<p><strong>gRPC</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/grpc/server.proto#L28-L30" target="_blank" title="Go to snippet source"></a><code class="language-proto">// 发布配置
-rpc PublishConfig (fusion.discoveryx.model.ConfigItem) returns (fusion.discoveryx.server.protocol.ConfigResponse) {
-}</code></pre>
-<p><strong>请求</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L42-L48" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ConfigItem {
-    string namespace = 1;
-    string data_id = 2;
-    string group_name = 3;
-    string content = 4;
-    ConfigType type = 5;
-}</code></pre>
-<p><strong>响应</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/config.proto#L94-L101" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ConfigResponse {
-    int32 status = 1;
-    string message = 2;
-    oneof data {
-        fusion.discoveryx.model.ConfigQueried listed = 3;
-        fusion.discoveryx.model.ConfigItem config = 4;
-    }
-}</code></pre>
-<p><code>oneof</code>字段<code>config</code>有效：</p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L42-L48" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ConfigItem {
-    string namespace = 1;
-    string data_id = 2;
-    string group_name = 3;
-    string content = 4;
-    ConfigType type = 5;
-}</code></pre>
+<p>见 <a href="../open/config.html#publishconfig">PublishConfig</a> 。</p>
 <h2><a href="#removeconfig" name="removeconfig" class="anchor"><span class="anchor-link"></span></a>RemoveConfig</h2>
-<p><strong>gRPC</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/grpc/server.proto#L34-L36" target="_blank" title="Go to snippet source"></a><code class="language-proto">// 删除配置
-rpc RemoveConfig (fusion.discoveryx.model.ConfigRemove) returns (fusion.discoveryx.server.protocol.ConfigResponse) {
-}</code></pre>
-<p><strong>请求</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L78-L81" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ConfigRemove {
-    string namespace = 1;
-    string data_id = 2;
-}</code></pre>
-<p><strong>响应</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/config.proto#L94-L101" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ConfigResponse {
-    int32 status = 1;
-    string message = 2;
-    oneof data {
-        fusion.discoveryx.model.ConfigQueried listed = 3;
-        fusion.discoveryx.model.ConfigItem config = 4;
-    }
-}</code></pre>
+<p>见 <a href="../open/config.html#removeconfig">RemoveConfig</a> 。</p>
 </div>
 </article>
 <div class="row">

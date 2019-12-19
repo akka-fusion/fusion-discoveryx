@@ -45,9 +45,9 @@ class ConfigRoute(namespaceRef: ActorRef[NamespaceRef.ExistNamespace])(implicit 
   import fusion.discoveryx.server.util.ProtobufJsonSupport._
 
   def openRoute: Route = pathPrefix("config") {
-    pathPost("QueryConfig") {
+    pathPost("GetConfig") {
       entity(as[ConfigGet]) { in =>
-        complete(configService.queryConfig(in))
+        complete(configService.getConfig(in))
       }
     } ~
     pathPost("PublishConfig") {
@@ -66,21 +66,6 @@ class ConfigRoute(namespaceRef: ActorRef[NamespaceRef.ExistNamespace])(implicit 
     pathPost("ListConfig") {
       entity(as[ListConfig]) { in =>
         complete(configManagerService.listConfig(in))
-      }
-    } ~
-    pathPost("GetConfig") {
-      entity(as[ConfigGet]) { in =>
-        complete(configManagerService.getConfig(in))
-      }
-    } ~
-    pathPost("PublishConfig") {
-      entity(as[ConfigItem]) { in =>
-        complete(configManagerService.publishConfig(in))
-      }
-    } ~
-    pathPost("RemoveConfig") {
-      entity(as[ConfigRemove]) { in =>
-        complete(configManagerService.removeConfig(in))
       }
     }
   }

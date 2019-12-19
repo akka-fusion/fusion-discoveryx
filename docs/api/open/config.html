@@ -56,7 +56,7 @@ Version 1.0.0
       <li><a href="../../api/open/index.html#目录" class="header">目录</a></li>
       <li><a href="../../api/open/config.html#config-配置管理-" class="active page">Config（配置管理）</a>
       <ul>
-        <li><a href="../../api/open/config.html#queryconfig" class="header">QueryConfig</a></li>
+        <li><a href="../../api/open/config.html#getconfig" class="header">GetConfig</a></li>
         <li><a href="../../api/open/config.html#publishconfig" class="header">PublishConfig</a></li>
         <li><a href="../../api/open/config.html#removeconfig" class="header">RemoveConfig</a></li>
         <li><a href="../../api/open/config.html#listenerconfig" class="header">ListenerConfig</a></li>
@@ -98,7 +98,7 @@ Version 1.0.0
       <li><a href="../../api/open/index.html#目录" class="header">目录</a></li>
       <li><a href="../../api/open/config.html#config-配置管理-" class="active page">Config（配置管理）</a>
       <ul>
-        <li><a href="../../api/open/config.html#queryconfig" class="header">QueryConfig</a></li>
+        <li><a href="../../api/open/config.html#getconfig" class="header">GetConfig</a></li>
         <li><a href="../../api/open/config.html#publishconfig" class="header">PublishConfig</a></li>
         <li><a href="../../api/open/config.html#removeconfig" class="header">RemoveConfig</a></li>
         <li><a href="../../api/open/config.html#listenerconfig" class="header">ListenerConfig</a></li>
@@ -129,10 +129,10 @@ Version 1.0.0
   <li>REST URL前缀：<code>/fusion/discoveryx/v1/config</code></li>
 </ul>
 <p>REST URL路径由 <strong>REST URL前缀</strong> + 服务名组织，均使用 <strong>POST</strong> 方法的请求，JSON序例化格式。如查询配置接口访问地址为：<code>POST /fusion/discoveryx/v1/config/QueryConfig</code>。Protobuf与JSON格式转换请参阅： <a href="../json.html">JSON 说明</a>。</p>
-<h3><a href="#queryconfig" name="queryconfig" class="anchor"><span class="anchor-link"></span></a>QueryConfig</h3>
+<h3><a href="#getconfig" name="getconfig" class="anchor"><span class="anchor-link"></span></a>GetConfig</h3>
 <p><strong>gRPC</strong></p>
 <pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/grpc/discoveryx.proto#L15-L17" target="_blank" title="Go to snippet source"></a><code class="language-proto">// 查询配置
-rpc QueryConfig (fusion.discoveryx.model.ConfigGet) returns (fusion.discoveryx.model.ConfigReply) {
+rpc GetConfig (fusion.discoveryx.model.ConfigGet) returns (fusion.discoveryx.model.ConfigReply) {
 }</code></pre>
 <p><strong>请求</strong></p>
 <pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L35-L38" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ConfigGet {

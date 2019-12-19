@@ -131,24 +131,6 @@ service ConfigManagerService {
     rpc ListConfig (fusion.discoveryx.server.protocol.ListConfig) returns (fusion.discoveryx.server.protocol.ConfigResponse) {
     }
     // #ListConfig
-
-    // #GetConfig
-    // 查询单个配置
-    rpc GetConfig (fusion.discoveryx.model.ConfigGet) returns (fusion.discoveryx.server.protocol.ConfigResponse) {
-    }
-    // #GetConfig
-
-    // #PublishConfig
-    // 发布配置
-    rpc PublishConfig (fusion.discoveryx.model.ConfigItem) returns (fusion.discoveryx.server.protocol.ConfigResponse) {
-    }
-    // #PublishConfig
-
-    // #RemoveConfig
-    // 删除配置
-    rpc RemoveConfig (fusion.discoveryx.model.ConfigRemove) returns (fusion.discoveryx.server.protocol.ConfigResponse) {
-    }
-    // #RemoveConfig
 }
 
 service NamingManagerService {

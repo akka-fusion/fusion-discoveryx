@@ -21,7 +21,6 @@ import akka.actor.typed.{ ActorRef, ActorSystem }
 import akka.cluster.sharding.typed.ShardingEnvelope
 import akka.util.Timeout
 import com.typesafe.scalalogging.StrictLogging
-import fusion.discoveryx.model.{ ConfigGet, ConfigItem, ConfigRemove }
 import fusion.discoveryx.server.grpc.ConfigManagerService
 import fusion.discoveryx.server.management.NamespaceRef
 import fusion.discoveryx.server.management.NamespaceRef.NamespaceExists
@@ -43,24 +42,6 @@ class ConfigManagerServiceImpl(namespaceRef: ActorRef[NamespaceRef.ExistNamespac
    * 查询配置列表（不返回配置内容）
    */
   override def listConfig(in: ListConfig): Future[ConfigResponse] = askConfig(in.namespace, Cmd.List(in))
-
-  /**
-   * #GetConfig
-   * 查询单个配置
-   */
-  override def getConfig(in: ConfigGet): Future[ConfigResponse] = askConfig(in.namespace, Cmd.Get(in))
-
-  /**
-   * #PublishConfig
-   * 发布配置
-   */
-  override def publishConfig(in: ConfigItem): Future[ConfigResponse] = askConfig(in.namespace, Cmd.Publish(in))
-
-  /**
-   * #RemoveConfig
-   * 删除配置
-   */
-  override def removeConfig(in: ConfigRemove): Future[ConfigResponse] = askConfig(in.namespace, Cmd.Remove(in))
 
   @inline private def askConfig(namespace: String, cmd: ConfigManagerCommand.Cmd): Future[ConfigResponse] =
     namespaceRef

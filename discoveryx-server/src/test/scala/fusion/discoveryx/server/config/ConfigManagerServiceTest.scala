@@ -37,11 +37,5 @@ class ConfigManagerServiceTest extends ScalaTestWithActorTestKit with WordSpecLi
       resp.status shouldBe IntStatus.OK
       println(ProtobufJson4s.toJsonPrettyString(resp))
     }
-
-    "getConfig" in {}
-
-    "publishConfig" in {}
-
-    "removeConfig" in {}
   }
 }

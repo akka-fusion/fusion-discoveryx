@@ -5,11 +5,11 @@
 
 REST URL路径由 **REST URL前缀** + 服务名组织，均使用 **POST** 方法的请求，JSON序例化格式。如查询配置接口访问地址为：`POST /fusion/discoveryx/v1/config/QueryConfig`。Protobuf与JSON格式转换请参阅： @ref[JSON 说明](../json.md)。
 
-### QueryConfig
+### GetConfig
 
 **gRPC**
 
-@@snip [gRPC](../../../../../../discoveryx-common/src/main/protobuf/fusion/discoveryx/grpc/discoveryx.proto) { #QueryConfig }
+@@snip [gRPC](../../../../../../discoveryx-common/src/main/protobuf/fusion/discoveryx/grpc/discoveryx.proto) { #GetConfig }
 
 **请求**
 

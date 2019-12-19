@@ -44,7 +44,7 @@ class ConfigServiceImpl(namespaceRef: ActorRef[NamespaceRef.ExistNamespace])(imp
   override def serverStatus(in: ServerStatusQuery): Future[ServerStatusBO] =
     Future.successful(ServerStatusBO(IntStatus.OK))
 
-  override def queryConfig(in: ConfigGet): Future[ConfigReply] =
+  override def getConfig(in: ConfigGet): Future[ConfigReply] =
     askConfig(in.namespace, in.dataId, ConfigEntityCommand.Cmd.Get(in))
 
   override def publishConfig(in: ConfigItem): Future[ConfigReply] =

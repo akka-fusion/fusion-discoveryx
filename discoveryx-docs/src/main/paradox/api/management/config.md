@@ -25,50 +25,12 @@ REST URL路径由 **REST URL前缀** + 服务名组织，均使用 **POST** 方�
 
 ## GetConfig
 
-**gRPC**
-
-@@snip [gRPC](../../../../../../discoveryx-server/src/main/protobuf/fusion/discoveryx/server/grpc/server.proto) { #GetConfig }
-
-**请求**
-
-@@snip [protocol](../../../../../../discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto) { #ConfigGet }
-
-**响应**
-
-@@snip [protocol](../../../../../../discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/config.proto) { #ConfigResponse }
-
-`oneof`字段`config`有效：
-
-@@snip [protocol](../../../../../../discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto) { #ConfigItem }
+见 @ref[GetConfig](../open/config.md#getconfig) 。
 
 ## PublishConfig
 
-**gRPC**
-
-@@snip [gRPC](../../../../../../discoveryx-server/src/main/protobuf/fusion/discoveryx/server/grpc/server.proto) { #PublishConfig }
-
-**请求**
-
-@@snip [protocol](../../../../../../discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto) { #ConfigItem }
-
-**响应**
-
-@@snip [protocol](../../../../../../discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/config.proto) { #ConfigResponse }
-
-`oneof`字段`config`有效：
-
-@@snip [protocol](../../../../../../discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto) { #ConfigItem }
+见 @ref[PublishConfig](../open/config.md#publishconfig) 。
 
 ## RemoveConfig
 
-**gRPC**
-
-@@snip [gRPC](../../../../../../discoveryx-server/src/main/protobuf/fusion/discoveryx/server/grpc/server.proto) { #RemoveConfig }
-
-**请求**
-
-@@snip [protocol](../../../../../../discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto) { #ConfigRemove }
-
-**响应**
-
-@@snip [protocol](../../../../../../discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/config.proto) { #ConfigResponse }
+见 @ref[RemoveConfig](../open/config.md#removeconfig) 。
