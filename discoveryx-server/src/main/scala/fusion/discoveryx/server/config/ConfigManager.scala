@@ -94,9 +94,7 @@ class ConfigManager private (namespace: String, context: ActorContext[Command]) 
   }
 
   private def processList(cmd: ListConfig): Future[ConfigResponse] = {
-    val page = settings.findPage(cmd.page)
-    val size = settings.findPage(cmd.size)
-    val offset = settings.findOffset(page, size)
+    val (page, size, offset) = settings.findPageSizeOffset(cmd.page, cmd.size)
     context.log.info(s"dataIds: $configKeys")
     if (offset < configKeys.size) {
       val futures = configKeys.view
