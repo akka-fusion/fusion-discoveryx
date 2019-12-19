@@ -3,11 +3,10 @@ package fusion.discoveryx.functest
 import akka.remote.testconductor.RoleName
 import akka.remote.testkit.{MultiNodeConfig, STMultiNodeSpec, SchudulerXMultiNodeSpec}
 import com.typesafe.config.ConfigFactory
-import fusion.discoveryx.DiscoveryX
 import fusion.discoveryx.client.DiscoveryXNamingClient
 import fusion.discoveryx.common.Constants
 import fusion.discoveryx.model.{InstanceQuery, InstanceRegister, ServerStatusQuery}
-import fusion.discoveryx.server.DiscoveryXServer
+import fusion.discoveryx.server.{DiscoveryX, DiscoveryXServer}
 import helloscala.common.IntStatus
 
 object DiscoveryXMultiTestConfig extends MultiNodeConfig {

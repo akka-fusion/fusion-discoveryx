@@ -43,7 +43,7 @@ object ConfigManager {
       Entity(TypeKey)(entityContext => apply(entityContext.entityId))
         .withSettings(ClusterShardingSettings(system).withPassivateIdleEntityAfter(Duration.Zero)))
 
-  def apply(entityId: String): Behavior[Command] =
+  private def apply(entityId: String): Behavior[Command] =
     Behaviors.setup(context => new ConfigManager(entityId, context).init())
 }
 

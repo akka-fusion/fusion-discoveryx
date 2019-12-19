@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package fusion.discoveryx.server.config.service
+package fusion.discoveryx.server.config
 
 import akka.actor.typed.scaladsl.AskPattern._
 import akka.actor.typed.{ ActorRef, ActorSystem }
@@ -22,15 +22,19 @@ import akka.cluster.sharding.typed.ShardingEnvelope
 import akka.util.Timeout
 import com.typesafe.scalalogging.StrictLogging
 import fusion.discoveryx.model.{ ConfigGet, ConfigItem, ConfigRemove }
-import fusion.discoveryx.server.config.ConfigManager
 import fusion.discoveryx.server.grpc.ConfigManagerService
+import fusion.discoveryx.server.management.NamespaceRef
+import fusion.discoveryx.server.management.NamespaceRef.NamespaceExists
 import fusion.discoveryx.server.protocol.ConfigManagerCommand.Cmd
 import fusion.discoveryx.server.protocol._
+import helloscala.common.IntStatus
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-class ConfigManagerServiceImpl()(implicit system: ActorSystem[_]) extends ConfigManagerService with StrictLogging {
+class ConfigManagerServiceImpl(namespaceRef: ActorRef[NamespaceRef.ExistNamespace])(implicit system: ActorSystem[_])
+    extends ConfigManagerService
+    with StrictLogging {
   private implicit val timeout: Timeout = 10.seconds
   private val configManager: ActorRef[ShardingEnvelope[ConfigManager.Command]] = ConfigManager.init(system)
 
@@ -59,5 +63,12 @@ class ConfigManagerServiceImpl()(implicit system: ActorSystem[_]) extends Config
   override def removeConfig(in: ConfigRemove): Future[ConfigResponse] = askConfig(in.namespace, Cmd.Remove(in))
 
   @inline private def askConfig(namespace: String, cmd: ConfigManagerCommand.Cmd): Future[ConfigResponse] =
-    configManager.ask[ConfigResponse](replyTo => ShardingEnvelope(namespace, ConfigManagerCommand(replyTo, cmd)))
+    namespaceRef
+      .ask[NamespaceExists](replyTo => NamespaceRef.ExistNamespace(namespace, replyTo))
+      .flatMap {
+        case NamespaceExists(true) =>
+          configManager.ask[ConfigResponse](replyTo => ShardingEnvelope(namespace, ConfigManagerCommand(replyTo, cmd)))
+        case _ =>
+          Future.successful(ConfigResponse(IntStatus.BAD_REQUEST, s"Namespace '$namespace' not exists."))
+      }(system.executionContext)
 }

@@ -20,7 +20,6 @@ import akka.http.scaladsl.model.StatusCodes
 import com.typesafe.scalalogging.StrictLogging
 import fusion.discoveryx.model.{ ConfigGet, ConfigItem, ConfigRemove }
 import fusion.discoveryx.server.DiscoveryXServer
-import fusion.discoveryx.server.config.ConfigSettings
 import fusion.discoveryx.server.protocol.{ ConfigResponse, ListConfig }
 import fusion.discoveryx.server.util.ProtobufJson4s
 import helloscala.common.IntStatus
@@ -28,7 +27,8 @@ import org.scalatest.WordSpec
 
 class ConfigManagementRouteTest extends WordSpec with FusionRouteTest with StrictLogging {
   DiscoveryXServer.checkDatabase(system.settings.config)
-  lazy private val configRoute = new ConfigRoute(ConfigSettings(discoveryX.system))(discoveryX.system)
+
+  lazy private val configRoute = new ConfigRoute(discoveryX.namespaceRef)(discoveryX.system)
   lazy private val route = configRoute.consoleRoute
 
   "ConfigManagementRoute" must {
@@ -75,7 +75,7 @@ class ConfigManagementRouteTest extends WordSpec with FusionRouteTest with Stric
         val configResponse = responseAs[ConfigResponse]
         println("getConfig response is " + ProtobufJson4s.toJsonString(configResponse))
         IntStatus.isSuccess(configResponse.status) shouldBe true
-        val config = configResponse.data.config.value
+        configResponse.data.config should not be empty
 //        config.content shouldBe configItem.content
       }
     }

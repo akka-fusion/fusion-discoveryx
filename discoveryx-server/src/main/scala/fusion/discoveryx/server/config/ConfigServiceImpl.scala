@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package fusion.discoveryx.server.config.service
+package fusion.discoveryx.server.config
 
 import akka.NotUsed
-import akka.actor.typed.ActorSystem
 import akka.actor.typed.scaladsl.AskPattern._
+import akka.actor.typed.{ ActorRef, ActorSystem }
 import akka.cluster.sharding.typed.ShardingEnvelope
 import akka.stream.OverflowStrategy
 import akka.stream.scaladsl.Source
@@ -26,7 +26,8 @@ import akka.stream.typed.scaladsl.ActorSource
 import akka.util.Timeout
 import fusion.discoveryx.grpc.ConfigService
 import fusion.discoveryx.model._
-import fusion.discoveryx.server.config.ConfigEntity
+import fusion.discoveryx.server.management.NamespaceRef
+import fusion.discoveryx.server.management.NamespaceRef.{ ExistNamespace, NamespaceExists }
 import fusion.discoveryx.server.protocol._
 import helloscala.common.IntStatus
 import helloscala.common.exception.HSInternalErrorException
@@ -35,7 +36,8 @@ import helloscala.common.util.Utils
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-class ConfigServiceImpl()(implicit system: ActorSystem[_]) extends ConfigService {
+class ConfigServiceImpl(namespaceRef: ActorRef[NamespaceRef.ExistNamespace])(implicit system: ActorSystem[_])
+    extends ConfigService {
   implicit private val timeout: Timeout = 5.seconds
   private val configEntity = ConfigEntity.init(system)
 
@@ -70,5 +72,12 @@ class ConfigServiceImpl()(implicit system: ActorSystem[_]) extends ConfigService
   }
 
   @inline private def askConfig(namespace: String, dataId: String, cmd: ConfigEntityCommand.Cmd): Future[ConfigReply] =
-    configEntity.ask[ConfigReply](replyTo => ShardingEnvelope(namespace, ConfigEntityCommand(replyTo, cmd)))
+    namespaceRef
+      .ask[NamespaceExists](replyTo => ExistNamespace(namespace, replyTo))
+      .flatMap {
+        case NamespaceExists(true) =>
+          configEntity.ask[ConfigReply](replyTo => ShardingEnvelope(namespace, ConfigEntityCommand(replyTo, cmd)))
+        case _ =>
+          Future.successful(ConfigReply(IntStatus.BAD_REQUEST, s"Namespace '$namespace' not exists."))
+      }(system.executionContext)
 }

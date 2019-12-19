@@ -17,26 +17,23 @@
 package fusion.discoveryx.server.route
 
 import akka.actor
-import akka.actor.typed.ActorSystem
-import akka.cluster.typed.{ ClusterSingleton, SingletonActor }
+import akka.actor.typed.{ ActorRef, ActorSystem }
 import akka.http.scaladsl.model.{ HttpRequest, HttpResponse }
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.stream.{ Materializer, SystemMaterializer }
 import fusion.discoveryx.grpc.ConfigServiceHandler
 import fusion.discoveryx.model.{ ConfigGet, ConfigItem, ConfigRemove }
-import fusion.discoveryx.server.ConfigLeader
-import fusion.discoveryx.server.config.ConfigSettings
-import fusion.discoveryx.server.config.service.{ ConfigManagerServiceImpl, ConfigServiceImpl }
+import fusion.discoveryx.server.config.{ ConfigManagerServiceImpl, ConfigServiceImpl }
 import fusion.discoveryx.server.grpc.ConfigManagerServiceHandler
+import fusion.discoveryx.server.management.NamespaceRef
 import fusion.discoveryx.server.protocol.ListConfig
 
 import scala.concurrent.Future
 
-class ConfigRoute(configSettings: ConfigSettings)(implicit system: ActorSystem[_]) {
-  ClusterSingleton(system).init(SingletonActor(ConfigLeader(), ConfigLeader.NAME))
-  private val configService = new ConfigServiceImpl()
-  private val configManagerService = new ConfigManagerServiceImpl()
+class ConfigRoute(namespaceRef: ActorRef[NamespaceRef.ExistNamespace])(implicit system: ActorSystem[_]) {
+  private val configService = new ConfigServiceImpl(namespaceRef)
+  private val configManagerService = new ConfigManagerServiceImpl(namespaceRef)
 
   val grpcHandler: List[PartialFunction[HttpRequest, Future[HttpResponse]]] = {
     import akka.actor.typed.scaladsl.adapter._

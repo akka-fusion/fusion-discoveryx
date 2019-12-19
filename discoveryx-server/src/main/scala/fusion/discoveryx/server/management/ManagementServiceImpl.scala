@@ -16,8 +16,8 @@
 
 package fusion.discoveryx.server.management
 
-import akka.actor.typed.ActorSystem
 import akka.actor.typed.scaladsl.AskPattern._
+import akka.actor.typed.{ ActorRef, ActorSystem }
 import akka.util.Timeout
 import fusion.discoveryx.server.grpc.ManagementService
 import fusion.discoveryx.server.protocol.ManagementCommand.Cmd
@@ -26,9 +26,9 @@ import fusion.discoveryx.server.protocol._
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-class ManagementServiceImpl()(implicit system: ActorSystem[_]) extends ManagementService {
+class ManagementServiceImpl(managementRef: ActorRef[Management.Command])(implicit system: ActorSystem[_])
+    extends ManagementService {
   implicit private val timeout: Timeout = 5.seconds
-  private val managementRef = Management.init(system)
 
   /**
    * #ListNamespace

@@ -42,7 +42,7 @@ object NamingManager {
     ClusterSharding(system).init(Entity(TypeKey)(entityContext => NamingManager(entityContext.entityId)))
   }
 
-  def apply(namespace: String): Behavior[Command] =
+  private def apply(namespace: String): Behavior[Command] =
     Behaviors.setup(context => new NamingManager(namespace, context).receive())
 }
 
@@ -52,8 +52,7 @@ class NamingManager private (namespace: String, context: ActorContext[Command]) 
   private implicit val timeout: Timeout = 10.seconds
   private implicit val system: ActorSystem[_] = context.system
   private val namingSettings = NamingSettings(context.system)
-  private val namingRegion = ClusterSharding(context.system).init(Entity(NamingEntity.TypeKey)(entityContext =>
-    NamingEntity(entityContext.entityId)))
+  private val namingRegion = NamingEntity.init(context.system)
   private var namings = Vector.empty[ActorRef[NamingEntity.Command]]
 
   DistributedPubSub(context.system).mediator ! DistributedPubSubMediator.Subscribe(

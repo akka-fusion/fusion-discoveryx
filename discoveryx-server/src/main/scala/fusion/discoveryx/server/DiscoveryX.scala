@@ -14,24 +14,28 @@
  * limitations under the License.
  */
 
-package fusion.discoveryx
+package fusion.discoveryx.server
 
-import akka.actor.typed.ActorSystem
 import akka.actor.typed.scaladsl.adapter._
+import akka.actor.typed.scaladsl.{ ActorContext, Behaviors }
+import akka.actor.typed.{ ActorRef, ActorSystem, Behavior }
 import akka.{ actor => classic }
 import com.typesafe.config.Config
 import fusion.common.config.FusionConfigFactory
 import fusion.common.{ FusionActorRefFactory, FusionProtocol }
+import fusion.discoveryx.DiscoveryXSettings
 import fusion.discoveryx.common.Constants
+import fusion.discoveryx.server.management.NamespaceRef
 
 class DiscoveryX(val settings: DiscoveryXSettings, val config: Config, val system: ActorSystem[FusionProtocol.Command])
     extends FusionActorRefFactory {
+  def namespaceRef: ActorRef[NamespaceRef.ExistNamespace] = system.narrow[NamespaceRef.ExistNamespace]
   def classicSystem: classic.ActorSystem = system.toClassic
 }
 
 object DiscoveryX {
   def fromMergedConfig(config: Config): DiscoveryX =
-    fromActorSystem(ActorSystem(FusionProtocol.behavior, Constants.DISCOVERYX, config))
+    fromActorSystem(ActorSystem(apply(), Constants.DISCOVERYX, config))
 
   def fromActorSystem(system: ActorSystem[FusionProtocol.Command]): DiscoveryX = {
     new DiscoveryX(DiscoveryXSettings(system.settings.config), system.settings.config, system)
@@ -40,5 +44,18 @@ object DiscoveryX {
   def fromOriginalConfig(originalConfig: Config): DiscoveryX = {
     val config = FusionConfigFactory.arrangeConfig(originalConfig, Constants.DISCOVERYX, Seq("akka"))
     fromActorSystem(ActorSystem(FusionProtocol.behavior, Constants.DISCOVERYX, config))
+  }
+
+  private def apply(): Behavior[FusionProtocol.Command] = Behaviors.setup { context =>
+    val namespaceRef = context.spawn(NamespaceRef(), NamespaceRef.NAME)
+    Behaviors.receiveMessage[FusionProtocol.Command] {
+      case cmd: NamespaceRef.ExistNamespace =>
+        namespaceRef ! cmd
+        Behaviors.same
+      case t =>
+        FusionProtocol.behaviorPartial.applyOrElse(
+          (context, t),
+          (_: (ActorContext[FusionProtocol.Command], FusionProtocol.Command)) => Behaviors.unhandled)
+    }
   }
 }

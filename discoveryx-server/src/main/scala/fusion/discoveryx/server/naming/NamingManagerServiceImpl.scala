@@ -14,21 +14,23 @@
  * limitations under the License.
  */
 
-package fusion.discoveryx.server.naming.service
+package fusion.discoveryx.server.naming
 
 import akka.actor.typed.scaladsl.AskPattern._
 import akka.actor.typed.{ ActorRef, ActorSystem }
 import akka.cluster.sharding.typed.ShardingEnvelope
 import akka.util.Timeout
 import fusion.discoveryx.server.grpc.NamingManagerService
-import fusion.discoveryx.server.naming.NamingManager
+import fusion.discoveryx.server.management.NamespaceRef.{ ExistNamespace, NamespaceExists }
 import fusion.discoveryx.server.protocol.NamingManagerCommand.Cmd
 import fusion.discoveryx.server.protocol._
+import helloscala.common.IntStatus
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-class NamingManagerServiceImpl()(implicit system: ActorSystem[_]) extends NamingManagerService {
+class NamingManagerServiceImpl(namespaceRef: ActorRef[ExistNamespace])(implicit system: ActorSystem[_])
+    extends NamingManagerService {
   private implicit val timeout: Timeout = 10.seconds
   private val namingManager: ActorRef[ShardingEnvelope[NamingManager.Command]] = NamingManager.init(system)
 
@@ -66,5 +68,12 @@ class NamingManagerServiceImpl()(implicit system: ActorSystem[_]) extends Naming
     askManager(in.namespace, Cmd.RemoveService(in))
 
   @inline private def askManager(namespace: String, cmd: NamingManagerCommand.Cmd): Future[NamingResponse] =
-    namingManager.ask[NamingResponse](replyTo => ShardingEnvelope(namespace, NamingManagerCommand(replyTo, cmd)))
+    namespaceRef
+      .ask[NamespaceExists](replyTo => ExistNamespace(namespace, replyTo))
+      .flatMap {
+        case NamespaceExists(true) =>
+          namingManager.ask[NamingResponse](replyTo => ShardingEnvelope(namespace, NamingManagerCommand(replyTo, cmd)))
+        case _ =>
+          Future.successful(NamingResponse(IntStatus.NOT_FOUND, s"Namespace '$namespace' not exists."))
+      }(system.executionContext)
 }

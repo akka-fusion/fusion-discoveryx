@@ -16,10 +16,11 @@
 
 package fusion.discoveryx.server.naming
 
-import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.{ ActorContext, Behaviors, TimerScheduler }
+import akka.actor.typed.{ ActorRef, ActorSystem, Behavior }
 import akka.cluster.pubsub.{ DistributedPubSub, DistributedPubSubMediator }
-import akka.cluster.sharding.typed.scaladsl.EntityTypeKey
+import akka.cluster.sharding.typed.ShardingEnvelope
+import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, Entity, EntityTypeKey }
 import fusion.discoveryx.DiscoveryXUtils
 import fusion.discoveryx.model._
 import fusion.discoveryx.server.protocol._
@@ -48,7 +49,10 @@ object NamingEntity {
     else Right(s"$namespace $serviceName")
   }
 
-  def apply(entityId: String): Behavior[Command] = Behaviors.setup[Command] { context =>
+  def init(system: ActorSystem[_]): ActorRef[ShardingEnvelope[Command]] =
+    ClusterSharding(system).init(Entity(NamingEntity.TypeKey)(entityContext => apply(entityContext.entityId)))
+
+  private def apply(entityId: String): Behavior[Command] = Behaviors.setup[Command] { context =>
     context.log.debug(s"apply entityId is '$entityId'")
     val namingServiceKey = NamingServiceKey
       .unapply(entityId)

@@ -49,7 +49,7 @@ object ConfigEntity {
     ClusterSharding(system).init(
       Entity(TypeKey)(entityContext => apply(entityContext)).withStopMessage(ConfigPassiveStop()))
 
-  def apply(entityContext: EntityContext[Command]): Behavior[Command] =
+  private def apply(entityContext: EntityContext[Command]): Behavior[Command] =
     Behaviors.setup(context =>
       ConfigEntity.ConfigKey.unapply(entityContext.entityId) match {
         case Some(configKey) =>

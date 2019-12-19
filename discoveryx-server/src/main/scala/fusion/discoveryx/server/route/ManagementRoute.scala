@@ -23,13 +23,14 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.stream.{ Materializer, SystemMaterializer }
 import fusion.discoveryx.server.grpc.ManagementServiceHandler
-import fusion.discoveryx.server.management.{ ManagementServiceImpl, ManagementSettings }
+import fusion.discoveryx.server.management.{ Management, ManagementServiceImpl }
 import fusion.discoveryx.server.protocol.{ CreateNamespace, ListNamespace }
 
 import scala.concurrent.Future
 
-class ManagementRoute(managementSettings: ManagementSettings)(implicit system: ActorSystem[_]) {
-  val managementService = new ManagementServiceImpl()
+class ManagementRoute()(implicit system: ActorSystem[_]) {
+  private val managementRef = Management.init(system)
+  private val managementService = new ManagementServiceImpl(managementRef)
 
   val grpcHandler: List[PartialFunction[HttpRequest, Future[HttpResponse]]] = {
     import akka.actor.typed.scaladsl.adapter._

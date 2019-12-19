@@ -21,7 +21,7 @@ import akka.http.scaladsl.testkit.{ RouteTestTimeout, ScalatestRouteTest }
 import akka.testkit.TestDuration
 import com.typesafe.config.{ Config, ConfigFactory }
 import fusion.core.extension.FusionCore
-import fusion.discoveryx.DiscoveryX
+import fusion.discoveryx.server.DiscoveryX
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{ Millis, Span }
 import org.scalatest.{ EitherValues, Matchers, OptionValues, Suite }

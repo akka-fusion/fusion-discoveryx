@@ -17,31 +17,29 @@
 package fusion.discoveryx.server.route
 
 import akka.actor
-import akka.actor.typed.ActorSystem
+import akka.actor.typed.{ ActorRef, ActorSystem }
 import akka.grpc.scaladsl.MetadataImpl
 import akka.http.scaladsl.model.{ HttpRequest, HttpResponse }
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.stream.{ Materializer, SystemMaterializer }
-import fusion.common.FusionProtocol
-import fusion.discoveryx.DiscoveryX
 import fusion.discoveryx.grpc.NamingServicePowerApiHandler
 import fusion.discoveryx.model.{ InstanceModify, InstanceQuery, InstanceRegister, InstanceRemove }
 import fusion.discoveryx.server.grpc.NamingManagerServiceHandler
-import fusion.discoveryx.server.naming.service.NamingManagerServiceImpl
-import fusion.discoveryx.server.naming.{ NamingServiceImpl, NamingSettings }
-import fusion.discoveryx.server.protocol.{ CreateService, GetService, ListService, ModifyService, RemoveService }
+import fusion.discoveryx.server.management.NamespaceRef.ExistNamespace
+import fusion.discoveryx.server.naming.{ NamingManagerServiceImpl, NamingServiceImpl }
+import fusion.discoveryx.server.protocol._
 
 import scala.concurrent.Future
 
-class NamingRoute(discoveryX: DiscoveryX, namingSettings: NamingSettings) {
-  private implicit val system: ActorSystem[FusionProtocol.Command] = discoveryX.system
-  private val namingManagerService = new NamingManagerServiceImpl()(discoveryX.system)
-  private val namingService = new NamingServiceImpl()
+class NamingRoute(namespaceRef: ActorRef[ExistNamespace])(implicit system: ActorSystem[_]) {
+  private val namingManagerService = new NamingManagerServiceImpl(namespaceRef)
+  private val namingService = new NamingServiceImpl(namespaceRef)
 
   val grpcHandler: List[PartialFunction[HttpRequest, Future[HttpResponse]]] = {
+    import akka.actor.typed.scaladsl.adapter._
     implicit val mat: Materializer = SystemMaterializer(system).materializer
-    implicit val classicSystem: actor.ActorSystem = discoveryX.classicSystem
+    implicit val classicSystem: actor.ActorSystem = system.toClassic
     NamingServicePowerApiHandler.partial(namingService) :: NamingManagerServiceHandler.partial(namingManagerService) :: Nil
   }
 
