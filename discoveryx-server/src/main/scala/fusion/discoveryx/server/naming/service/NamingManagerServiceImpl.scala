@@ -20,11 +20,10 @@ import akka.actor.typed.scaladsl.AskPattern._
 import akka.actor.typed.{ ActorRef, ActorSystem }
 import akka.cluster.sharding.typed.ShardingEnvelope
 import akka.util.Timeout
-import fusion.discoveryx.model.{ InstanceModify, InstanceRegister, InstanceRemove }
 import fusion.discoveryx.server.grpc.NamingManagerService
 import fusion.discoveryx.server.naming.NamingManager
 import fusion.discoveryx.server.protocol.NamingManagerCommand.Cmd
-import fusion.discoveryx.server.protocol.{ GetService, ListService, NamingManagerCommand, NamingResponse }
+import fusion.discoveryx.server.protocol._
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -32,13 +31,6 @@ import scala.concurrent.duration._
 class NamingManagerServiceImpl()(implicit system: ActorSystem[_]) extends NamingManagerService {
   private implicit val timeout: Timeout = 10.seconds
   private val namingManager: ActorRef[ShardingEnvelope[NamingManager.Command]] = NamingManager.init(system)
-
-  /**
-   * #CreateInstance
-   * 创建实例
-   */
-  override def createInstance(in: InstanceRegister): Future[NamingResponse] =
-    askManager(in.namespace, Cmd.InstanceCreate(in))
 
   /**
    * #ListService
@@ -53,18 +45,25 @@ class NamingManagerServiceImpl()(implicit system: ActorSystem[_]) extends Naming
   override def getService(in: GetService): Future[NamingResponse] = askManager(in.namespace, Cmd.GetService(in))
 
   /**
-   * #RemoveInstance
-   * 删除实例
+   * # CreateService
+   * 创建服务
    */
-  override def removeInstance(in: InstanceRemove): Future[NamingResponse] =
-    askManager(in.namespace, Cmd.InstanceRemove(in))
+  override def createService(in: CreateService): Future[NamingResponse] =
+    askManager(in.namespace, Cmd.CreateService(in))
 
   /**
-   * #ModifyInstance
-   * 编辑实例
+   * # ModifyService
+   * 创建服务
    */
-  override def modifyInstance(in: InstanceModify): Future[NamingResponse] =
-    askManager(in.namespace, Cmd.InstanceModify(in))
+  override def modifyService(in: ModifyService): Future[NamingResponse] =
+    askManager(in.namespace, Cmd.ModifyService(in))
+
+  /**
+   * # RemoveService
+   * 删除服务
+   */
+  override def removeService(in: RemoveService): Future[NamingResponse] =
+    askManager(in.namespace, Cmd.RemoveService(in))
 
   @inline private def askManager(namespace: String, cmd: NamingManagerCommand.Cmd): Future[NamingResponse] =
     namingManager.ask[NamingResponse](replyTo => ShardingEnvelope(namespace, NamingManagerCommand(replyTo, cmd)))

@@ -68,10 +68,11 @@ object ConfigLeader {
     eventSource.runForeach {
       case (configKey, envelope) =>
         envelope.event match {
-          case event: ChangedConfigEvent if event.`type` == ChangeType.CHANGE_REMOVE =>
-            configManager ! ShardingEnvelope(configKey.namespace, InternalRemoveKey(configKey))
-          case _: ChangedConfigEvent => // TODO 每次都发请求，是否有更好的方案？
-            configManager ! ShardingEnvelope(configKey.namespace, InternalConfigKeys(configKey :: Nil))
+          case event: ChangedConfigEvent =>
+            val cmd =
+              if (event.`type` == ChangeType.CHANGE_REMOVE) InternalRemoveKey(configKey)
+              else InternalConfigKeys(configKey :: Nil)
+            configManager ! ShardingEnvelope(configKey.namespace, cmd)
           case _ => // do nothing
         }
     }

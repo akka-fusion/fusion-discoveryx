@@ -1,11 +1,11 @@
 # Naming Manager 名称管理服务
 
 - gRPC服务地址：`/fusion.discoveryx.server.grpc.NamingManagerService`
-- REST URL前缀：`/fusion/discoveryx/management/naming`
+- REST URL前缀：`/fusion/discoveryx/console/naming`
 
-REST URL路径由 **REST URL前缀** + 服务名组织，均使用 **POST** 方法的请求，JSON序例化格式。如查询服务列表接口访问地址为：`POST /fusion/discoveryx/management/naming/ListService`。Protobuf与JSON格式转换请参阅： @ref[JSON 说明](../json.md)。
+REST URL路径由 **REST URL前缀** + 服务名组织，均使用 **POST** 方法的请求，JSON序例化格式。如查询服务列表接口访问地址为：`POST /fusion/discoveryx/console/naming/ListService`。Protobuf与JSON格式转换请参阅： @ref[JSON 说明](../json.md)。
 
-## ListService 查询服务列表
+## ListService
 
 **gRPC**
 
@@ -22,11 +22,11 @@ REST URL路径由 **REST URL前缀** + 服务名组织，均使用 **POST** 方�
 `oneof`的`listed_service`字段将返回匹配查询的服务列表：
 
 @@snip [protocol](../../../../../../discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/naming.proto) { #ListedService }
-@@snip [protocol](../../../../../../discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/naming.proto) { #ServiceInfo }
+@@snip [model](../../../../../../discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto) { #ServiceInfo }
 
-`Instance`见 @ref[开放API#instance](../open-api.md#instance)。
+`Instance`见 @ref[开放API#instance](../open/naming.md#instance)。
 
-## GetService 查询单个服务
+## GetService
 
 **gRPC**
 
@@ -42,34 +42,62 @@ REST URL路径由 **REST URL前缀** + 服务名组织，均使用 **POST** 方�
 
 `oneof`的`listed_service`字段将返回匹配查询的服务列表：
 
-@@snip [protocol](../../../../../../discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/naming.proto) { #ServiceInfo }
+@@snip [model](../../../../../../discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto) { #ServiceInfo }
 
-## RemoveInstance 删除实例
+## CreateService
 
 **gRPC**
 
-@@snip [gRPC](../../../../../../discoveryx-server/src/main/protobuf/fusion/discoveryx/server/grpc/server.proto) { #RemoveInstance }
+@@snip [gRPC](../../../../../../discoveryx-server/src/main/protobuf/fusion/discoveryx/server/grpc/server.proto) { #CreateService }
 
 **请求**
 
-@@snip [protocol](../../../../../../discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto) { #InstanceRemove }
+@@snip [protocol](../../../../../../discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/naming.proto) { #CreateService }
 
 **响应**
 
 @@snip [protocol](../../../../../../discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/naming.proto) { #NamingResponse }
 
-## ModifyInstance 编辑实例
+`oneof`的`listed_service`字段将返回匹配查询的服务列表：
+
+@@snip [model](../../../../../../discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto) { #ServiceInfo }
+
+## ModifyService
 
 **gRPC**
 
-@@snip [gRPC](../../../../../../discoveryx-server/src/main/protobuf/fusion/discoveryx/server/grpc/server.proto) { #ModifyInstance }
+@@snip [gRPC](../../../../../../discoveryx-server/src/main/protobuf/fusion/discoveryx/server/grpc/server.proto) { #ModifyService }
 
 **请求**
 
-@@snip [protocol](../../../../../../discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto) { #InstanceModify }
+@@snip [protocol](../../../../../../discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/naming.proto) { #ModifyService }
 
 **响应**
 
 @@snip [protocol](../../../../../../discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/naming.proto) { #NamingResponse }
 
-`oneof`的`instance`将返回编辑后的实例信息，`Instance`见 @ref[开放API#instance](../open-api.md#instance)。
+`oneof`的`listed_service`字段将返回匹配查询的服务列表：
+
+@@snip [model](../../../../../../discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto) { #ServiceInfo }
+
+## RemoveService
+
+**gRPC**
+
+@@snip [gRPC](../../../../../../discoveryx-server/src/main/protobuf/fusion/discoveryx/server/grpc/server.proto) { #RemoveService }
+
+**请求**
+
+@@snip [protocol](../../../../../../discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/naming.proto) { #RemoveService }
+
+**响应**
+
+@@snip [protocol](../../../../../../discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/naming.proto) { #NamingResponse }
+
+## RemoveInstance
+
+见 @ref[RemoveInstance 删除实例](../open/naming.md#removeinstance) 。
+
+## ModifyInstance
+
+见 @ref[ModifyInstance 编辑实例](../open/naming.md#modifyinstance) 。

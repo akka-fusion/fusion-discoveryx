@@ -30,7 +30,7 @@ import fusion.discoveryx.model.{ InstanceModify, InstanceQuery, InstanceRegister
 import fusion.discoveryx.server.grpc.NamingManagerServiceHandler
 import fusion.discoveryx.server.naming.service.NamingManagerServiceImpl
 import fusion.discoveryx.server.naming.{ NamingServiceImpl, NamingSettings }
-import fusion.discoveryx.server.protocol.{ GetService, ListService }
+import fusion.discoveryx.server.protocol.{ CreateService, GetService, ListService, ModifyService, RemoveService }
 
 import scala.concurrent.Future
 
@@ -47,53 +47,53 @@ class NamingRoute(discoveryX: DiscoveryX, namingSettings: NamingSettings) {
 
   import fusion.discoveryx.server.util.ProtobufJsonSupport._
 
-  def managementRoute: Route = pathPrefix("naming") {
-    pathPost("listService") {
-      entity(as[ListService]) { cmd =>
-        complete(namingManagerService.listService(cmd))
+  def consoleRoute: Route = pathPrefix("naming") {
+    pathPost("ListService") {
+      entity(as[ListService]) { in =>
+        complete(namingManagerService.listService(in))
       }
     } ~
-    pathPost("getService") {
-      entity(as[GetService]) { cmd =>
-        complete(namingManagerService.getService(cmd))
+    pathPost("GetService") {
+      entity(as[GetService]) { in =>
+        complete(namingManagerService.getService(in))
       }
     } ~
-    pathPost("createInstance") {
-      entity(as[InstanceRegister]) { cmd =>
-        complete(namingManagerService.createInstance(cmd))
+    pathPost("CreateService") {
+      entity(as[CreateService]) { in =>
+        complete(namingManagerService.createService(in))
       }
     } ~
-    pathPost("removeInstance") {
-      entity(as[InstanceRemove]) { cmd =>
-        complete(namingManagerService.removeInstance(cmd))
+    pathPost("RemoveService") {
+      entity(as[RemoveService]) { in =>
+        complete(namingManagerService.removeService(in))
       }
     } ~
-    pathPost("modifyInstance") {
-      entity(as[InstanceModify]) { cmd =>
-        complete(namingManagerService.modifyInstance(cmd))
+    pathPost("ModifyService") {
+      entity(as[ModifyService]) { in =>
+        complete(namingManagerService.modifyService(in))
       }
     }
   }
 
   def openRoute: Route = pathPrefix("naming") {
-    pathPost("queryInstance") {
-      entity(as[InstanceQuery]) { cmd =>
-        complete(namingService.queryInstance(cmd, new MetadataImpl()))
+    pathPost("QueryInstance") {
+      entity(as[InstanceQuery]) { in =>
+        complete(namingService.queryInstance(in, new MetadataImpl()))
       }
     } ~
-    pathPost("registerInstance") {
-      entity(as[InstanceRegister]) { cmd =>
-        complete(namingService.registerInstance(cmd, new MetadataImpl()))
+    pathPost("RegisterInstance") {
+      entity(as[InstanceRegister]) { in =>
+        complete(namingService.registerInstance(in, new MetadataImpl()))
       }
     } ~
-    pathPost("modifyInstance") {
-      entity(as[InstanceModify]) { cmd =>
-        complete(namingService.modifyInstance(cmd, new MetadataImpl()))
+    pathPost("ModifyInstance") {
+      entity(as[InstanceModify]) { in =>
+        complete(namingService.modifyInstance(in, new MetadataImpl()))
       }
     } ~
-    pathPost("removeInstance") {
-      entity(as[InstanceRemove]) { cmd =>
-        complete(namingService.removeInstance(cmd, new MetadataImpl()))
+    pathPost("RemoveInstance") {
+      entity(as[InstanceRemove]) { in =>
+        complete(namingService.removeInstance(in, new MetadataImpl()))
       }
     }
   }

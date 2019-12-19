@@ -10,6 +10,7 @@
 
 - [intro](intro.md)
 - [api](api/index.md)
+- [deploy](deploy/index.md)
 - [release](releases.md)
 
 @@@

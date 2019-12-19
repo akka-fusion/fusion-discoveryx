@@ -19,6 +19,7 @@ package fusion.discoveryx.server.config
 import akka.actor.typed.scaladsl.AskPattern._
 import akka.actor.typed.scaladsl.{ ActorContext, Behaviors }
 import akka.actor.typed.{ ActorRef, ActorSystem, Behavior }
+import akka.cluster.sharding.typed.ClusterShardingSettings
 import akka.cluster.sharding.typed.ShardingEnvelope
 import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, Entity, EntityTypeKey }
 import akka.util.Timeout
@@ -38,7 +39,9 @@ object ConfigManager {
   val TypeKey: EntityTypeKey[Command] = EntityTypeKey("ConfigManager")
 
   def init(system: ActorSystem[_]): ActorRef[ShardingEnvelope[Command]] =
-    ClusterSharding(system).init(Entity(TypeKey)(entityContext => apply(entityContext.entityId)))
+    ClusterSharding(system).init(
+      Entity(TypeKey)(entityContext => apply(entityContext.entityId))
+        .withSettings(ClusterShardingSettings(system).withPassivateIdleEntityAfter(Duration.Zero)))
 
   def apply(entityId: String): Behavior[Command] =
     Behaviors.setup(context => new ConfigManager(entityId, context).init())
@@ -91,8 +94,9 @@ class ConfigManager private (namespace: String, context: ActorContext[Command]) 
   }
 
   private def processList(cmd: ListConfig): Future[ConfigResponse] = {
+    val page = settings.findPage(cmd.page)
     val size = settings.findPage(cmd.size)
-    val offset = settings.findOffset(settings.findPage(cmd.page), size)
+    val offset = settings.findOffset(page, size)
     context.log.info(s"dataIds: $configKeys")
     if (offset < configKeys.size) {
       val futures = configKeys.view
@@ -101,10 +105,14 @@ class ConfigManager private (namespace: String, context: ActorContext[Command]) 
         .toVector
       Future.sequence(futures).map { replies =>
         val configs = replies.collect { case Some(item) => itemToBasic(item) }
-        ConfigResponse(IntStatus.OK, data = Data.Listed(ConfigQueried(configs)))
+        ConfigResponse(IntStatus.OK, data = Data.Listed(ConfigQueried(configs, namespace, page, size, configKeys.size)))
       }
     } else {
-      Future.successful(ConfigResponse(IntStatus.OK, data = Data.Listed(ConfigQueried())))
+      Future.successful(
+        ConfigResponse(
+          IntStatus.OK,
+          data = Data.Listed(
+            ConfigQueried(namespace = namespace, page = page, size = size, totalElements = configKeys.size))))
     }
   }
 

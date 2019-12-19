@@ -42,7 +42,7 @@ class NamingManagementRouteTest
   private implicit val timeout: RouteTestTimeout = RouteTestTimeout(5.seconds.dilated)
   private var discoveryX: DiscoveryX = _
   lazy private val namingRoute = new NamingRoute(discoveryX, NamingSettings(discoveryX.system))
-  lazy private val route = namingRoute.managementRoute
+  lazy private val route = namingRoute.consoleRoute
 
   "testManagementRoute" must {
     import fusion.discoveryx.server.util.ProtobufJsonSupport._

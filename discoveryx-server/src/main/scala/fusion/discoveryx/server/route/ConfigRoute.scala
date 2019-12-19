@@ -48,40 +48,40 @@ class ConfigRoute(configSettings: ConfigSettings)(implicit system: ActorSystem[_
   import fusion.discoveryx.server.util.ProtobufJsonSupport._
 
   def openRoute: Route = pathPrefix("config") {
-    pathPost("queryConfig") {
+    pathPost("QueryConfig") {
       entity(as[ConfigGet]) { in =>
         complete(configService.queryConfig(in))
       }
     } ~
-    pathPost("publishConfig") {
+    pathPost("PublishConfig") {
       entity(as[ConfigItem]) { in =>
         complete(configService.publishConfig(in))
       }
     } ~
-    pathPost("removeConfig") {
+    pathPost("RemoveConfig") {
       entity(as[ConfigRemove]) { in =>
         complete(configService.removeConfig(in))
       }
     }
   }
 
-  def managementRoute: Route = pathPrefix("config") {
-    pathPost("listConfig") {
+  def consoleRoute: Route = pathPrefix("config") {
+    pathPost("ListConfig") {
       entity(as[ListConfig]) { in =>
         complete(configManagerService.listConfig(in))
       }
     } ~
-    pathPost("getConfig") {
+    pathPost("GetConfig") {
       entity(as[ConfigGet]) { in =>
         complete(configManagerService.getConfig(in))
       }
     } ~
-    pathPost("publishConfig") {
+    pathPost("PublishConfig") {
       entity(as[ConfigItem]) { in =>
         complete(configManagerService.publishConfig(in))
       }
     } ~
-    pathPost("removeConfig") {
+    pathPost("RemoveConfig") {
       entity(as[ConfigRemove]) { in =>
         complete(configManagerService.removeConfig(in))
       }

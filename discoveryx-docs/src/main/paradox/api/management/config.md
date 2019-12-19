@@ -1,11 +1,11 @@
 # Config Manager 配置管理服务
 
 - gRPC服务地址：`/fusion.discoveryx.server.grpc.ConfigManagerService`
-- REST URL前缀：`/fusion/discoveryx/management/config`
+- REST URL前缀：`/fusion/discoveryx/console/config`
 
 REST URL路径由 **REST URL前缀** + 服务名组织，均使用 **POST** 方法的请求，JSON序例化格式。如查询配置列表接口访问地址为：`POST /fusion/discoveryx/management/config/ListConfig`。Protobuf与JSON格式转换请参阅： @ref[JSON 说明](../json.md)。
 
-## ListConfig 查询配置列表
+## ListConfig
 
 **gRPC**
 
@@ -23,7 +23,7 @@ REST URL路径由 **REST URL前缀** + 服务名组织，均使用 **POST** 方�
 
 @@snip [protocol](../../../../../../discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto) { #ConfigQueried }
 
-## GetConfig 查询单个配置
+## GetConfig
 
 **gRPC**
 
@@ -41,7 +41,7 @@ REST URL路径由 **REST URL前缀** + 服务名组织，均使用 **POST** 方�
 
 @@snip [protocol](../../../../../../discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto) { #ConfigItem }
 
-## PublishConfig 发布配置
+## PublishConfig
 
 **gRPC**
 
@@ -59,7 +59,7 @@ REST URL路径由 **REST URL前缀** + 服务名组织，均使用 **POST** 方�
 
 @@snip [protocol](../../../../../../discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto) { #ConfigItem }
 
-## RemoveConfig 删除配置
+## RemoveConfig
 
 **gRPC**
 

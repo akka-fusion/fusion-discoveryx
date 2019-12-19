@@ -68,6 +68,9 @@ message ConfigBasic {
 message ConfigQueried {
     repeated ConfigBasic configs = 1;
     string namespace = 2;
+    int32 page = 3;
+    int32 size = 4;
+    int32 total_elements = 5;
 }
 // #ConfigQueried
 
@@ -202,6 +205,15 @@ message InstanceHeartbeat {
 }
 // #InstanceHeartbeat
 
+// #ServiceInfo
+message ServiceInfo {
+    string namespace = 1;
+    string service_name = 2;
+    string group_name = 3;
+    repeated Instance instances = 4;
+}
+// #ServiceInfo
+
 // #NamingReply
 message NamingReply {
     int32 status = 1;
@@ -209,6 +221,7 @@ message NamingReply {
     oneof data {
         InstanceQueryResult queried = 3;
         Instance instance = 4;
+        ServiceInfo service_info = 5;
     }
 }
 // #NamingReply
