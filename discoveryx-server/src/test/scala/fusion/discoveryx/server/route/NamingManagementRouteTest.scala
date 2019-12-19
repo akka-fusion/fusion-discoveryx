@@ -19,19 +19,18 @@ package fusion.discoveryx.server.route
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.testkit.{ RouteTestTimeout, ScalatestRouteTest }
+import akka.testkit.TestDuration
 import com.typesafe.config.{ Config, ConfigFactory }
-import fusion.discoveryx.DiscoveryX
+import com.typesafe.scalalogging.StrictLogging
+import fusion.core.extension.FusionCore
 import fusion.discoveryx.model.{ Instance, InstanceModify, InstanceRegister, InstanceRemove }
-import fusion.discoveryx.server.naming.NamingSettings
+import fusion.discoveryx.server.DiscoveryX
 import fusion.discoveryx.server.protocol.{ GetService, ListService, NamingResponse }
+import fusion.discoveryx.server.util.ProtobufJson4s
 import helloscala.common.IntStatus
 import org.scalatest.{ Matchers, OptionValues, WordSpec }
 
 import scala.concurrent.duration._
-import akka.testkit.TestDuration
-import com.typesafe.scalalogging.StrictLogging
-import fusion.core.extension.FusionCore
-import fusion.discoveryx.server.util.ProtobufJson4s
 
 class NamingManagementRouteTest
     extends WordSpec
@@ -41,8 +40,8 @@ class NamingManagementRouteTest
     with StrictLogging {
   private implicit val timeout: RouteTestTimeout = RouteTestTimeout(5.seconds.dilated)
   private var discoveryX: DiscoveryX = _
-  lazy private val namingRoute = new NamingRoute(discoveryX, NamingSettings(discoveryX.system))
-  lazy private val route = namingRoute.managementRoute
+  lazy private val namingRoute = new NamingRoute(discoveryX.namespaceRef)(discoveryX.system)
+  lazy private val route = namingRoute.consoleRoute
 
   "testManagementRoute" must {
     import fusion.discoveryx.server.util.ProtobufJsonSupport._

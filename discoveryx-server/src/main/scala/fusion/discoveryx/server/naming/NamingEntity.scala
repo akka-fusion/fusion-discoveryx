@@ -17,9 +17,10 @@
 package fusion.discoveryx.server.naming
 
 import akka.actor.typed.scaladsl.{ ActorContext, Behaviors, TimerScheduler }
-import akka.actor.typed.{ ActorRef, Behavior }
+import akka.actor.typed.{ ActorRef, ActorSystem, Behavior }
 import akka.cluster.pubsub.{ DistributedPubSub, DistributedPubSubMediator }
-import akka.cluster.sharding.typed.scaladsl.EntityTypeKey
+import akka.cluster.sharding.typed.ShardingEnvelope
+import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, Entity, EntityTypeKey }
 import fusion.discoveryx.DiscoveryXUtils
 import fusion.discoveryx.model._
 import fusion.discoveryx.server.protocol._
@@ -31,6 +32,7 @@ object NamingEntity {
   trait Command
 
   private case object HealthCheckKey extends Command
+  private case object StopNaming extends Command
 
   object NamingServiceKey {
     def unapply(entityId: String): Option[NamingServiceKey] = entityId.split(' ') match {
@@ -47,7 +49,10 @@ object NamingEntity {
     else Right(s"$namespace $serviceName")
   }
 
-  def apply(entityId: String): Behavior[Command] = Behaviors.setup[Command] { context =>
+  def init(system: ActorSystem[_]): ActorRef[ShardingEnvelope[Command]] =
+    ClusterSharding(system).init(Entity(NamingEntity.TypeKey)(entityContext => apply(entityContext.entityId)))
+
+  private def apply(entityId: String): Behavior[Command] = Behaviors.setup[Command] { context =>
     context.log.debug(s"apply entityId is '$entityId'")
     val namingServiceKey = NamingServiceKey
       .unapply(entityId)
@@ -78,14 +83,20 @@ class NamingEntity private (
     case Heartbeat(_, _, instId) =>
       processHeartbeat(instId)
     case QueryServiceInfo(replyTo) =>
-      queryServiceInfo(replyTo)
+      replyTo ! queryServiceInfo()
+      Behaviors.same
     case HealthCheckKey =>
       healthCheck()
+    case StopNaming =>
+      Behaviors.stopped
   }
 
-  private def queryServiceInfo(replyTo: ActorRef[ServiceInfo]): Behavior[Command] = {
-    replyTo ! ServiceInfo(namingServiceKey.namespace, namingServiceKey.serviceName, internalService.allRealInstance())
-    Behaviors.same
+  private def queryServiceInfo(): ServiceInfo = {
+    ServiceInfo(
+      namingServiceKey.namespace,
+      namingServiceKey.serviceName,
+      "", // TODO group_name
+      internalService.allRealInstance())
   }
 
   private def healthCheck(): Behavior[Command] = {
@@ -101,11 +112,20 @@ class NamingEntity private (
   private def processReplyCommand(cmd: NamingReplyCommand.Cmd): NamingReply = {
     import NamingReplyCommand.Cmd
     cmd match {
-      case Cmd.Query(value)    => queryInstance(value)
-      case Cmd.Register(value) => registerInstance(value)
-      case Cmd.Remove(value)   => removeInstance(value)
-      case Cmd.Modify(value)   => modifyInstance(value)
-      case Cmd.Empty           => NamingReply(IntStatus.BAD_REQUEST, "Invalid Cmd.")
+      case Cmd.Query(value)         => queryInstance(value)
+      case Cmd.Register(value)      => registerInstance(value)
+      case Cmd.Remove(value)        => removeInstance(value)
+      case Cmd.Modify(value)        => modifyInstance(value)
+      case Cmd.CreateService(value) =>
+        // TODO 保存 value.groupName
+        NamingReply(IntStatus.OK, data = NamingReply.Data.ServiceInfo(queryServiceInfo()))
+      case Cmd.ModifyService(value) =>
+        // TODO 保存 value.groupName
+        NamingReply(IntStatus.OK, data = NamingReply.Data.ServiceInfo(queryServiceInfo()))
+      case Cmd.RemoveService(_) =>
+        context.self ! StopNaming
+        NamingReply(IntStatus.OK)
+      case Cmd.Empty => NamingReply(IntStatus.BAD_REQUEST, "Invalid Cmd.")
     }
   }
 

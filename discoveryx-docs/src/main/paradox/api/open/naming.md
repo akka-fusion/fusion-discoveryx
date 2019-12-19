@@ -5,7 +5,7 @@
 
 REST URL路径由 **REST URL前缀** + 服务名组织，均使用 **POST** 方法的请求，JSON序例化格式。如查询实例接口访问地址为：`POST /fusion/discoveryx/v1/naming/QueryInstance`。Protobuf与JSON格式转换请参阅： @ref[JSON 说明](../json.md)。
 
-### RegisterInstance 注册实例
+### RegisterInstance
 
 **gRPC**
 
@@ -24,7 +24,7 @@ REST URL路径由 **REST URL前缀** + 服务名组织，均使用 **POST** 方�
 
 @@snip [model](../../../../../../discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto) { #Instance }
 
-### RemoveInstance 删除实例
+### RemoveInstance
 
 **gRPC**
 
@@ -40,7 +40,7 @@ REST URL路径由 **REST URL前缀** + 服务名组织，均使用 **POST** 方�
 
 @@snip [model](../../../../../../discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto) { #NamingReply }
 
-### QueryInstance 查询实例
+### QueryInstance
 
 **gRPC**
 
@@ -56,7 +56,7 @@ REST URL路径由 **REST URL前缀** + 服务名组织，均使用 **POST** 方�
 
 查询成功`oneof`通过`queried`字段将查询匹配到的实例返回：
 
-### ModifyInstance 修改实例
+### ModifyInstance
 
 **gRPC**
 
@@ -72,7 +72,7 @@ REST URL路径由 **REST URL前缀** + 服务名组织，均使用 **POST** 方�
 
 `oneof`的`instance`字段将返回修改后的实例信息。
 
-### Heartbeat 实例心跳
+### Heartbeat
 
 **gRPC**
 

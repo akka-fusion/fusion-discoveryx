@@ -46,9 +46,10 @@ object ConfigEntity {
   def makeEntityId(namespace: String, dataId: String) = s"$namespace $dataId"
 
   def init(system: ActorSystem[_]): ActorRef[ShardingEnvelope[Command]] =
-    ClusterSharding(system).init(Entity(TypeKey)(entityContext => apply(entityContext)))
+    ClusterSharding(system).init(
+      Entity(TypeKey)(entityContext => apply(entityContext)).withStopMessage(ConfigPassiveStop()))
 
-  def apply(entityContext: EntityContext[Command]): Behavior[Command] =
+  private def apply(entityContext: EntityContext[Command]): Behavior[Command] =
     Behaviors.setup(context =>
       ConfigEntity.ConfigKey.unapply(entityContext.entityId) match {
         case Some(configKey) =>
@@ -102,6 +103,9 @@ class ConfigEntity private (
       listeners ::= replyTo
       context.watch(replyTo)
       Effect.none
+
+    case ConfigPassiveStop() =>
+      Effect.stop()
   }
 
   private def processRemove(replyTo: ActorRef[ConfigReply]): Effect[ChangedConfigEvent, ConfigState] =

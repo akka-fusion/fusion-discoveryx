@@ -17,83 +17,81 @@
 package fusion.discoveryx.server.route
 
 import akka.actor
-import akka.actor.typed.ActorSystem
+import akka.actor.typed.{ ActorRef, ActorSystem }
 import akka.grpc.scaladsl.MetadataImpl
 import akka.http.scaladsl.model.{ HttpRequest, HttpResponse }
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.stream.{ Materializer, SystemMaterializer }
-import fusion.common.FusionProtocol
-import fusion.discoveryx.DiscoveryX
 import fusion.discoveryx.grpc.NamingServicePowerApiHandler
 import fusion.discoveryx.model.{ InstanceModify, InstanceQuery, InstanceRegister, InstanceRemove }
 import fusion.discoveryx.server.grpc.NamingManagerServiceHandler
-import fusion.discoveryx.server.naming.service.NamingManagerServiceImpl
-import fusion.discoveryx.server.naming.{ NamingServiceImpl, NamingSettings }
-import fusion.discoveryx.server.protocol.{ GetService, ListService }
+import fusion.discoveryx.server.management.NamespaceRef.ExistNamespace
+import fusion.discoveryx.server.naming.{ NamingManagerServiceImpl, NamingServiceImpl }
+import fusion.discoveryx.server.protocol._
 
 import scala.concurrent.Future
 
-class NamingRoute(discoveryX: DiscoveryX, namingSettings: NamingSettings) {
-  private implicit val system: ActorSystem[FusionProtocol.Command] = discoveryX.system
-  private val namingManagerService = new NamingManagerServiceImpl()(discoveryX.system)
-  private val namingService = new NamingServiceImpl()
+class NamingRoute(namespaceRef: ActorRef[ExistNamespace])(implicit system: ActorSystem[_]) {
+  private val namingManagerService = new NamingManagerServiceImpl(namespaceRef)
+  private val namingService = new NamingServiceImpl(namespaceRef)
 
   val grpcHandler: List[PartialFunction[HttpRequest, Future[HttpResponse]]] = {
+    import akka.actor.typed.scaladsl.adapter._
     implicit val mat: Materializer = SystemMaterializer(system).materializer
-    implicit val classicSystem: actor.ActorSystem = discoveryX.classicSystem
+    implicit val classicSystem: actor.ActorSystem = system.toClassic
     NamingServicePowerApiHandler.partial(namingService) :: NamingManagerServiceHandler.partial(namingManagerService) :: Nil
   }
 
   import fusion.discoveryx.server.util.ProtobufJsonSupport._
 
-  def managementRoute: Route = pathPrefix("naming") {
-    pathPost("listService") {
-      entity(as[ListService]) { cmd =>
-        complete(namingManagerService.listService(cmd))
+  def consoleRoute: Route = pathPrefix("naming") {
+    pathPost("ListService") {
+      entity(as[ListService]) { in =>
+        complete(namingManagerService.listService(in))
       }
     } ~
-    pathPost("getService") {
-      entity(as[GetService]) { cmd =>
-        complete(namingManagerService.getService(cmd))
+    pathPost("GetService") {
+      entity(as[GetService]) { in =>
+        complete(namingManagerService.getService(in))
       }
     } ~
-    pathPost("createInstance") {
-      entity(as[InstanceRegister]) { cmd =>
-        complete(namingManagerService.createInstance(cmd))
+    pathPost("CreateService") {
+      entity(as[CreateService]) { in =>
+        complete(namingManagerService.createService(in))
       }
     } ~
-    pathPost("removeInstance") {
-      entity(as[InstanceRemove]) { cmd =>
-        complete(namingManagerService.removeInstance(cmd))
+    pathPost("RemoveService") {
+      entity(as[RemoveService]) { in =>
+        complete(namingManagerService.removeService(in))
       }
     } ~
-    pathPost("modifyInstance") {
-      entity(as[InstanceModify]) { cmd =>
-        complete(namingManagerService.modifyInstance(cmd))
+    pathPost("ModifyService") {
+      entity(as[ModifyService]) { in =>
+        complete(namingManagerService.modifyService(in))
       }
     }
   }
 
   def openRoute: Route = pathPrefix("naming") {
-    pathPost("queryInstance") {
-      entity(as[InstanceQuery]) { cmd =>
-        complete(namingService.queryInstance(cmd, new MetadataImpl()))
+    pathPost("QueryInstance") {
+      entity(as[InstanceQuery]) { in =>
+        complete(namingService.queryInstance(in, new MetadataImpl()))
       }
     } ~
-    pathPost("registerInstance") {
-      entity(as[InstanceRegister]) { cmd =>
-        complete(namingService.registerInstance(cmd, new MetadataImpl()))
+    pathPost("RegisterInstance") {
+      entity(as[InstanceRegister]) { in =>
+        complete(namingService.registerInstance(in, new MetadataImpl()))
       }
     } ~
-    pathPost("modifyInstance") {
-      entity(as[InstanceModify]) { cmd =>
-        complete(namingService.modifyInstance(cmd, new MetadataImpl()))
+    pathPost("ModifyInstance") {
+      entity(as[InstanceModify]) { in =>
+        complete(namingService.modifyInstance(in, new MetadataImpl()))
       }
     } ~
-    pathPost("removeInstance") {
-      entity(as[InstanceRemove]) { cmd =>
-        complete(namingService.removeInstance(cmd, new MetadataImpl()))
+    pathPost("RemoveInstance") {
+      entity(as[InstanceRemove]) { in =>
+        complete(namingService.removeInstance(in, new MetadataImpl()))
       }
     }
   }

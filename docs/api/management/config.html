@@ -1,212 +1,141 @@
 <!DOCTYPE html>
-<html lang="zh" class="no-js">
+<html class="no-js" lang="en">
+
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta http-equiv="x-ua-compatible" content="ie=edge">
-<meta name="description" content="discoveryx-docs">
-<meta name="generator" content="Paradox, paradox-material-theme=0.6.0, mkdocs-material=3.0.3">
+<title>Config Manager 配置管理服务 &bull; Fusion DiscoveryX</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="description" content="discoveryx-docs"/>
+<link rel="canonical" href="https://akka-fusion.github.io/fusion-discoveryx/api/management/config.html"/>
+<script type="text/javascript" src="../../lib/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../lib/foundation/dist/js/foundation.min.js"></script>
+<link rel="stylesheet" type="text/css" href="../../lib/normalize.css/normalize.css"/>
+<link rel="stylesheet" type="text/css" href="../../lib/foundation/dist/css/foundation.min.css"/>
+<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/docsearch.js/2/docsearch.min.css" />
+<link rel="stylesheet" type="text/css" href="../../css/icons.css"/>
+<link rel="stylesheet" type="text/css" href="../../css/page-6.css"/>
+<link rel="stylesheet" type="text/css" href="../../css/banner.css"/>
+<link rel="shortcut icon" href="../../images/favicon.ico" />
+<link rel="apple-touch-icon" sizes="180x180" href="../../images/apple-touch-icon.png"/>
+<link rel="icon" type="image/png" sizes="32x32" href="../../images/favicon-32x32.png"/>
+<link rel="icon" type="image/png" sizes="16x16" href="../../images/favicon-16x16.png"/>
+<link rel="manifest" href="../../images/manifest.json"/>
+<meta name="msapplication-TileImage" content="../../images/mstile-150x150.png"/>
+<meta name="msapplication-TileColor" content="#15a9ce"/>
+<meta name="theme-color" content="#15a9ce"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 
-<meta name="lang:clipboard.copy" content="Copy to clipboard">
-<meta name="lang:clipboard.copied" content="Copied to clipboard">
-<meta name="lang:search.language" content="">
-<meta name="lang:search.pipeline.stopwords" content="true">
-<meta name="lang:search.pipeline.trimmer" content="true">
-<meta name="lang:search.result.none" content="No matching documents">
-<meta name="lang:search.result.one" content="1 matching document">
-<meta name="lang:search.result.other" content="# matching documents">
-<meta name="lang:search.tokenizer" content="[\s\-]+">
 
+<body id="underlay" data-toggler="nav-open">
+<header class="site-header hide-for-large">
+<div class="sticky-header clearfix">
+<a href="https://akka.io"><img class="logo" src="../../images/akka-logo-reverse.svg"/></a>
 
-<meta name="description" content="discoveryx-docs">
-<link rel="shortcut icon" href="../../assets/images/favicon.png">
-<title>Config Manager 配置管理服务 · Fusion DiscoveryX</title>
-<link rel="stylesheet" href="../../assets/stylesheets/application.451f80e5.css">
-<link rel="stylesheet" href="../../assets/stylesheets/application-palette.22915126.css">
-<meta name="theme-color" content="#3f51b5" />
-<link rel="stylesheet" href="../../lib/material__tabs/dist/mdc.tabs.min.css">
-<link rel="stylesheet" href="../../lib/prettify/prettify.css">
-<script src="../../assets/javascripts/modernizr.1aa3b519.js"></script>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700|Roboto+Mono">
-<style>
-body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}
-code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}
-</style>
-<link rel="stylesheet" href="../../assets/fonts/font-awesome.css">
-<link rel="stylesheet" href="../../assets/fonts/material-icons.css">
-<link rel="stylesheet" href="../../assets/stylesheets/paradox-material-theme.css">
-</head>
-<body
-data-md-color-primary="indigo"
-data-md-color-accent="red"
->
-<input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
-<input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
-<label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
-<header class="md-header" data-md-component="header">
-<nav class="md-header-nav md-grid">
-<div class="md-flex">
-<div class="md-flex__cell md-flex__cell--shrink">
-<a href="../../index.html" title="Fusion DiscoveryX" class="md-header-nav__button md-logo">
-<i class="md-icon">local_library</i>
-</a>
+<button class="menu-icon float-right" type="button" data-toggle="underlay overlay"></button>
 </div>
-<div class="md-flex__cell md-flex__cell--shrink">
-<label class="md-icon md-icon--menu md-header-nav__button" for="__drawer"></label>
+<div id="overlay" class="overlay-nav" data-toggler="nav-open">
+<header class="nav-header">
+<div class="nav-header-title">
+<h1><a href="../../index.html">Fusion DiscoveryX</a></h1>
 </div>
-<div class="md-flex__cell md-flex__cell--stretch">
-<div class="md-flex__ellipsis md-header-nav__title" data-md-component="title">
-<span class="md-header-nav__topic">
-Fusion DiscoveryX
-</span>
-<span class="md-header-nav__topic">
-Config Manager 配置管理服务
-</span>
+<div class="nav-header-version">
+Version 1.0.0
 </div>
+<div class="nav-header-groups">
+<select class="supergroup" name="Language"><option class="group" value="group-scala">Scala</option></select>
 </div>
-<div class="md-flex__cell md-flex__cell--shrink">
-<label class="md-icon md-icon--search md-header-nav__button" for="__search"></label>
-<div class="md-search" data-md-component="search" role="dialog">
-<label class="md-search__overlay" for="__search"></label>
-<div class="md-search__inner" role="search">
-<form class="md-search__form" name="search">
-<input type="text" class="md-search__input" name="query" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query" data-md-state="active">
-<label class="md-icon md-search__icon" for="__search"></label>
-<button type="reset" class="md-icon md-search__icon" data-md-component="reset" tabindex="-1">&#xE5CD;</button>
-</form>
-<div class="md-search__output">
-<div class="md-search__scrollwrap" data-md-scrollfix>
-<div class="md-search-result" data-md-component="result">
-<div class="md-search-result__meta">
-Type to start searching
-</div>
-<ol class="md-search-result__list"></ol>
-</div>
-</div>
-</div>
-</div>
-</div>
-
-</div>
-<div class="md-flex__cell md-flex__cell--shrink">
-<div class="md-header-nav__source">
-<a href="https://github.com/akka-fusion/fusion-discoveryx"
-title="Go to repository"
-class="md-source"
-data-md-source="github">
-<div class="md-source__icon">
-<i class="fa fa-github"></i>
-</div>
-<div class="md-source__repository">
-akka-fusion/fusion-discoveryx
-</div>
-</a>
-
-</div>
-</div>
-</div>
-</nav>
 </header>
-
-<div class="md-container">
-<main class="md-main">
-<div class="md-main__inner md-grid" data-md-component="container">
-<div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
-<div class="md-sidebar__scrollwrap">
-<div class="md-sidebar__inner">
-<nav class="md-nav md-nav--primary" data-md-level="0" style="visibility: hidden">
-<label class="md-nav__title md-nav__title--site" for="drawer">
-<a href="../../index.html" title="Fusion DiscoveryX" class="md-nav__button md-logo">
-<span class="md-nav__button md-logo">
-<i class="md-icon">local_library</i>
-</a>
-<a href="../../index.html" title="Fusion DiscoveryX">
-Fusion DiscoveryX
-</a>
-</label>
-<div class="md-nav__source">
-<a href="https://github.com/akka-fusion/fusion-discoveryx"
-title="Go to repository"
-class="md-source"
-data-md-source="github">
-<div class="md-source__icon">
-<i class="fa fa-github"></i>
-</div>
-<div class="md-source__repository">
-akka-fusion/fusion-discoveryx
-</div>
-</a>
-
-</div>
+<nav class="nav-toc">
 <ul>
   <li><a href="../../intro.html" class="page">介绍</a></li>
   <li><a href="../../api/index.html" class="page">API</a>
   <ul>
+    <li><a href="../../api/index.html#目录" class="header">目录</a></li>
     <li><a href="../../api/open/index.html" class="page">开放API</a></li>
-    <li><a href="../../api/management/index.html" class="page">管理API</a></li>
+    <li><a href="../../api/management/index.html" class="page">管理API</a>
+    <ul>
+      <li><a href="../../api/management/index.html#目录" class="header">目录</a></li>
+      <li><a href="../../api/management/config.html#config-manager-配置管理服务" class="active page">Config Manager 配置管理服务</a>
+      <ul>
+        <li><a href="../../api/management/config.html#listconfig" class="header">ListConfig</a></li>
+        <li><a href="../../api/management/config.html#getconfig" class="header">GetConfig</a></li>
+        <li><a href="../../api/management/config.html#publishconfig" class="header">PublishConfig</a></li>
+        <li><a href="../../api/management/config.html#removeconfig" class="header">RemoveConfig</a></li>
+      </ul></li>
+      <li><a href="../../api/management/naming.html" class="page">Naming Manager 名称管理服务</a></li>
+      <li><a href="../../api/management/grpc.html" class="page">gRPC服务描述定义文件</a></li>
+    </ul></li>
     <li><a href="../../api/json.html" class="page">JSON 说明</a></li>
   </ul></li>
+  <li><a href="../../deploy/index.html" class="page">部署</a></li>
   <li><a href="../../releases.html" class="page">版本</a></li>
 </ul>
-<nav class="md-nav md-nav--secondary">
-<label class="md-nav__title" for="__toc">Table of contents</label>
+</nav>
+</div>
+</header>
+<div class="site-content-wrapper">
+<aside class="sticky-sidebar show-for-large">
+<header class="nav-header sticky-sidebar-header">
+<div class="nav-header-title">
+<h1><a href="../../index.html">Fusion DiscoveryX</a></h1>
+</div>
+<div class="nav-header-version">
+Version 1.0.0
+</div>
+<div class="nav-header-groups">
+<select class="supergroup" name="Language"><option class="group" value="group-scala">Scala</option></select>
+</div>
+</header>
+<nav class="site-nav sticky-sidebar-contents">
+<div class="nav-toc">
 <ul>
-  <li><a href="../../api/management/config.html#config-manager-配置管理服务" class="header">Config Manager 配置管理服务</a>
+  <li><a href="../../intro.html" class="page">介绍</a></li>
+  <li><a href="../../api/index.html" class="page">API</a>
   <ul>
-    <li><a href="../../api/management/config.html#listconfig-查询配置列表" class="header">ListConfig 查询配置列表</a></li>
-    <li><a href="../../api/management/config.html#getconfig-查询单个配置" class="header">GetConfig 查询单个配置</a></li>
-    <li><a href="../../api/management/config.html#publishconfig-发布配置" class="header">PublishConfig 发布配置</a></li>
-    <li><a href="../../api/management/config.html#removeconfig-删除配置" class="header">RemoveConfig 删除配置</a></li>
+    <li><a href="../../api/index.html#目录" class="header">目录</a></li>
+    <li><a href="../../api/open/index.html" class="page">开放API</a></li>
+    <li><a href="../../api/management/index.html" class="page">管理API</a>
+    <ul>
+      <li><a href="../../api/management/index.html#目录" class="header">目录</a></li>
+      <li><a href="../../api/management/config.html#config-manager-配置管理服务" class="active page">Config Manager 配置管理服务</a>
+      <ul>
+        <li><a href="../../api/management/config.html#listconfig" class="header">ListConfig</a></li>
+        <li><a href="../../api/management/config.html#getconfig" class="header">GetConfig</a></li>
+        <li><a href="../../api/management/config.html#publishconfig" class="header">PublishConfig</a></li>
+        <li><a href="../../api/management/config.html#removeconfig" class="header">RemoveConfig</a></li>
+      </ul></li>
+      <li><a href="../../api/management/naming.html" class="page">Naming Manager 名称管理服务</a></li>
+      <li><a href="../../api/management/grpc.html" class="page">gRPC服务描述定义文件</a></li>
+    </ul></li>
+    <li><a href="../../api/json.html" class="page">JSON 说明</a></li>
   </ul></li>
+  <li><a href="../../deploy/index.html" class="page">部署</a></li>
+  <li><a href="../../releases.html" class="page">版本</a></li>
 </ul>
+</div>
 </nav>
+<footer class="nav-footer sticky-sidebar-footer">
+<a href="https://akka.io"><img class="logo" src="../../images/akka-logo-reverse.svg"/></a>
 
-</nav>
-<ul style="display: none">
-<li class="md-nav__item md-version" id="project.version">
-<label class="md-nav__link" for="__version">
-<i class="md-icon" title="Version">label_outline</i> 1.0.0
-</label>
-</li>
-</ul>
-</div>
-</div>
-</div>
-<div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
-<div class="md-sidebar__scrollwrap">
-<div class="md-sidebar__inner">
-<nav class="md-nav md-nav--secondary">
-<label class="md-nav__title" for="__toc">Table of contents</label>
-<ul>
-  <li><a href="../../api/management/config.html#config-manager-配置管理服务" class="header">Config Manager 配置管理服务</a>
-  <ul>
-    <li><a href="../../api/management/config.html#listconfig-查询配置列表" class="header">ListConfig 查询配置列表</a></li>
-    <li><a href="../../api/management/config.html#getconfig-查询单个配置" class="header">GetConfig 查询单个配置</a></li>
-    <li><a href="../../api/management/config.html#publishconfig-发布配置" class="header">PublishConfig 发布配置</a></li>
-    <li><a href="../../api/management/config.html#removeconfig-删除配置" class="header">RemoveConfig 删除配置</a></li>
-  </ul></li>
-</ul>
-</nav>
-
-</div>
-</div>
-</div>
-<div class="md-content">
-<article class="md-content__inner md-typeset">
-<div class="md-content__searchable">
+</footer>
+</aside>
+<main class="fixed-shift-for-large expanded row">
+<section class="site-content small-12 column">
+<article class="page-content row">
+<div class="small-12 column" id="docs">
 <h1><a href="#config-manager-配置管理服务" name="config-manager-配置管理服务" class="anchor"><span class="anchor-link"></span></a>Config Manager 配置管理服务</h1>
 <ul>
   <li>gRPC服务地址：<code>/fusion.discoveryx.server.grpc.ConfigManagerService</code></li>
-  <li>REST URL前缀：<code>/fusion/discoveryx/management/config</code></li>
+  <li>REST URL前缀：<code>/fusion/discoveryx/console/config</code></li>
 </ul>
 <p>REST URL路径由 <strong>REST URL前缀</strong> + 服务名组织，均使用 <strong>POST</strong> 方法的请求，JSON序例化格式。如查询配置列表接口访问地址为：<code>POST /fusion/discoveryx/management/config/ListConfig</code>。Protobuf与JSON格式转换请参阅： <a href="../json.html">JSON 说明</a>。</p>
-<h2><a href="#listconfig-查询配置列表" name="listconfig-查询配置列表" class="anchor"><span class="anchor-link"></span></a>ListConfig 查询配置列表</h2>
+<h2><a href="#listconfig" name="listconfig" class="anchor"><span class="anchor-link"></span></a>ListConfig</h2>
 <p><strong>gRPC</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/grpc/server.proto#L15-L17" target="_blank" title="Go to snippet source"></a><code class="language-proto">// 查询配置列表（不返回配置内容）
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/grpc/server.proto#L16-L18" target="_blank" title="Go to snippet source"></a><code class="language-proto">// 查询配置列表（不返回配置内容）
 rpc ListConfig (fusion.discoveryx.server.protocol.ListConfig) returns (fusion.discoveryx.server.protocol.ConfigResponse) {
 }</code></pre>
 <p><strong>请求</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/config.proto#L66-L72" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ListConfig {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/config.proto#L70-L76" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ListConfig {
     string namespace = 1;
     google.protobuf.StringValue data_id = 2;
     google.protobuf.StringValue group_name = 3;
@@ -214,7 +143,7 @@ rpc ListConfig (fusion.discoveryx.server.protocol.ListConfig) returns (fusion.di
     int32 size = 5;
 }</code></pre>
 <p><strong>响应</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/config.proto#L89-L96" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ConfigResponse {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/config.proto#L94-L101" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ConfigResponse {
     int32 status = 1;
     string message = 2;
     oneof data {
@@ -223,7 +152,7 @@ rpc ListConfig (fusion.discoveryx.server.protocol.ListConfig) returns (fusion.di
     }
 }</code></pre>
 <p><code>oneof</code>字段<code>listed</code>有效：</p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L53-L71" target="_blank" title="Go to snippet source"></a><code class="language-proto">enum ConfigType {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L53-L74" target="_blank" title="Go to snippet source"></a><code class="language-proto">enum ConfigType {
     TEXT = 0;
     HOCON = 1;
     JSON = 2;
@@ -240,156 +169,63 @@ message ConfigBasic {
 message ConfigQueried {
     repeated ConfigBasic configs = 1;
     string namespace = 2;
+    int32 page = 3;
+    int32 size = 4;
+    int32 total_elements = 5;
 }</code></pre>
-<h2><a href="#getconfig-查询单个配置" name="getconfig-查询单个配置" class="anchor"><span class="anchor-link"></span></a>GetConfig 查询单个配置</h2>
-<p><strong>gRPC</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/grpc/server.proto#L21-L23" target="_blank" title="Go to snippet source"></a><code class="language-proto">// 查询单个配置
-rpc GetConfig (fusion.discoveryx.model.ConfigGet) returns (fusion.discoveryx.server.protocol.ConfigResponse) {
-}</code></pre>
-<p><strong>请求</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L35-L38" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ConfigGet {
-    string namespace = 1;
-    string data_id = 2;
-}</code></pre>
-<p><strong>响应</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/config.proto#L89-L96" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ConfigResponse {
-    int32 status = 1;
-    string message = 2;
-    oneof data {
-        fusion.discoveryx.model.ConfigQueried listed = 3;
-        fusion.discoveryx.model.ConfigItem config = 4;
-    }
-}</code></pre>
-<p><code>oneof</code>字段<code>config</code>有效：</p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L42-L48" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ConfigItem {
-    string namespace = 1;
-    string data_id = 2;
-    string group_name = 3;
-    string content = 4;
-    ConfigType type = 5;
-}</code></pre>
-<h2><a href="#publishconfig-发布配置" name="publishconfig-发布配置" class="anchor"><span class="anchor-link"></span></a>PublishConfig 发布配置</h2>
-<p><strong>gRPC</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/grpc/server.proto#L27-L29" target="_blank" title="Go to snippet source"></a><code class="language-proto">// 发布配置
-rpc PublishConfig (fusion.discoveryx.model.ConfigItem) returns (fusion.discoveryx.server.protocol.ConfigResponse) {
-}</code></pre>
-<p><strong>请求</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L42-L48" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ConfigItem {
-    string namespace = 1;
-    string data_id = 2;
-    string group_name = 3;
-    string content = 4;
-    ConfigType type = 5;
-}</code></pre>
-<p><strong>响应</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/config.proto#L89-L96" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ConfigResponse {
-    int32 status = 1;
-    string message = 2;
-    oneof data {
-        fusion.discoveryx.model.ConfigQueried listed = 3;
-        fusion.discoveryx.model.ConfigItem config = 4;
-    }
-}</code></pre>
-<p><code>oneof</code>字段<code>config</code>有效：</p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L42-L48" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ConfigItem {
-    string namespace = 1;
-    string data_id = 2;
-    string group_name = 3;
-    string content = 4;
-    ConfigType type = 5;
-}</code></pre>
-<h2><a href="#removeconfig-删除配置" name="removeconfig-删除配置" class="anchor"><span class="anchor-link"></span></a>RemoveConfig 删除配置</h2>
-<p><strong>gRPC</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/grpc/server.proto#L33-L35" target="_blank" title="Go to snippet source"></a><code class="language-proto">// 删除配置
-rpc RemoveConfig (fusion.discoveryx.model.ConfigRemove) returns (fusion.discoveryx.server.protocol.ConfigResponse) {
-}</code></pre>
-<p><strong>请求</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L75-L78" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ConfigRemove {
-    string namespace = 1;
-    string data_id = 2;
-}</code></pre>
-<p><strong>响应</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/config.proto#L89-L96" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ConfigResponse {
-    int32 status = 1;
-    string message = 2;
-    oneof data {
-        fusion.discoveryx.model.ConfigQueried listed = 3;
-        fusion.discoveryx.model.ConfigItem config = 4;
-    }
-}</code></pre>
-</div>
-<div>
-<a href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-docs/src/main/paradox/api/management/config.md" title="Edit this page" class="md-source-file md-edit">
-Edit this page
-</a>
-</div>
-<div class="print-only">
-<span class="md-source-file md-version">
-1.0.0
-</span>
+<h2><a href="#getconfig" name="getconfig" class="anchor"><span class="anchor-link"></span></a>GetConfig</h2>
+<p>见 <a href="../open/config.html#getconfig">GetConfig</a> 。</p>
+<h2><a href="#publishconfig" name="publishconfig" class="anchor"><span class="anchor-link"></span></a>PublishConfig</h2>
+<p>见 <a href="../open/config.html#publishconfig">PublishConfig</a> 。</p>
+<h2><a href="#removeconfig" name="removeconfig" class="anchor"><span class="anchor-link"></span></a>RemoveConfig</h2>
+<p>见 <a href="../open/config.html#removeconfig">RemoveConfig</a> 。</p>
 </div>
 </article>
+<div class="row">
+<div class="small-12 column">
+<section class="nav-prev-next row">
+<div class="nav-prev small-6 column">
+<a href="../../api/management/index.html"><i class="icon-prev"></i> <span class="link-prev">管理API</span></a>
+</div>
+<div class="nav-next small-6 column clearfix">
+<a class="float-right" href="../../api/management/naming.html">Naming Manager 名称管理服务 <i class="icon-next"></i></a>
+</div>
+</section>
 </div>
 </div>
-</main>
-<footer class="md-footer">
-<div class="md-footer-nav">
-<nav class="md-footer-nav__inner md-grid">
-<a href="../../api/management/index.html" title="管理API" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
-<div class="md-flex__cell md-flex__cell--shrink">
-<i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
-</div>
-<div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
-<span class="md-flex__ellipsis">
-<span class="md-footer-nav__direction">
-Previous
-</span>
-管理API
-</span>
-</div>
-</a>
-<a href="../../api/management/naming.html" title="Naming Manager 名称管理服务" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
-<div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
-<span class="md-flex__ellipsis">
-<span class="md-footer-nav__direction">
-Next
-</span>
-Naming Manager 名称管理服务
-</span>
-</div>
-<div class="md-flex__cell md-flex__cell--shrink">
-<i class="md-icon md-icon--arrow-forward md-footer-nav__button"></i>
-</div>
-</a>
-</nav>
-</div>
-<div class="md-footer-meta md-typeset">
-<div class="md-footer-meta__inner md-grid">
-<div class="md-footer-copyright">
-Powered by
-<a href="https://github.com/lightbend/paradox">Paradox</a>
-and
-<a href="https://jonas.github.io/paradox-material-theme/">Paradox Material Theme</a>
-
-</div>
-<div class="md-footer-social">
-<a href="http://akka-fusion.github.io/akka-fusion/" class="md-footer-social__link fa fa-globe"></a><a href="https://github.com/akka-fusion" class="md-footer-social__link fa fa-github"></a><a href="https://weibo.com/yangbajing" class="md-footer-social__link fa fa-globe"></a>
+<div class="source-github row">
+在此文档中发现错误？该页面的源代码可以在 <a href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-docs/src/main/paradox/api/management/config.md" target="_blank">这里</a> 找到。欢迎随时编辑并提交Pull Request。
 </div>
 
-</div>
-</div>
+<footer class="page-footer row clearfix">
+<img class="akka-icon float-left show-for-medium" src="../../images/akka-icon.svg" />
+<section class="copyright">
+<div>discoveryx-docs is Open Source and available under the Apache 2 License.</div>
+<p class="legal">
+&copy; 2019-2019 <a href="https://akka-fusion.github.com/" target="_blank">Akka Fusion</a> |
+<a href="https://akka-fusion.github.com/fusion-discoveryx/" target="_blank">Fusion DiscoveryX</a> |
+<a href="https://akka-fusion.github.com/fusion-schedulerx/" target="_blank">Fusion SchedulerX</a>
+</p>
+</section>
 </footer>
-
+</section>
+</main>
 </div>
-<script src="../../assets/javascripts/application.583bbe55.js"></script>
-<script src="../../assets/javascripts/paradox-material-theme.js"></script>
-<script>app.initialize({version:"0.17",url:{base:"../../."}})</script>
+
+<script type="text/javascript" src="../../js/scrollsneak.js"></script>
+<script type="text/javascript">jQuery(document).foundation();</script>
+<script type="text/javascript" src="../../js/groups.js"></script>
+<script type="text/javascript" src="../../js/page.js"></script>
+<script type="text/javascript" src="../../js/magellan.js"></script>
+<script type="text/javascript" src="../../js/metadata-toggle.js"></script>
+
+<style type="text/css">@import "../../lib/prettify/prettify.css";</style>
 <script type="text/javascript" src="../../lib/prettify/prettify.js"></script>
 <script type="text/javascript" src="../../lib/prettify/lang-scala.js"></script>
-<script type="text/javascript">
-document.addEventListener("DOMContentLoaded", function(event) {
-window.prettyPrint && prettyPrint();
-});
-</script>
+<script type="text/javascript">//<![CDATA[
+jQuery(function(){window.prettyPrint && prettyPrint()});
+//]]></script>
+<!-- hook for including project specific javascript into the generated docs -->
+
 </body>
 </html>

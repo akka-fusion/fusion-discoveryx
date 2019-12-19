@@ -25,6 +25,9 @@ message NamingReplyCommand {
         fusion.discoveryx.model.InstanceQuery query = 3;
         fusion.discoveryx.model.InstanceRemove remove = 4;
         fusion.discoveryx.model.InstanceModify modify = 5;
+        CreateService create_service = 6;
+        ModifyService modify_service = 7;
+        RemoveService remove_service = 8;
     }
 }
 
@@ -38,16 +41,8 @@ message Heartbeat {
 message QueryServiceInfo {
     option (scalapb.message).extends = "fusion.discoveryx.server.naming.NamingEntity.Command";
     option (scalapb.message).companion_extends = "fusion.protobuf.ActorRefCompanion";
-    string reply_to = 1 [(scalapb.field).type = "akka.actor.typed.ActorRef[ServiceInfo]"];
+    string reply_to = 1 [(scalapb.field).type = "akka.actor.typed.ActorRef[fusion.discoveryx.model.ServiceInfo]"];
 }
-
-// #ServiceInfo
-message ServiceInfo {
-    string namespace = 1;
-    string service_name = 2;
-    repeated fusion.discoveryx.model.Instance instances = 3;
-}
-// #ServiceInfo
 
 ////////////////////////////////////////////////////////////////////////////////
 // NamingManager 使用
@@ -71,7 +66,10 @@ message ListService {
 
 // #ListedService
 message ListedService {
-    repeated ServiceInfo service_infos = 1;
+    repeated fusion.discoveryx.model.ServiceInfo service_infos = 1;
+    int32 page = 2;
+    int32 size = 3;
+    int32 total_elements = 4;
 }
 // #ListedService
 
@@ -82,6 +80,28 @@ message GetService {
 }
 // #GetService
 
+// #CreateService
+message CreateService {
+    string namespace = 1;
+    string service_name = 2;
+}
+// #CreateService
+
+// #RemoveService
+message RemoveService {
+    string namespace = 1;
+    string service_name = 2;
+}
+// #RemoveService
+
+// #ModifyService
+message ModifyService {
+    string namespace = 1;
+    string service_name = 2;
+    google.protobuf.StringValue group_name = 3;
+}
+// #ModifyService
+
 message NamingManagerCommand {
     option (scalapb.message).extends = "fusion.discoveryx.server.naming.NamingManager.Command";
     option (scalapb.message).companion_extends = "fusion.protobuf.ActorRefCompanion";
@@ -90,9 +110,9 @@ message NamingManagerCommand {
     oneof cmd {
         ListService list_service = 2;
         GetService get_service = 3;
-        fusion.discoveryx.model.InstanceRegister instance_create = 4;
-        fusion.discoveryx.model.InstanceModify instance_modify = 5;
-        fusion.discoveryx.model.InstanceRemove instance_remove = 6;
+        CreateService create_service = 4;
+        RemoveService remove_service = 5;
+        ModifyService modify_service = 6;
     }
 }
 
@@ -102,7 +122,7 @@ message NamingResponse {
     string message = 2;
     oneof data {
         ListedService listed_service = 3;
-        ServiceInfo service_info = 4;
+        fusion.discoveryx.model.ServiceInfo service_info = 4;
         fusion.discoveryx.model.Instance instance = 5;
     }
 }

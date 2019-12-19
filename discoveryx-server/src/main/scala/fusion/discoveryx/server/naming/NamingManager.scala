@@ -42,7 +42,7 @@ object NamingManager {
     ClusterSharding(system).init(Entity(TypeKey)(entityContext => NamingManager(entityContext.entityId)))
   }
 
-  def apply(namespace: String): Behavior[Command] =
+  private def apply(namespace: String): Behavior[Command] =
     Behaviors.setup(context => new NamingManager(namespace, context).receive())
 }
 
@@ -52,8 +52,7 @@ class NamingManager private (namespace: String, context: ActorContext[Command]) 
   private implicit val timeout: Timeout = 10.seconds
   private implicit val system: ActorSystem[_] = context.system
   private val namingSettings = NamingSettings(context.system)
-  private val namingRegion = ClusterSharding(context.system).init(Entity(NamingEntity.TypeKey)(entityContext =>
-    NamingEntity(entityContext.entityId)))
+  private val namingRegion = NamingEntity.init(context.system)
   private var namings = Vector.empty[ActorRef[NamingEntity.Command]]
 
   DistributedPubSub(context.system).mediator ! DistributedPubSubMediator.Subscribe(
@@ -80,28 +79,24 @@ class NamingManager private (namespace: String, context: ActorContext[Command]) 
       command: NamingManagerCommand.Cmd,
       replyTo: ActorRef[NamingResponse]): Behavior[Command] =
     command match {
-      case NamingManagerCommand.Cmd.ListService(cmd)    => processListService(cmd, replyTo)
-      case NamingManagerCommand.Cmd.GetService(cmd)     => processGetService(cmd, replyTo)
-      case NamingManagerCommand.Cmd.InstanceCreate(cmd) => processCreateInstance(cmd, replyTo)
-      case NamingManagerCommand.Cmd.InstanceModify(cmd) => processModifyInstance(cmd, replyTo)
-      case NamingManagerCommand.Cmd.InstanceRemove(cmd) => processRemoveInstance(cmd, replyTo)
+      case NamingManagerCommand.Cmd.ListService(cmd)   => processListService(cmd, replyTo)
+      case NamingManagerCommand.Cmd.GetService(cmd)    => processGetService(cmd, replyTo)
+      case NamingManagerCommand.Cmd.CreateService(cmd) => processCreateService(cmd, replyTo)
+      case NamingManagerCommand.Cmd.ModifyService(cmd) => processModifyService(cmd, replyTo)
+      case NamingManagerCommand.Cmd.RemoveService(cmd) => processRemoveService(cmd, replyTo)
       case NamingManagerCommand.Cmd.Empty =>
         context.log.warn(s"Invalid message: ${NamingManagerCommand.Cmd.Empty}")
         Behaviors.same
     }
 
-  private def processCreateInstance(cmd: InstanceRegister, replyTo: ActorRef[NamingResponse]): Behavior[Command] =
-    askNaming(cmd.namespace, cmd.serviceName, NamingReplyCommand.Cmd.Register(cmd), replyTo) { value =>
-      NamingResponse.Data.Instance(value.getInstance)
+  private def processModifyService(cmd: ModifyService, replyTo: ActorRef[NamingResponse]): Behavior[Command] =
+    askNaming(cmd.namespace, cmd.serviceName, NamingReplyCommand.Cmd.ModifyService(cmd), replyTo) { value =>
+      val serviceInfo = ServiceInfo(cmd.namespace, cmd.serviceName, "", value.data.queried.get.instances)
+      NamingResponse.Data.ServiceInfo(serviceInfo)
     }
 
-  private def processModifyInstance(cmd: InstanceModify, replyTo: ActorRef[NamingResponse]): Behavior[Command] =
-    askNaming(cmd.namespace, cmd.serviceName, NamingReplyCommand.Cmd.Modify(cmd), replyTo) { value =>
-      NamingResponse.Data.Instance(value.getInstance)
-    }
-
-  private def processRemoveInstance(cmd: InstanceRemove, replyTo: ActorRef[NamingResponse]): Behavior[Command] =
-    askNaming(cmd.namespace, cmd.serviceName, NamingReplyCommand.Cmd.Remove(cmd), replyTo)(_ =>
+  private def processRemoveService(cmd: RemoveService, replyTo: ActorRef[NamingResponse]): Behavior[Command] =
+    askNaming(cmd.namespace, cmd.serviceName, NamingReplyCommand.Cmd.RemoveService(cmd), replyTo)(_ =>
       NamingResponse.Data.Empty)
 
   private def processGetService(cmd: GetService, replyTo: ActorRef[NamingResponse]): Behavior[Command] =
@@ -110,14 +105,17 @@ class NamingManager private (namespace: String, context: ActorContext[Command]) 
       cmd.serviceName,
       NamingReplyCommand.Cmd.Query(InstanceQuery(cmd.namespace, cmd.serviceName)),
       replyTo) { value =>
-      val serviceInfo = ServiceInfo(cmd.namespace, cmd.serviceName, value.data.queried.get.instances)
+      val serviceInfo = ServiceInfo(cmd.namespace, cmd.serviceName, "", value.data.queried.get.instances)
+      NamingResponse.Data.ServiceInfo(serviceInfo)
+    }
+  private def processCreateService(cmd: CreateService, replyTo: ActorRef[NamingResponse]): Behavior[Command] =
+    askNaming(cmd.namespace, cmd.serviceName, NamingReplyCommand.Cmd.CreateService(cmd), replyTo) { value =>
+      val serviceInfo = ServiceInfo(cmd.namespace, cmd.serviceName, "", value.data.serviceInfo.get.instances)
       NamingResponse.Data.ServiceInfo(serviceInfo)
     }
 
   private def processListService(cmd: ListService, replyTo: ActorRef[NamingResponse]): Behavior[Command] = {
-    val page = namingSettings.findPage(cmd.page)
-    val size = namingSettings.findSize(cmd.size)
-    val offset = namingSettings.findOffset(page, size)
+    val (page, size, offset) = namingSettings.findPageSizeOffset(cmd.page, cmd.size)
     if (offset < namings.size) {
       val ns = namings.slice(offset, offset + size)
       println(s"namings: $ns - $namings")
@@ -127,7 +125,9 @@ class NamingManager private (namespace: String, context: ActorContext[Command]) 
       }
       Future.sequence(futures).onComplete {
         case Success(serviceInfos) =>
-          replyTo ! NamingResponse(IntStatus.OK, data = NamingResponse.Data.ListedService(ListedService(serviceInfos)))
+          replyTo ! NamingResponse(
+            IntStatus.OK,
+            data = NamingResponse.Data.ListedService(ListedService(serviceInfos, page, size, namings.size)))
         case Failure(exception) =>
           context.log.warn(s"ListService error, $exception")
           replyTo ! NamingResponse(IntStatus.NOT_FOUND)

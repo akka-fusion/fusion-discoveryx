@@ -21,9 +21,10 @@ import akka.http.scaladsl.model.{ HttpRequest, HttpResponse }
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import com.typesafe.scalalogging.StrictLogging
-import fusion.discoveryx.DiscoveryX
 import fusion.discoveryx.common.Constants
+import fusion.discoveryx.server.DiscoveryX
 import fusion.discoveryx.server.config.ConfigSettings
+import fusion.discoveryx.server.management.ManagementSettings
 import fusion.discoveryx.server.naming.NamingSettings
 
 import scala.concurrent.Future
@@ -32,19 +33,25 @@ class Routes(discoveryX: DiscoveryX) extends StrictLogging {
   private implicit val system = discoveryX.system
   private val configSettings = ConfigSettings(system)
   private val namingSettings = NamingSettings(system)
+  private val managementSettings = ManagementSettings(system)
   private var openRoutes: List[Route] = Nil
-  private var managementRoutes: List[Route] = Nil
+  private var consoleRoutes: List[Route] = Nil
   private var grpcHandlers: List[PartialFunction[HttpRequest, Future[HttpResponse]]] = Nil
+  if (managementSettings.enable) {
+    val m = new ManagementRoute()
+    consoleRoutes ::= m.consoleRoute
+    grpcHandlers :::= m.grpcHandler
+  }
   if (configSettings.enable) {
-    val c = new ConfigRoute(configSettings)
+    val c = new ConfigRoute(discoveryX.namespaceRef)
     openRoutes ::= c.openRoute
-    managementRoutes ::= c.managementRoute
+    consoleRoutes ::= c.consoleRoute
     grpcHandlers :::= c.grpcHandler
   }
   if (namingSettings.enable) {
-    val n = new NamingRoute(discoveryX, namingSettings)
+    val n = new NamingRoute(discoveryX.namespaceRef)
     openRoutes ::= n.openRoute
-    managementRoutes ::= n.managementRoute
+    consoleRoutes ::= n.consoleRoute
     grpcHandlers :::= n.grpcHandler
   }
   private val grpcHandler = ServiceHandler.concatOrNotFound(grpcHandlers: _*)
@@ -54,8 +61,8 @@ class Routes(discoveryX: DiscoveryX) extends StrictLogging {
       pathPrefix("v1") {
         concat(openRoutes: _*)
       } ~
-      pathPrefix("management") {
-        concat(managementRoutes: _*)
+      pathPrefix("console") {
+        concat(consoleRoutes: _*)
       }
     } ~
     extractRequest { request =>

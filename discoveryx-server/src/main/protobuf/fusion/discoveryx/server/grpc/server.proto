@@ -5,6 +5,7 @@ import "scalapb/scalapb.proto";
 import "fusion/discoveryx/model/discoveryx.proto";
 import "fusion/discoveryx/server/protocol/config.proto";
 import "fusion/discoveryx/server/protocol/naming.proto";
+import "fusion/discoveryx/server/protocol/management.proto";
 
 option (scalapb.options) = {
   collection_type: "scala.collection.immutable.Seq"
@@ -16,24 +17,6 @@ service ConfigManagerService {
     rpc ListConfig (fusion.discoveryx.server.protocol.ListConfig) returns (fusion.discoveryx.server.protocol.ConfigResponse) {
     }
     // #ListConfig
-
-    // #GetConfig
-    // 查询单个配置
-    rpc GetConfig (fusion.discoveryx.model.ConfigGet) returns (fusion.discoveryx.server.protocol.ConfigResponse) {
-    }
-    // #GetConfig
-
-    // #PublishConfig
-    // 发布配置
-    rpc PublishConfig (fusion.discoveryx.model.ConfigItem) returns (fusion.discoveryx.server.protocol.ConfigResponse) {
-    }
-    // #PublishConfig
-
-    // #RemoveConfig
-    // 删除配置
-    rpc RemoveConfig (fusion.discoveryx.model.ConfigRemove) returns (fusion.discoveryx.server.protocol.ConfigResponse) {
-    }
-    // #RemoveConfig
 }
 
 service NamingManagerService {
@@ -49,21 +32,47 @@ service NamingManagerService {
     }
     // #GetService
 
-    // #CreateInstance
-    // 创建实例
-    rpc CreateInstance (fusion.discoveryx.model.InstanceRegister) returns (fusion.discoveryx.server.protocol.NamingResponse) {
+    // #CreateService
+    // 创建服务
+    rpc CreateService (fusion.discoveryx.server.protocol.CreateService) returns (fusion.discoveryx.server.protocol.NamingResponse) {
     }
-    // #CreateInstance
+    // #CreateService
 
-    // #RemoveInstance
-    // 删除实例
-    rpc RemoveInstance (fusion.discoveryx.model.InstanceRemove) returns (fusion.discoveryx.server.protocol.NamingResponse) {
+    // #ModifyService
+    // 创建服务
+    rpc ModifyService (fusion.discoveryx.server.protocol.ModifyService) returns (fusion.discoveryx.server.protocol.NamingResponse) {
     }
-    // #RemoveInstance
+    // #ModifyService
 
-    // #ModifyInstance
-    // 编辑实例
-    rpc ModifyInstance (fusion.discoveryx.model.InstanceModify) returns (fusion.discoveryx.server.protocol.NamingResponse) {
+    // #RemoveService
+    // 删除服务
+    rpc RemoveService (fusion.discoveryx.server.protocol.RemoveService) returns (fusion.discoveryx.server.protocol.NamingResponse) {
     }
-    // #ModifyInstance
+    // #RemoveService
+}
+
+service ManagementService {
+    // #ListNamespace
+    // 创建命名空间
+    rpc ListNamespace (fusion.discoveryx.server.protocol.ListNamespace) returns (fusion.discoveryx.server.protocol.ManagementResponse) {
+    }
+    // #ListNamespace
+
+    // #CreateNamespace
+    // 创建命名空间
+    rpc CreateNamespace (fusion.discoveryx.server.protocol.CreateNamespace) returns (fusion.discoveryx.server.protocol.ManagementResponse) {
+    }
+    // #CreateNamespace
+
+    // #ModifyNamespace
+    // 修改命名空间
+    rpc ModifyNamespace (fusion.discoveryx.server.protocol.ModifyNamespace) returns (fusion.discoveryx.server.protocol.ManagementResponse) {
+    }
+    // #ModifyNamespace
+
+    // #RemoveNamespace
+    // 删除命名空间
+    rpc RemoveNamespace (fusion.discoveryx.server.protocol.RemoveNamespace) returns (fusion.discoveryx.server.protocol.ManagementResponse) {
+    }
+    // #RemoveNamespace
 }

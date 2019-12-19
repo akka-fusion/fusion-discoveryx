@@ -16,6 +16,10 @@ message ConfigKey {
     string data_id = 2;
 }
 
+message ConfigPassiveStop {
+    option (scalapb.message).extends = "fusion.discoveryx.server.config.ConfigEntity.Command";
+}
+
 message RegisterChangeListener {
     option (scalapb.message).extends = "fusion.discoveryx.server.config.ConfigEntity.Command";
     option (scalapb.message).companion_extends = "fusion.protobuf.ActorRefCompanion";
@@ -71,6 +75,7 @@ message ListConfig {
     int32 size = 5;
 }
 // #ListConfig
+
 
 message ConfigManagerCommand {
     option (scalapb.message).extends = "fusion.discoveryx.server.config.ConfigManager.Command";

@@ -42,4 +42,6 @@ object DiscoveryXUtils {
       in.ephemeral,
       in.metadata)
   }
+
+  def userHome: Option[String] = sys.env.get("HOME") orElse sys.props.get("user.home")
 }

@@ -29,4 +29,14 @@ trait BaseSettings {
   def findPage(page: Int): Int = if (page < defaultPage) defaultPage else page
 
   def findOffset(page: Int, size: Int): Int = if (page > 0) (page - 1) * size else 0
+
+  /**
+   * @return (page, size, offset)
+   */
+  def findPageSizeOffset(_page: Int, _size: Int): (Int, Int, Int) = {
+    val page = findPage(_page)
+    val size = findSize(_size)
+    val offset = if (page > 0) (page - 1) * size else 0
+    (page, size, offset)
+  }
 }

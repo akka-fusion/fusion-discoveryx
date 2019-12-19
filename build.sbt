@@ -30,20 +30,25 @@ lazy val root = Project(id = "fusion-discoveryx", base = file("."))
   .settings(skip in publish := true, aggregate in sonarScan := false)
 
 lazy val discoveryxDocs = _project("discoveryx-docs")
-  .enablePlugins(ParadoxMaterialThemePlugin)
+  .enablePlugins(/*ParadoxMaterialThemePlugin*/AkkaParadoxPlugin)
   .dependsOn(discoveryxFunctest, discoveryxServer, discoveryxClient, discoveryxCommon)
   .settings(
-    skip in publish := true,
-    Compile / paradoxMaterialTheme ~= {
-      _.withLanguage(java.util.Locale.SIMPLIFIED_CHINESE)
-        .withColor("indigo", "red")
-        .withRepository(uri("https://github.com/akka-fusion/fusion-discoveryx"))
-        .withSocial(
-          uri("http://akka-fusion.github.io/akka-fusion/"),
-          uri("https://github.com/akka-fusion"),
-          uri("https://weibo.com/yangbajing"))
-    },
-    paradoxProperties ++= Map(
+      resolvers += Resolver.jcenterRepo,
+      skip in publish := true,
+//    Compile / paradoxMaterialTheme ~= {
+//      _.withLanguage(java.util.Locale.SIMPLIFIED_CHINESE)
+//        .withColor("indigo", "red")
+//        .withRepository(uri("https://github.com/akka-fusion/fusion-discoveryx"))
+//        .withSocial(
+//          uri("http://akka-fusion.github.io/akka-fusion/"),
+//          uri("https://github.com/akka-fusion"),
+//          uri("https://weibo.com/yangbajing"))
+//    },
+      paradoxGroups := Map("Language" -> Seq("Scala")),
+      sourceDirectory in Compile in paradoxTheme := sourceDirectory.value / "main" / "paradox" / "_template",
+      paradoxProperties ++= Map(
+        "project.name" -> "Fusion DiscoveryX",
+        "canonical.base_url" -> "http://akka-fusion.github.io/akka-fusion/",
         "github.base_url" -> s"https://github.com/akka-fusion/fusion-discoveryx/tree/${version.value}",
         "version" -> version.value,
         "scala.version" -> scalaVersion.value,
@@ -79,7 +84,7 @@ lazy val discoveryxServer = _project("discoveryx-server")
     scriptClasspath := Seq("*"),
     libraryDependencies ++= Seq(
         _scalapbJson4s,
-        _postgresql % Provided,
+        _postgresql % Runtime,
         _mysql % Provided,
         _h2,
         _hikariCP,

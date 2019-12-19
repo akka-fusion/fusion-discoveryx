@@ -17,14 +17,17 @@
 package fusion.discoveryx.server.config
 
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
-import fusion.discoveryx.server.config.service.ConfigManagerServiceImpl
+import fusion.discoveryx.server.management.NamespaceRef.ExistNamespace
+import fusion.discoveryx.server.management.{ Management, NamespaceRef }
 import fusion.discoveryx.server.protocol.ListConfig
 import fusion.discoveryx.server.util.ProtobufJson4s
 import helloscala.common.IntStatus
 import org.scalatest.WordSpecLike
 
 class ConfigManagerServiceTest extends ScalaTestWithActorTestKit with WordSpecLike {
-  private val configManagerService = new ConfigManagerServiceImpl()
+  Management.init(system)
+  private val namespaceRef = spawn(NamespaceRef()).narrow[ExistNamespace]
+  private val configManagerService = new ConfigManagerServiceImpl(namespaceRef)
 
   "ConfigManagerService" must {
     val namespace = "me.yangbajing"
@@ -34,11 +37,5 @@ class ConfigManagerServiceTest extends ScalaTestWithActorTestKit with WordSpecLi
       resp.status shouldBe IntStatus.OK
       println(ProtobufJson4s.toJsonPrettyString(resp))
     }
-
-    "getConfig" in {}
-
-    "publishConfig" in {}
-
-    "removeConfig" in {}
   }
 }
