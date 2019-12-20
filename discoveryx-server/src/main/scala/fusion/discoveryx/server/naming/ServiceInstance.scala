@@ -18,7 +18,6 @@ package fusion.discoveryx.server.naming
 
 import akka.actor.typed.scaladsl.{ ActorContext, Behaviors, TimerScheduler }
 import akka.actor.typed.{ ActorRef, ActorSystem, Behavior }
-import akka.cluster.pubsub.{ DistributedPubSub, DistributedPubSubMediator }
 import akka.cluster.sharding.typed.ShardingEnvelope
 import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, Entity, EntityTypeKey }
 import fusion.discoveryx.DiscoveryXUtils
@@ -28,20 +27,20 @@ import helloscala.common.IntStatus
 import helloscala.common.exception.HSBadRequestException
 import helloscala.common.util.StringUtils
 
-object NamingEntity {
+object ServiceInstance {
   trait Command
 
   private case object HealthCheckKey extends Command
   private case object StopNaming extends Command
 
-  object NamingServiceKey {
+  object ServiceKey {
     def unapply(entityId: String): Option[NamingServiceKey] = entityId.split(' ') match {
       case Array(namespace, serviceName) => Some(new NamingServiceKey(namespace, serviceName))
       case _                             => None
     }
   }
 
-  val TypeKey: EntityTypeKey[Command] = EntityTypeKey[Command]("NamingEntity")
+  val TypeKey: EntityTypeKey[Command] = EntityTypeKey[Command]("ServiceInstance")
 
   def entityId(namespace: String, serviceName: String): Either[String, String] = {
     if (StringUtils.isBlank(namespace) || StringUtils.isBlank(serviceName))
@@ -50,31 +49,29 @@ object NamingEntity {
   }
 
   def init(system: ActorSystem[_]): ActorRef[ShardingEnvelope[Command]] =
-    ClusterSharding(system).init(Entity(NamingEntity.TypeKey)(entityContext => apply(entityContext.entityId)))
+    ClusterSharding(system).init(Entity(ServiceInstance.TypeKey)(entityContext => apply(entityContext.entityId)))
 
   private def apply(entityId: String): Behavior[Command] = Behaviors.setup[Command] { context =>
     context.log.debug(s"apply entityId is '$entityId'")
-    val namingServiceKey = NamingServiceKey
+    val namingServiceKey = ServiceKey
       .unapply(entityId)
       .getOrElse(throw HSBadRequestException(
         s"${context.self} create child error. entityId invalid, need '[namespace] [serviceName]' format."))
-    Behaviors.withTimers(timers => new NamingEntity(namingServiceKey, timers, context).receive())
+    Behaviors.withTimers(timers => new ServiceInstance(namingServiceKey, timers, context).receive())
   }
 }
 
-class NamingEntity private (
-    namingServiceKey: NamingServiceKey,
-    timers: TimerScheduler[NamingEntity.Command],
-    context: ActorContext[NamingEntity.Command]) {
-  import NamingEntity._
+class ServiceInstance private (
+    private var serviceKey: NamingServiceKey,
+    timers: TimerScheduler[ServiceInstance.Command],
+    context: ActorContext[ServiceInstance.Command]) {
+  import ServiceInstance._
   private val settings = NamingSettings(context.system)
-  private val internalService = new InternalService(namingServiceKey, settings)
+  private val internalService = new InternalService(serviceKey, settings)
 
-  DistributedPubSub(context.system).mediator ! DistributedPubSubMediator.Publish(
-    NamingManager.TOPIC_NAMING_TO_MANAGER,
-    NamingRegisterToManager(context.self))
+  ServiceManager.init(context.system) ! ShardingEnvelope(serviceKey.namespace, NamingRegisterToManager(context.self))
   timers.startTimerWithFixedDelay(HealthCheckKey, HealthCheckKey, settings.heartbeatInterval)
-  context.log.info(s"Namings started: $namingServiceKey")
+  context.log.info(s"ServiceInstance started: $serviceKey")
 
   def receive(): Behavior[Command] = Behaviors.receiveMessage {
     case NamingReplyCommand(replyTo, cmd) =>
@@ -93,9 +90,11 @@ class NamingEntity private (
 
   private def queryServiceInfo(): ServiceInfo = {
     ServiceInfo(
-      namingServiceKey.namespace,
-      namingServiceKey.serviceName,
-      "", // TODO group_name
+      serviceKey.namespace,
+      serviceKey.serviceName,
+      serviceKey.groupName,
+      serviceKey.protectThreshold,
+      serviceKey.metadata,
       internalService.allRealInstance())
   }
 
@@ -112,15 +111,22 @@ class NamingEntity private (
   private def processReplyCommand(cmd: NamingReplyCommand.Cmd): NamingReply = {
     import NamingReplyCommand.Cmd
     cmd match {
-      case Cmd.Query(value)         => queryInstance(value)
-      case Cmd.Register(value)      => registerInstance(value)
-      case Cmd.Remove(value)        => removeInstance(value)
-      case Cmd.Modify(value)        => modifyInstance(value)
+      case Cmd.Query(value)    => queryInstance(value)
+      case Cmd.Register(value) => registerInstance(value)
+      case Cmd.Remove(value)   => removeInstance(value)
+      case Cmd.Modify(value)   => modifyInstance(value)
       case Cmd.CreateService(value) =>
-        // TODO 保存 value.groupName
+        serviceKey = serviceKey.copy(
+          groupName = value.groupName,
+          protectThreshold = value.protectThreshold,
+          metadata = value.metadata)
         NamingReply(IntStatus.OK, data = NamingReply.Data.ServiceInfo(queryServiceInfo()))
       case Cmd.ModifyService(value) =>
-        // TODO 保存 value.groupName
+        val old = serviceKey
+        serviceKey = serviceKey.copy(
+          groupName = value.groupName.getOrElse(old.groupName),
+          protectThreshold = value.protectThreshold.getOrElse(old.protectThreshold),
+          metadata = if (value.replaceMetadata) value.metadata else old.metadata ++ value.metadata)
         NamingReply(IntStatus.OK, data = NamingReply.Data.ServiceInfo(queryServiceInfo()))
       case Cmd.RemoveService(_) =>
         context.self ! StopNaming
@@ -132,8 +138,16 @@ class NamingEntity private (
   private def queryInstance(in: InstanceQuery): NamingReply =
     try {
       val items = internalService.queryInstance(in)
-      val status = if (items.isEmpty) IntStatus.NOT_FOUND else IntStatus.OK
-      NamingReply(status, data = NamingReply.Data.Queried(InstanceQueryResult(items)))
+      NamingReply(
+        IntStatus.OK,
+        data = NamingReply.Data.ServiceInfo(
+          ServiceInfo(
+            serviceKey.namespace,
+            serviceKey.serviceName,
+            serviceKey.groupName,
+            serviceKey.protectThreshold,
+            serviceKey.metadata,
+            items)))
     } catch {
       case _: IllegalArgumentException => NamingReply(IntStatus.BAD_REQUEST)
     }

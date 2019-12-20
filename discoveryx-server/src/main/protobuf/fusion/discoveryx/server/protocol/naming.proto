@@ -13,10 +13,13 @@ option (scalapb.options) = {
 message NamingServiceKey {
     string namespace = 1;
     string serviceName = 2;
+    string group_name = 3;
+    double protect_threshold = 4;
+    map<string, string> metadata = 5;
 }
 
 message NamingReplyCommand {
-    option (scalapb.message).extends = "fusion.discoveryx.server.naming.NamingEntity.Command";
+    option (scalapb.message).extends = "fusion.discoveryx.server.naming.ServiceInstance.Command";
     option (scalapb.message).companion_extends = "fusion.protobuf.ActorRefCompanion";
 
     string reply_to = 1 [(scalapb.field).type = "akka.actor.typed.ActorRef[fusion.discoveryx.model.NamingReply]"];
@@ -32,27 +35,27 @@ message NamingReplyCommand {
 }
 
 message Heartbeat {
-    option (scalapb.message).extends = "fusion.discoveryx.server.naming.NamingEntity.Command";
+    option (scalapb.message).extends = "fusion.discoveryx.server.naming.ServiceInstance.Command";
     string namespace = 1;
     string service_name = 2;
     string instance_id = 3;
 }
 
 message QueryServiceInfo {
-    option (scalapb.message).extends = "fusion.discoveryx.server.naming.NamingEntity.Command";
+    option (scalapb.message).extends = "fusion.discoveryx.server.naming.ServiceInstance.Command";
     option (scalapb.message).companion_extends = "fusion.protobuf.ActorRefCompanion";
     string reply_to = 1 [(scalapb.field).type = "akka.actor.typed.ActorRef[fusion.discoveryx.model.ServiceInfo]"];
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// NamingManager 使用
+// ServiceManager 使用
 ////////////////////////////////////////////////////////////////////////////////
 
-// 通过 PubSub 发布 fusion.discoveryx.server.naming.NamingEntity 自身的 ActorRef，并注册到 NamingManager
+// 通过 PubSub 发布 fusion.discoveryx.server.naming.ServiceInstance 自身的 ActorRef，并注册到 ServiceManager
 message NamingRegisterToManager {
-    option (scalapb.message).extends = "fusion.discoveryx.server.naming.NamingManager.Command";
+    option (scalapb.message).extends = "fusion.discoveryx.server.naming.ServiceManager.Command";
     option (scalapb.message).companion_extends = "fusion.protobuf.ActorRefCompanion";
-    string naming_ref = 1 [(scalapb.field).type = "akka.actor.typed.ActorRef[fusion.discoveryx.server.naming.NamingEntity.Command]"];
+    string naming_ref = 1 [(scalapb.field).type = "akka.actor.typed.ActorRef[fusion.discoveryx.server.naming.ServiceInstance.Command]"];
 }
 
 // #ListService
@@ -61,6 +64,7 @@ message ListService {
     int32 page = 2;
     int32 size = 3;
     string service_name = 4;
+    string group_name = 5;
 }
 // #ListService
 
@@ -77,6 +81,7 @@ message ListedService {
 message GetService {
     string namespace = 1;
     string service_name = 2;
+    google.protobuf.StringValue group_name = 3;
 }
 // #GetService
 
@@ -84,6 +89,9 @@ message GetService {
 message CreateService {
     string namespace = 1;
     string service_name = 2;
+    string group_name = 3;
+    double protect_threshold = 4;
+    map<string, string> metadata = 5;
 }
 // #CreateService
 
@@ -99,11 +107,15 @@ message ModifyService {
     string namespace = 1;
     string service_name = 2;
     google.protobuf.StringValue group_name = 3;
+    google.protobuf.DoubleValue protect_threshold = 4;
+    map<string, string> metadata = 5;
+    bool replace_metadata = 6;
 }
 // #ModifyService
 
+// #NamingManagerCommand
 message NamingManagerCommand {
-    option (scalapb.message).extends = "fusion.discoveryx.server.naming.NamingManager.Command";
+    option (scalapb.message).extends = "fusion.discoveryx.server.naming.ServiceManager.Command";
     option (scalapb.message).companion_extends = "fusion.protobuf.ActorRefCompanion";
 
     string reply_to = 1 [(scalapb.field).type = "akka.actor.typed.ActorRef[NamingResponse]"];
@@ -115,6 +127,7 @@ message NamingManagerCommand {
         ModifyService modify_service = 6;
     }
 }
+// #NamingManagerCommand
 
 // #NamingResponse
 message NamingResponse {

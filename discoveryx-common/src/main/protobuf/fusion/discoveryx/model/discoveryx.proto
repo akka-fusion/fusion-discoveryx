@@ -195,9 +195,6 @@ message InstanceQuery {
     // only return one healthy instance
     bool one_healthy = 5;
 }
-message InstanceQueryResult {
-    repeated Instance instances = 2;
-}
 // #InstanceQuery
 
 // #InstanceHeartbeat
@@ -210,7 +207,9 @@ message ServiceInfo {
     string namespace = 1;
     string service_name = 2;
     string group_name = 3;
-    repeated Instance instances = 4;
+    double protect_threshold = 4;
+    map<string, string> metadata = 5;
+    repeated Instance instances = 6;
 }
 // #ServiceInfo
 
@@ -219,9 +218,8 @@ message NamingReply {
     int32 status = 1;
     string message = 2;
     oneof data {
-        InstanceQueryResult queried = 3;
-        Instance instance = 4;
-        ServiceInfo service_info = 5;
+        Instance instance = 3;
+        ServiceInfo service_info = 4;
     }
 }
 // #NamingReply

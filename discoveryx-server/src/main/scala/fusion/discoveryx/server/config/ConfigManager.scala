@@ -19,8 +19,7 @@ package fusion.discoveryx.server.config
 import akka.actor.typed.scaladsl.AskPattern._
 import akka.actor.typed.scaladsl.{ ActorContext, Behaviors }
 import akka.actor.typed.{ ActorRef, ActorSystem, Behavior }
-import akka.cluster.sharding.typed.ClusterShardingSettings
-import akka.cluster.sharding.typed.ShardingEnvelope
+import akka.cluster.sharding.typed.{ ClusterShardingSettings, ShardingEnvelope }
 import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, Entity, EntityTypeKey }
 import akka.util.Timeout
 import fusion.discoveryx.model._
@@ -107,10 +106,7 @@ class ConfigManager private (namespace: String, context: ActorContext[Command]) 
       }
     } else {
       Future.successful(
-        ConfigResponse(
-          IntStatus.OK,
-          data = Data.Listed(
-            ConfigQueried(namespace = namespace, page = page, size = size, totalElements = configKeys.size))))
+        ConfigResponse(IntStatus.OK, data = Data.Listed(ConfigQueried(Nil, namespace, page, size, configKeys.size))))
     }
   }
 

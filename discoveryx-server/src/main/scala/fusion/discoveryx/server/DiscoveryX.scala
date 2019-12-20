@@ -17,7 +17,6 @@
 package fusion.discoveryx.server
 
 import akka.actor.typed.scaladsl.adapter._
-import akka.actor.typed.scaladsl.{ ActorContext, Behaviors }
 import akka.actor.typed.{ ActorRef, ActorSystem, Behavior }
 import akka.{ actor => classic }
 import com.typesafe.config.Config
@@ -29,7 +28,7 @@ import fusion.discoveryx.server.management.NamespaceRef
 
 class DiscoveryX(val settings: DiscoveryXSettings, val config: Config, val system: ActorSystem[FusionProtocol.Command])
     extends FusionActorRefFactory {
-  def namespaceRef: ActorRef[NamespaceRef.ExistNamespace] = system.narrow[NamespaceRef.ExistNamespace]
+  val namespaceRef: ActorRef[NamespaceRef.ExistNamespace] = spawn(NamespaceRef(), NamespaceRef.NAME)
   def classicSystem: classic.ActorSystem = system.toClassic
 }
 
@@ -43,19 +42,8 @@ object DiscoveryX {
 
   def fromOriginalConfig(originalConfig: Config): DiscoveryX = {
     val config = FusionConfigFactory.arrangeConfig(originalConfig, Constants.DISCOVERYX, Seq("akka"))
-    fromActorSystem(ActorSystem(FusionProtocol.behavior, Constants.DISCOVERYX, config))
+    fromActorSystem(ActorSystem(apply(), Constants.DISCOVERYX, config))
   }
 
-  private def apply(): Behavior[FusionProtocol.Command] = Behaviors.setup { context =>
-    val namespaceRef = context.spawn(NamespaceRef(), NamespaceRef.NAME)
-    Behaviors.receiveMessage[FusionProtocol.Command] {
-      case cmd: NamespaceRef.ExistNamespace =>
-        namespaceRef ! cmd
-        Behaviors.same
-      case t =>
-        FusionProtocol.behaviorPartial.applyOrElse(
-          (context, t),
-          (_: (ActorContext[FusionProtocol.Command], FusionProtocol.Command)) => Behaviors.unhandled)
-    }
-  }
+  private def apply(): Behavior[FusionProtocol.Command] = FusionProtocol.behavior
 }

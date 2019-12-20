@@ -32,7 +32,7 @@ import scala.concurrent.duration._
 class NamingManagerServiceImpl(namespaceRef: ActorRef[ExistNamespace])(implicit system: ActorSystem[_])
     extends NamingManagerService {
   private implicit val timeout: Timeout = 10.seconds
-  private val namingManager: ActorRef[ShardingEnvelope[NamingManager.Command]] = NamingManager.init(system)
+  private val serviceManager: ActorRef[ShardingEnvelope[ServiceManager.Command]] = ServiceManager.init(system)
 
   /**
    * #ListService
@@ -72,7 +72,7 @@ class NamingManagerServiceImpl(namespaceRef: ActorRef[ExistNamespace])(implicit 
       .ask[NamespaceExists](replyTo => ExistNamespace(namespace, replyTo))
       .flatMap {
         case NamespaceExists(true) =>
-          namingManager.ask[NamingResponse](replyTo => ShardingEnvelope(namespace, NamingManagerCommand(replyTo, cmd)))
+          serviceManager.ask[NamingResponse](replyTo => ShardingEnvelope(namespace, NamingManagerCommand(replyTo, cmd)))
         case _ =>
           Future.successful(NamingResponse(IntStatus.NOT_FOUND, s"Namespace '$namespace' not exists."))
       }(system.executionContext)

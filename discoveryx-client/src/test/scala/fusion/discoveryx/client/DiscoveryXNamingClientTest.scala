@@ -24,10 +24,11 @@ import helloscala.common.IntStatus
 import org.scalatest.{ OptionValues, WordSpecLike }
 
 class DiscoveryXNamingClientTest extends ScalaTestWithActorTestKit with WordSpecLike with OptionValues {
-  private val namingClient = DiscoveryXNamingClient(system)
-  private val namespace = "scala-meetup"
+  private val settings = NamingClientSettings(system)
+  private val namingClient = DiscoveryXNamingClient(settings, system)
+  private val namespace = settings.namespace.getOrElse("890cd0cd-22d8-11ea-8bfe-5254002e9e52")
   private val serviceName = "akka"
-  private val groupName = "default"
+  private val groupName = ""
 
   "DiscoveryXNamingService" must {
     var inst: Instance = null
@@ -36,9 +37,7 @@ class DiscoveryXNamingClientTest extends ScalaTestWithActorTestKit with WordSpec
       result.status should be(IntStatus.OK)
     }
     "registerInstance" in {
-      val in =
-        InstanceRegister(namespace, serviceName, groupName, "127.0.0.1", 8000, enable = true)
-      val reply = namingClient.registerInstance(in).futureValue
+      val reply = namingClient.registerOnSettings().futureValue
       println(reply)
       reply.status should be(IntStatus.OK)
     }
@@ -54,14 +53,14 @@ class DiscoveryXNamingClientTest extends ScalaTestWithActorTestKit with WordSpec
       val in = InstanceQuery(namespace, serviceName, groupName, allHealthy = true)
       val reply = namingClient.queryInstance(in).futureValue
       reply.status should be(IntStatus.OK)
-      val queried = reply.data.queried.value
+      val queried = reply.data.serviceInfo.value
       queried.instances should have size 2
     }
     "queryInstance one healthy" in {
       val in = InstanceQuery(namespace, serviceName, groupName, oneHealthy = true)
       val reply = namingClient.queryInstance(in).futureValue
       reply.status should be(IntStatus.OK)
-      val queried = reply.data.queried.value
+      val queried = reply.data.serviceInfo.value
       queried.instances should have size 1
     }
     "removeInstance" in {
@@ -74,7 +73,7 @@ class DiscoveryXNamingClientTest extends ScalaTestWithActorTestKit with WordSpec
       val in = InstanceQuery(namespace, serviceName, groupName, allHealthy = true)
       val reply = namingClient.queryInstance(in).futureValue
       reply.status should be(IntStatus.OK)
-      val queried = reply.data.queried.value
+      val queried = reply.data.serviceInfo.value
       queried.instances should have size 1
       queried.instances.exists(_.namespace == namespace) shouldBe true
       queried.instances.exists(_.serviceName == serviceName) shouldBe true

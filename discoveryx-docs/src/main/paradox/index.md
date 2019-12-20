@@ -11,6 +11,8 @@
 @@@ index
 
 - [intro](intro.md)
+- [use](use/index.md)
+- [design](design/index.md)
 - [api](api/index.md)
 - [deploy](deploy/index.md)
 - [release](releases.md)

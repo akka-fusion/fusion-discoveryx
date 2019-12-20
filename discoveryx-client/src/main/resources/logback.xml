@@ -12,8 +12,8 @@
     <logger name="ch.qos" level="WARN"/>
     <logger name="com.zaxxer" level="WARN"/>
     <logger name="fusion" level="DEBUG"/>
-    <logger name="akka" level="WARN"/>
-    <logger name="io.grpc" level="WARN"/>
+    <logger name="akka" level="INFO"/>
+<!--    <logger name="io.grpc" level="WARN"/>-->
 
     <root level="DEBUG">
         <appender-ref ref="STDOUT"/>

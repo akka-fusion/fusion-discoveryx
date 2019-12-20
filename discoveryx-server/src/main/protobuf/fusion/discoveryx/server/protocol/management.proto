@@ -11,41 +11,53 @@ option (scalapb.options) = {
   collection_type: "scala.collection.immutable.Seq"
 };
 
+// #Namespace
 message Namespace {
     option (scalapb.message).extends = "fusion.discoveryx.server.management.Management.Event";
 
     string namespace = 1;
     string name = 2;
 }
+// #Namespace
 
+// #CreateNamespace
 message CreateNamespace {
     string name = 1;
 }
+// #CreateNamespace
 
+// #ListNamespace
 message ListNamespace {
     int32 page = 1;
     int32 size = 2;
 }
+// #ListNamespace
 
+// #RemoveNamespace
 message RemoveNamespace {
     option (scalapb.message).extends = "fusion.discoveryx.server.management.Management.Event";
 
     string namespace = 1;
 }
+// #RemoveNamespace
 
+// #ModifyNamespace
 message ModifyNamespace {
     option (scalapb.message).extends = "fusion.discoveryx.server.management.Management.Event";
 
     string namespace = 1;
     google.protobuf.StringValue name = 2;
 }
+// #ModifyNamespace
 
+// #ListedNamespace
 message ListedNamespace {
     repeated Namespace namespaces = 1;
     int32 page = 2;
     int32 size = 3;
     int32 total_elements = 4;
 }
+// #ListedNamespace
 
 message ManagementCommand {
     option (scalapb.message).extends = "fusion.discoveryx.server.management.Management.Command";
@@ -60,6 +72,7 @@ message ManagementCommand {
     }
 }
 
+// #ManagementResponse
 message ManagementResponse {
     int32 status = 1;
     string message = 2;
@@ -68,6 +81,7 @@ message ManagementResponse {
         ListedNamespace listed = 4;
     }
 }
+// #ManagementResponse
 
 message ManagementState {
     repeated Namespace namespaces = 1 [(scalapb.field).collection_type = "Vector"];
