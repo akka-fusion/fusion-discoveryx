@@ -191,7 +191,7 @@ module.exports = {
     new HtmlWebpackPlugin({
       filename: 'index.html',
       template: config.path.indexHtml,
-      title: 'react-template',
+      title: 'Fusion DiscoveryX',
     }),
     new InlineManifestWebpackPlugin('runtime'),
     // 拷贝静态资源

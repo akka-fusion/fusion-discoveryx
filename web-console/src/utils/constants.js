@@ -58,4 +58,6 @@ const ECHARTS_DEFULT_OPTION = {
   series: [],
 };
 
-export { isProduction, ECHARTS_DEFULT_OPTION, browserRedirect };
+const PAGE_OBJECT = { page: 1, size: 20, totalElements: 0, data: [] };
+
+export { isProduction, ECHARTS_DEFULT_OPTION, browserRedirect, PAGE_OBJECT };

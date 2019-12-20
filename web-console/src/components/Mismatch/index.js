@@ -9,10 +9,8 @@ import './index.less';
 
 const Mismatch = () => (
   <div id="noMatch">
-    <section>
-      <span>404</span>
-      <p>抱歉，你访问的页面不存在</p>
-    </section>
+    <span>404</span>
+    <p>抱歉，你访问的页面不存在</p>
   </div>
 );
 
