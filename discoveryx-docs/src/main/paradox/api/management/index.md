@@ -10,6 +10,7 @@
 
 - [config](config.md)
 - [naming](naming.md)
+- [manage](manage.md)
 - [grpc](grpc.md)
 
 @@@

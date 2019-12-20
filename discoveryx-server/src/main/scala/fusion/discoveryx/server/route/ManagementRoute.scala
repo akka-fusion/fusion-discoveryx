@@ -24,7 +24,7 @@ import akka.http.scaladsl.server.Route
 import akka.stream.{ Materializer, SystemMaterializer }
 import fusion.discoveryx.server.grpc.ManagementServiceHandler
 import fusion.discoveryx.server.management.{ Management, ManagementServiceImpl }
-import fusion.discoveryx.server.protocol.{ CreateNamespace, ListNamespace }
+import fusion.discoveryx.server.protocol.{ CreateNamespace, ListNamespace, ModifyNamespace, RemoveNamespace }
 
 import scala.concurrent.Future
 
@@ -50,6 +50,16 @@ class ManagementRoute()(implicit system: ActorSystem[_]) {
     pathPost("CreateNamespace") {
       entity(as[CreateNamespace]) { in =>
         complete(managementService.createNamespace(in))
+      }
+    } ~
+    pathPost("RemoveNamespace") {
+      entity(as[RemoveNamespace]) { in =>
+        complete(managementService.removeNamespace(in))
+      }
+    } ~
+    pathPost("ModifyNamespace") {
+      entity(as[ModifyNamespace]) { in =>
+        complete(managementService.modifyNamespace(in))
       }
     }
   }

@@ -42,7 +42,7 @@ class NamingServiceImpl(namespaceRef: ActorRef[ExistNamespace])(implicit system:
     with StrictLogging {
   import system.executionContext
   implicit private val timeout: Timeout = 5.seconds
-  private val namingRegion = NamingEntity.init(system)
+  private val namingRegion = ServiceInstance.init(system)
 
   /**
    * 查询服务状态
@@ -79,6 +79,7 @@ class NamingServiceImpl(namespaceRef: ActorRef[ExistNamespace])(implicit system:
     askNaming(in.namespace, in.serviceName, NamingReplyCommand.Cmd.Query(in))
   }
 
+  // #heartbeat
   override def heartbeat(
       in: Source[InstanceHeartbeat, NotUsed],
       metadata: Metadata): Source[ServerStatusBO, NotUsed] = {
@@ -92,7 +93,7 @@ class NamingServiceImpl(namespaceRef: ActorRef[ExistNamespace])(implicit system:
       val instanceId = metadata
         .getText(Headers.INSTANCE_ID)
         .getOrElse(throw HSBadRequestException(s"Request header missing, need '${Headers.INSTANCE_ID}'."))
-      val entityId = NamingEntity.entityId(namespace, serviceName) match {
+      val entityId = ServiceInstance.entityId(namespace, serviceName) match {
         case Right(value) => value
         case Left(errMsg) => throw HSBadRequestException(errMsg)
       }
@@ -106,11 +107,12 @@ class NamingServiceImpl(namespaceRef: ActorRef[ExistNamespace])(implicit system:
         Source.single(ServerStatusBO(IntStatus.BAD_REQUEST))
     }
   }
+  // #heartbeat
 
   private def askNaming(namespace: String, serviceName: String, cmd: NamingReplyCommand.Cmd): Future[NamingReply] = {
     namespaceRef.ask[NamespaceExists](replyTo => ExistNamespace(namespace, replyTo)).flatMap {
       case NamespaceExists(true) =>
-        NamingEntity.entityId(namespace, serviceName) match {
+        ServiceInstance.entityId(namespace, serviceName) match {
           case Right(entityId) =>
             namingRegion
               .ask[NamingReply](replyTo => ShardingEnvelope(entityId, NamingReplyCommand(replyTo, cmd)))

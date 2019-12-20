@@ -4,11 +4,15 @@
 
 产品文档：[https://akka-fusion.github.io/fusion-discoveryx/](https://akka-fusion.github.io/fusion-discoveryx/)
 
+在线演示Demo：<a href="http://discoveryx.helloscala.com/">http://discoveryx.helloscala.com/</a> 。
+
 @@toc { depth=2 }
 
 @@@ index
 
 - [intro](intro.md)
+- [use](use/index.md)
+- [design](design/index.md)
 - [api](api/index.md)
 - [deploy](deploy/index.md)
 - [release](releases.md)

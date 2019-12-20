@@ -1,4 +1,4 @@
-# Naming Manager 名称管理服务
+# Naming服务管理
 
 - gRPC服务地址：`/fusion.discoveryx.server.grpc.NamingManagerService`
 - REST URL前缀：`/fusion/discoveryx/console/naming`

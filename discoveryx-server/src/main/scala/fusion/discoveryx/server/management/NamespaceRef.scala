@@ -20,38 +20,36 @@ import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ ActorRef, Behavior }
 import akka.cluster.ddata.typed.scaladsl.{ DistributedData, Replicator }
 import akka.cluster.ddata.{ ORSet, ORSetKey }
-import fusion.common.FusionProtocol
 
 /**
  * 需要 Singleton actor Management() 已启动
  */
 object NamespaceRef {
   trait Command
-  final case class ExistNamespace(namespace: String, replyTo: ActorRef[NamespaceExists])
-      extends Command
-      with FusionProtocol.Command
+  final case class ExistNamespace(namespace: String, replyTo: ActorRef[NamespaceExists]) extends Command
   final case class NamespaceExists(exists: Boolean)
   private final case class InternalNamespaceExists(exists: Boolean, replyTo: ActorRef[NamespaceExists]) extends Command
 
   val Key: ORSetKey[String] = ORSetKey("Namespace")
   val NAME = "Namespace"
 
-  def apply(): Behavior[Command] = Behaviors.setup[Command] { context =>
-    DistributedData.withReplicatorMessageAdapter[Command, ORSet[String]] { replicatorAdapter =>
-      Behaviors.receiveMessage[Command] {
-        case ExistNamespace(namespace, replyTo) =>
+  def apply(): Behavior[Command] = DistributedData.withReplicatorMessageAdapter[Command, ORSet[String]] {
+    replicatorAdapter =>
+      Behaviors.receive[Command] {
+        case (ctx, ExistNamespace(namespace, replyTo)) =>
           replicatorAdapter.askGet(Replicator.Get(Key, Replicator.ReadLocal), {
             case chg @ Replicator.GetSuccess(Key) =>
+              ctx.log.debug(s"$namespace, ORSet elements: ${chg.get(Key).elements}")
               InternalNamespaceExists(chg.get(Key).contains(namespace), replyTo)
             case _ =>
+              ctx.log.debug(s"ORSet $Key not exists.")
               InternalNamespaceExists(false, replyTo)
           })
           Behaviors.same
 
-        case InternalNamespaceExists(exists, replyTo) =>
+        case (ctx, InternalNamespaceExists(exists, replyTo)) =>
           replyTo ! NamespaceExists(exists)
           Behaviors.same
       }
-    }
   }
 }

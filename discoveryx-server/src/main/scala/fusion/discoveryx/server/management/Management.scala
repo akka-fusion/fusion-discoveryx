@@ -119,12 +119,13 @@ class Management private (context: ActorContext[Command]) {
               case Cmd.Empty      => Effect.reply(replyTo)(ManagementResponse(IntStatus.BAD_REQUEST, "Invalid command."))
             }
           case InternalUpdateResponse(resp) =>
-            // TODO do nothing, logging ?
+            context.log.debug(s"ORSet response: $resp.")
             Effect.none
         }
       },
       eventHandler).receiveSignal {
       case (state, RecoveryCompleted) =>
+        context.log.debug(s"RecoveryCompleted, state: $state")
         storeNamespace(set => state.namespaces.foldLeft(set)((data, ns) => data :+ ns.namespace))
     }
 
@@ -208,12 +209,12 @@ class Management private (context: ActorContext[Command]) {
   private def eventHandleModify(in: ModifyNamespace, state: ManagementState): ManagementState = {
     var namespaces = state.namespaces
     val idx = namespaces.indexWhere(_.namespace == in.namespace)
-    if (idx > 0) {
+    if (idx < 0) {
+      ManagementState(namespaces)
+    } else {
       val old = namespaces(idx)
       val namespace = old.copy(name = in.name.getOrElse(old.name))
       namespaces = namespaces.updated(idx, namespace)
-      ManagementState(namespaces)
-    } else {
       ManagementState(namespaces)
     }
   }

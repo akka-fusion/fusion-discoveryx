@@ -30,6 +30,7 @@ import fusion.discoveryx.model._
 import helloscala.common.IntStatus
 
 import scala.concurrent.Future
+import scala.util.control.NonFatal
 import scala.util.{ Failure, Success }
 
 object DiscoveryXNamingClient {
@@ -40,17 +41,21 @@ object DiscoveryXNamingClient {
   }
 
   def apply(system: ActorSystem[_]): DiscoveryXNamingClient = {
-    implicit val classicSystem = system.toClassic
-    import system.executionContext
-    apply(NamingClientSettings(system), NamingServiceClient(GrpcClientSettings.fromConfig(NamingService.name)))(system)
+    apply(NamingClientSettings(system), system)
   }
 
-  def apply(settings: NamingClientSettings, naming: NamingServiceClient)(
+  def apply(settings: NamingClientSettings, system: ActorSystem[_]): DiscoveryXNamingClient = {
+    implicit val classicSystem = system.toClassic
+    import system.executionContext
+    apply(settings, NamingServiceClient(GrpcClientSettings.fromConfig(NamingService.name)))(system)
+  }
+
+  def apply(settings: NamingClientSettings, serviceClient: NamingServiceClient)(
       implicit system: ActorSystem[_]): DiscoveryXNamingClient =
-    new DiscoveryXNamingClient(settings, naming)(system)
+    new DiscoveryXNamingClient(settings, serviceClient)(system)
 }
 
-class DiscoveryXNamingClient private (val settings: NamingClientSettings, val namingClient: NamingServiceClient)(
+class DiscoveryXNamingClient private (val settings: NamingClientSettings, val serviceClient: NamingServiceClient)(
     implicit system: ActorSystem[_])
     extends StrictLogging {
   import DiscoveryXNamingClient._
@@ -61,20 +66,42 @@ class DiscoveryXNamingClient private (val settings: NamingClientSettings, val na
     for ((_, cancellable) <- heartbeatInstances if !cancellable.isCancelled) {
       cancellable.cancel
     }
-    namingClient.close()
+    serviceClient.close()
   }
 
   /**
    * 查询服务状态
    */
-  def serverStatus(in: ServerStatusQuery): Future[ServerStatusBO] = namingClient.serverStatus(in)
+  def serverStatus(in: ServerStatusQuery): Future[ServerStatusBO] = serviceClient.serverStatus(in)
+
+  def registerOnSettings(): Future[NamingReply] =
+    try {
+      val namespace = settings.namespace.getOrElse(throw new IllegalArgumentException("'namespace' not set."))
+      val serviceName = settings.serviceName.getOrElse(throw new IllegalArgumentException("'service-name' not set."))
+      val ip = settings.ip.getOrElse(throw new IllegalArgumentException("'ip' not set."))
+      val port = settings.port.getOrElse(throw new IllegalArgumentException("'port' not set."))
+      val in = InstanceRegister(
+        namespace,
+        serviceName,
+        settings.groupName.getOrElse(""),
+        ip,
+        port,
+        weight = settings.weight,
+        health = true,
+        enable = settings.enable,
+        ephemeral = settings.ephemeral,
+        metadata = settings.metadata)
+      registerInstance(in)
+    } catch {
+      case NonFatal(e) => Future.failed(e)
+    }
 
   /**
    * 添加实例
    */
   def registerInstance(in: InstanceRegister): Future[NamingReply] = {
     import system.executionContext
-    namingClient.registerInstance(in).andThen {
+    serviceClient.registerInstance(in).andThen {
       case Success(reply) if reply.status == IntStatus.OK && reply.data.isInstance =>
         val inst = reply.data.instance.get
         val (cancellable, source) =
@@ -83,7 +110,7 @@ class DiscoveryXNamingClient private (val settings: NamingClientSettings, val na
         heartbeatInstances.get(key).foreach(_.cancel())
         heartbeatInstances = heartbeatInstances.updated(key, cancellable)
         logger.info(s"注册实例成功，开始心跳调度。${settings.heartbeatInterval} | $inst")
-        heartbeat(source, inst).runForeach(bo => logger.debug(s"Received: $bo"))
+        heartbeat(source, inst).runForeach(bo => logger.debug(s"Received heartbeat response: $bo"))
       case Success(reply) =>
         logger.warn(s"注册实例错误，返回：$reply")
       case Failure(exception) =>
@@ -94,7 +121,7 @@ class DiscoveryXNamingClient private (val settings: NamingClientSettings, val na
   /**
    * 修改实例
    */
-  def modifyInstance(in: InstanceModify): Future[NamingReply] = namingClient.modifyInstance(in)
+  def modifyInstance(in: InstanceModify): Future[NamingReply] = serviceClient.modifyInstance(in)
 
   /**
    * 删除实例
@@ -103,16 +130,16 @@ class DiscoveryXNamingClient private (val settings: NamingClientSettings, val na
     val key = InstanceKey(in)
     heartbeatInstances.get(key).foreach(_.cancel())
     heartbeatInstances -= key
-    namingClient.removeInstance(in)
+    serviceClient.removeInstance(in)
   }
 
   /**
    * 查询实例
    */
-  def queryInstance(in: InstanceQuery): Future[NamingReply] = namingClient.queryInstance(in)
+  def queryInstance(in: InstanceQuery): Future[NamingReply] = serviceClient.queryInstance(in)
 
   private def heartbeat(in: Source[InstanceHeartbeat, NotUsed], inst: Instance): Source[ServerStatusBO, NotUsed] = {
-    namingClient
+    serviceClient
       .heartbeat()
       .addHeader(Headers.NAMESPACE, inst.namespace)
       .addHeader(Headers.SERVICE_NAME, inst.serviceName)

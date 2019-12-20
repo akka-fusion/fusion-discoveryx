@@ -37,7 +37,7 @@ object ConfigEntity {
   object ConfigKey {
     def unapply(entityId: String): Option[ConfigKey] = entityId.split(' ') match {
       case Array(namespace, dataId) => Some(new ConfigKey(namespace, dataId))
-      case _                        => None
+      case others                   => None
     }
   }
 
@@ -60,7 +60,7 @@ object ConfigEntity {
             context).eventSourcedBehavior()
         case _ =>
           throw HSInternalErrorException(
-            s"Invalid entityId, need '[namespace] [dataId]'，but is ${entityContext.entityId}")
+            s"Invalid entityId, need '[namespace] [dataId]'，but ${entityContext.entityId} is ${entityContext.entityId.split(' ').toSeq}")
       })
 }
 

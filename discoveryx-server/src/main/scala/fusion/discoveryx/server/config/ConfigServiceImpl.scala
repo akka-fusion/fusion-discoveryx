@@ -76,7 +76,8 @@ class ConfigServiceImpl(namespaceRef: ActorRef[NamespaceRef.ExistNamespace])(imp
       .ask[NamespaceExists](replyTo => ExistNamespace(namespace, replyTo))
       .flatMap {
         case NamespaceExists(true) =>
-          configEntity.ask[ConfigReply](replyTo => ShardingEnvelope(namespace, ConfigEntityCommand(replyTo, cmd)))
+          configEntity.ask[ConfigReply](replyTo =>
+            ShardingEnvelope(ConfigEntity.makeEntityId(namespace, dataId), ConfigEntityCommand(replyTo, cmd)))
         case _ =>
           Future.successful(ConfigReply(IntStatus.BAD_REQUEST, s"Namespace '$namespace' not exists."))
       }(system.executionContext)

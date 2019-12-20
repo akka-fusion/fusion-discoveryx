@@ -1,4 +1,4 @@
-# Config Manager 配置管理服务
+# Config配置管理
 
 - gRPC服务地址：`/fusion.discoveryx.server.grpc.ConfigManagerService`
 - REST URL前缀：`/fusion/discoveryx/console/config`
