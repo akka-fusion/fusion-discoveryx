@@ -5,18 +5,68 @@
  * */
 
 import Loadable from '../components/Loadable';
+import {
+  CONFIG_MANAGEMENT_CREATE,
+  CONFIG_MANAGEMENT_LIST,
+  NAMESPACE_MANAGEMENT_LIST,
+  SERVICE_MANAGEMENT_DETAIL,
+  SERVICE_MANAGEMENT_LIST,
+} from './constants';
 
 const routes = [
-  // {
-  //   path: '/',
-  //   component: Loadable({
-  //     loader: () => import(/* webpackChunkName: "route-root" */ '../pages/App'),
-  //   }),
-  // },
+  {
+    path: CONFIG_MANAGEMENT_LIST,
+    component: Loadable({
+      loader: () =>
+        import(
+          /* webpackChunkName: "route-config-management-list" */ '../pages/config/management/List'
+        ),
+    }),
+  },
+  {
+    path: CONFIG_MANAGEMENT_CREATE,
+    component: Loadable({
+      loader: () =>
+        import(
+          /* webpackChunkName: "route-config-management-create" */ '../pages/config/management/Create'
+        ),
+    }),
+  },
+  {
+    path: NAMESPACE_MANAGEMENT_LIST,
+    component: Loadable({
+      loader: () =>
+        import(
+          /* webpackChunkName: "route-namespace-management-list" */ '../pages/namespace/management/List'
+        ),
+    }),
+  },
+  {
+    path: SERVICE_MANAGEMENT_LIST,
+    component: Loadable({
+      loader: () =>
+        import(
+          /* webpackChunkName: "route-service-management-list" */ '../pages/service/management/List'
+        ),
+    }),
+  },
+  {
+    path: SERVICE_MANAGEMENT_DETAIL,
+    component: Loadable({
+      loader: () =>
+        import(
+          /* webpackChunkName: "route-service-management-detail" */ '../pages/service/management/Detail'
+        ),
+    }),
+  },
 ];
 
 const breadcrumbNameMap = {
-  '/route': 'label',
+  [CONFIG_MANAGEMENT_LIST]: '配置列表',
+  [CONFIG_MANAGEMENT_CREATE]: '新建配置',
+  [NAMESPACE_MANAGEMENT_LIST]: '命名空间',
+  [SERVICE_MANAGEMENT_LIST]: '服务列表',
+  [SERVICE_MANAGEMENT_DETAIL]: '服务详情',
 };
 
 export { routes, breadcrumbNameMap };

@@ -13,37 +13,37 @@ import './index.less';
 @observer
 export default class Pagination extends Component {
   static propTypes = {
-    currentPage: PropTypes.number.isRequired,
+    page: PropTypes.number.isRequired,
+    size: PropTypes.number,
     totalElements: PropTypes.number.isRequired,
     handleChange: PropTypes.func.isRequired,
-    pageSize: PropTypes.number,
     showSizeChanger: PropTypes.bool,
   };
 
   static defaultProps = {
-    pageSize: 10,
-    showSizeChanger: false,
+    size: 10,
+    showSizeChanger: true,
   };
 
   onShowSizeChange = (current, pageSize) => {
     const { handleChange } = this.props;
-    handleChange({ sliceParams: { currentPage: current, pageSize } });
+    handleChange({ page: current, size: pageSize });
   };
 
   onChange = (pageNumber, pageSize) => {
     const { handleChange } = this.props;
-    handleChange({ sliceParams: { currentPage: pageNumber, pageSize } });
+    handleChange({ page: pageNumber, size: pageSize });
   };
 
   showTotal = total => `共 ${total || 0} 条`;
 
   render() {
-    const { currentPage, pageSize, totalElements, showSizeChanger } = this.props;
+    const { page, size, totalElements, showSizeChanger } = this.props;
 
     return (
       <AntdPagination
-        current={currentPage}
-        pageSize={pageSize}
+        current={page}
+        pageSize={size}
         className="rs-pagination"
         showSizeChanger={showSizeChanger || false}
         onShowSizeChange={this.onShowSizeChange}

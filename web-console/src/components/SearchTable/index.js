@@ -19,8 +19,22 @@ const { RangePicker } = DatePicker;
 
 const formItemLatest = 3;
 
-@withRouter
-@create()
+const RefAndWithRouterAndForm = Wrapped => {
+  const EnhancedForm = Form.create()(Wrapped);
+
+  const WithRouter = withRouter(({ forwardRef, ...otherProps }) => (
+    <EnhancedForm wrappedComponentRef={forwardRef} {...otherProps} />
+  ));
+
+  const WithRouterAndRef = React.forwardRef((props, ref) => (
+    <WithRouter {...props} forwardRef={ref} />
+  ));
+  const name = Wrapped.displayName || Wrapped.name;
+  WithRouterAndRef.displayName = `withRouterAndRef(${name})`;
+  return WithRouterAndRef;
+};
+
+@RefAndWithRouterAndForm
 @observer
 export default class SearchTable extends Component {
   static propTypes = {
@@ -54,10 +68,10 @@ export default class SearchTable extends Component {
   handleSearch = e => {
     e.preventDefault();
     const {
-      paginationProps: { pageSize },
+      paginationProps: { size },
     } = this.props;
     this.props.form.validateFields(() => {
-      this.fetchData({ sliceParams: { pageSize, pageNum: 1 } });
+      this.fetchData({ page: 1, size });
     });
   };
 
@@ -67,24 +81,28 @@ export default class SearchTable extends Component {
     this.setState({ loading: true });
 
     const {
-      paginationProps: { pageSize, currentPage },
+      paginationProps: { size, page },
     } = this.props;
     const formValues = this.props.form.getFieldsValue();
     const newParams = upObject.filterNull({
-      sliceParams: { pageSize, currentPage }, // 分页参数
-      ...formValues, // 搜索条件
-      ...params, // 其它参数
+      // 分页参数
+      page,
+      size,
+      // 搜索条件
+      ...formValues,
+      // 其它参数
+      ...params,
     });
 
     Promise.resolve(this.props.callback(newParams))
       .then(() => {
         const {
           tableProps: { dataSource: nextDataSource },
-          paginationProps: { currentPage: nextCurrentPage },
+          paginationProps: { page: nextPage },
         } = this.props;
         // 当前页没有数据又有上一页，自动翻到上一页
-        if (nextDataSource.length === 0 && nextCurrentPage > 1) {
-          newParams.currentPage = nextCurrentPage - 1;
+        if (nextDataSource.length === 0 && nextPage > 1) {
+          newParams.currentPage = nextPage - 1;
           this.fetchData(newParams);
           return;
         }
@@ -173,14 +191,16 @@ export default class SearchTable extends Component {
             <Row>
               <Col span={24} style={{ textAlign: 'right' }}>
                 <Button type="primary" htmlType="submit">
-                  Search
+                  搜索
                 </Button>
                 <Button style={{ marginLeft: 8 }} onClick={this.handleReset}>
-                  Clear
+                  重置
                 </Button>
-                <a style={{ marginLeft: 8, fontSize: 12 }} onClick={this.toggle}>
-                  展开 <Icon type={this.state.expand ? 'up' : 'down'} />
-                </a>
+                {fields.length > formItemLatest && (
+                  <a style={{ marginLeft: 8, fontSize: 12 }} onClick={this.toggle}>
+                    展开 <Icon type={this.state.expand ? 'up' : 'down'} />
+                  </a>
+                )}
               </Col>
             </Row>
           </Form>

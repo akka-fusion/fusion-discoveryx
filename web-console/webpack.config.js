@@ -27,8 +27,8 @@ module.exports = {
     historyApiFallback: true,
     disableHostCheck: true,
     proxy: {
-      '/api': {
-        target: `https://unidemo.dcloud.net.cn`,
+      '/fusion': {
+        target: `http://discoveryx.helloscala.com`,
         changeOrigin: true,
       },
     },
@@ -108,7 +108,7 @@ module.exports = {
     new HtmlWebpackPlugin({
       hash: false,
       template: config.path.indexHtml,
-      title: 'react-template',
+      title: 'Fusion DiscoveryX',
     }),
   ],
 };
