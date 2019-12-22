@@ -21,6 +21,7 @@ import akka.actor.typed.{ ActorRef, ActorSystem, Behavior }
 import akka.cluster.sharding.typed.ShardingEnvelope
 import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, Entity, EntityTypeKey }
 import fusion.discoveryx.DiscoveryXUtils
+import fusion.discoveryx.common.Constants
 import fusion.discoveryx.model._
 import fusion.discoveryx.server.protocol._
 import helloscala.common.IntStatus
@@ -35,8 +36,9 @@ object ServiceInstance {
 
   object ServiceKey {
     def unapply(entityId: String): Option[NamingServiceKey] = entityId.split(' ') match {
-      case Array(namespace, serviceName) => Some(new NamingServiceKey(namespace, serviceName))
-      case _                             => None
+      case Array(namespace, serviceName) =>
+        Some(new NamingServiceKey(namespace, serviceName, Constants.DEFAULT_GROUP_NAME))
+      case _ => None
     }
   }
 
@@ -57,11 +59,12 @@ object ServiceInstance {
       .unapply(entityId)
       .getOrElse(throw HSBadRequestException(
         s"${context.self} create child error. entityId invalid, need '[namespace] [serviceName]' format."))
-    Behaviors.withTimers(timers => new ServiceInstance(namingServiceKey, timers, context).receive())
+    Behaviors.withTimers(timers => new ServiceInstance(entityId, namingServiceKey, timers, context).receive())
   }
 }
 
 class ServiceInstance private (
+    entityId: String,
     private var serviceKey: NamingServiceKey,
     timers: TimerScheduler[ServiceInstance.Command],
     context: ActorContext[ServiceInstance.Command]) {
@@ -69,7 +72,7 @@ class ServiceInstance private (
   private val settings = NamingSettings(context.system)
   private val internalService = new InternalService(serviceKey, settings)
 
-  ServiceManager.init(context.system) ! ShardingEnvelope(serviceKey.namespace, NamingRegisterToManager(context.self))
+  NamingManager.init(context.system) ! ShardingEnvelope(serviceKey.namespace, NamingRegisterToManager(entityId))
   timers.startTimerWithFixedDelay(HealthCheckKey, HealthCheckKey, settings.heartbeatInterval)
   context.log.info(s"ServiceInstance started: $serviceKey")
 
@@ -117,14 +120,14 @@ class ServiceInstance private (
       case Cmd.Modify(value)   => modifyInstance(value)
       case Cmd.CreateService(value) =>
         serviceKey = serviceKey.copy(
-          groupName = value.groupName,
+          groupName = if (StringUtils.isBlank(value.groupName)) Constants.DEFAULT_GROUP_NAME else value.groupName,
           protectThreshold = value.protectThreshold,
           metadata = value.metadata)
         NamingReply(IntStatus.OK, data = NamingReply.Data.ServiceInfo(queryServiceInfo()))
       case Cmd.ModifyService(value) =>
         val old = serviceKey
         serviceKey = serviceKey.copy(
-          groupName = value.groupName.getOrElse(old.groupName),
+          groupName = value.groupName.filterNot(str => StringUtils.isBlank(str)).getOrElse(old.groupName),
           protectThreshold = value.protectThreshold.getOrElse(old.protectThreshold),
           metadata = if (value.replaceMetadata) value.metadata else old.metadata ++ value.metadata)
         NamingReply(IntStatus.OK, data = NamingReply.Data.ServiceInfo(queryServiceInfo()))

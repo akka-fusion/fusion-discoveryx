@@ -48,14 +48,14 @@ message QueryServiceInfo {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// ServiceManager 使用
+// NamingManager 使用
 ////////////////////////////////////////////////////////////////////////////////
 
-// 通过 PubSub 发布 fusion.discoveryx.server.naming.ServiceInstance 自身的 ActorRef，并注册到 ServiceManager
+// 通过 PubSub 发布 fusion.discoveryx.server.naming.ServiceInstance 自身的 ActorRef，并注册到 NamingManager
 message NamingRegisterToManager {
-    option (scalapb.message).extends = "fusion.discoveryx.server.naming.ServiceManager.Command";
+    option (scalapb.message).extends = "fusion.discoveryx.server.naming.NamingManager.Command";
     option (scalapb.message).companion_extends = "fusion.protobuf.ActorRefCompanion";
-    string naming_ref = 1 [(scalapb.field).type = "akka.actor.typed.ActorRef[fusion.discoveryx.server.naming.ServiceInstance.Command]"];
+    string entity_id = 1;
 }
 
 // #ListService
@@ -115,7 +115,7 @@ message ModifyService {
 
 // #NamingManagerCommand
 message NamingManagerCommand {
-    option (scalapb.message).extends = "fusion.discoveryx.server.naming.ServiceManager.Command";
+    option (scalapb.message).extends = "fusion.discoveryx.server.naming.NamingManager.Command";
     option (scalapb.message).companion_extends = "fusion.protobuf.ActorRefCompanion";
 
     string reply_to = 1 [(scalapb.field).type = "akka.actor.typed.ActorRef[NamingResponse]"];

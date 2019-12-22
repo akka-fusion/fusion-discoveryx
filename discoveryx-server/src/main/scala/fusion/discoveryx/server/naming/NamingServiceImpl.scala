@@ -42,7 +42,7 @@ class NamingServiceImpl(namespaceRef: ActorRef[ExistNamespace])(implicit system:
     with StrictLogging {
   import system.executionContext
   implicit private val timeout: Timeout = 5.seconds
-  private val namingRegion = ServiceInstance.init(system)
+  private val serviceInstanceRegion = ServiceInstance.init(system)
 
   /**
    * 查询服务状态
@@ -98,7 +98,7 @@ class NamingServiceImpl(namespaceRef: ActorRef[ExistNamespace])(implicit system:
         case Left(errMsg) => throw HSBadRequestException(errMsg)
       }
       in.map { _ =>
-        namingRegion ! ShardingEnvelope(entityId, Heartbeat(namespace, serviceName, instanceId))
+        serviceInstanceRegion ! ShardingEnvelope(entityId, Heartbeat(namespace, serviceName, instanceId))
         ServerStatusBO(IntStatus.OK)
       }
     } catch {
@@ -114,7 +114,7 @@ class NamingServiceImpl(namespaceRef: ActorRef[ExistNamespace])(implicit system:
       case NamespaceExists(true) =>
         ServiceInstance.entityId(namespace, serviceName) match {
           case Right(entityId) =>
-            namingRegion
+            serviceInstanceRegion
               .ask[NamingReply](replyTo => ShardingEnvelope(entityId, NamingReplyCommand(replyTo, cmd)))
               .recover {
                 case _: TimeoutException => NamingReply(IntStatus.GATEWAY_TIMEOUT)

@@ -212,7 +212,7 @@ Protobuf的`oneof`特性在序列化为JSON时，将没有外层的`data`。而�
 - object（伴身对象）： 内定义消息类型`trait`、`EntityTypeKey`、消息等
 - class（同名类）： 定义具体的`Behavior`，若Actor比较简单，也可以在 `object.apply` 方法里直接实现。
 - 响应消息里标注操作是否成功
-- 因为 Actor 是异步的，当`ask`超时时异常不应被吞掉，因以错误状态构造消息并返回
+- 因为 Actor 是异步的，当`ask`超时时异常不应被吞掉，应将异常转换并构造成消息返回
 
 ```scala
 val response = try {
@@ -231,23 +231,37 @@ processCreate(in).recover {
 
 ## Cluster
 
+![Actor 类图](imgs/FusionDiscoveryXClassDiagram.svg)
+
 ### Sharding
 
-TODO 通过分片可横向扩展服务Actor（ServiceInstance），每个服务一个actor
+通过分片可横向扩展服务Actor（NamingManager、ServiceInstance、ConfigEntity、ConfigManager），一个`entityId`将保证同一时间内整个集群中只有一个实例，同时由集群选择在哪一个节点创建这个实例。
+
+- 具备横向扩展能力
+- 地址透明，不需要关心节点、网络地址等，通过 `entityId` 构造 `ShardingEnvelope` 发送消息即可
 
 #### ShardingEnvelope
 
-TODO
+向分片 Actor 发送消息的载体。NamingManager 可以保存它所能管理的所有 ServiceInstance 的 `entityId`（'[namespace] [serviceName]'）。
 
-- ServiceInstance 向 ServiceManager 注册自己
+不需要保存 ServiceInstance 的 Actor 引用，通过 `ShardingEnvelope` 和 `entityId` 即可向 ServiceInstance 发送消息。
+
+@@@note { title=应用场景 }
+ServiceInstance向ServiceManager注册自己
+@@@
 
 ### Singleton
 
-TODO 通过 Singleton Actor 来实现管理功能，保存所有有效的namespace列表
+Primary/Secondary 模式下用来实现 Primary 了。
+
+`Management`（管理Actor）作为一个Singleton。
+
+1. 通过 Singleton Actor 来实现管理功能，保存所有有效的 namespace 列表
+2. 通过 `ReadJournal` 查询、监听 **Event** ，管理 `NamingManager` 保存的 `serviceNames` 列表 和 `ConfigManager` 保存的 `configKeys` 列表
 
 ### DistributeData
 
-TODO 通过DistributeData在每个节点同步namespace列表，Config、Naming相关功能校验namespace是否有效时可在本地校验
+通过 DistributeData 在每个节点同步 namespace 列表，Config、Naming 相关功能校验 namespace 是否有效时实现本地校验（不需要通过网络请求）
 
 ## Persistence
 
@@ -255,15 +269,39 @@ TODO 通过DistributeData在每个节点同步namespace列表，Config、Naming�
 
 ### EventSourceBehavior
 
-TODO
+```
+Command -> Event -> State
+```
 
-- PersistenceId: 使用 EntityTypeKey.name 和 id 一起
-- 恢复
+通过处理 `Command` 生成 `Event`，`Event` 将用于改变保存的 `State` （内存中），而每一个 `Event` 将被持久化。恢复时可通过重放 `Event` 来恢复 `State`。
+
+- PersistenceId: 使用 EntityTypeKey.name 和 entityId 一起，保证持久化ID的唯一性
+- 恢复时会自动重放所有持久事件
+
+EventSourceBehavior 可以与普通的 Behavior 集成
+
+- 与 ClusterSharding 集成，保证每个 PersistenceId 在整个集群内同一时间只会有一个实例
+- 与 ClusterSingleton 集成，保证当前 PersistenceId 在整个集群内同一时间只有一个实例（`Management`）
 
 ### 存储的选择
 
-TODO
+- JDBC：开发环境搭建方便，但性能略差
+- Cassandra：性能好，开发环境稍麻烦
+
+*通过 Docker 来自动化创建开发环境*
+
+### Snapshot
+
+通过创建快照可以加快恢复时的速度。
+
+快照被触发时将保存当前 `State`。恢复时将以被保存的 `State` 来初始化状态，同时将快照后的事件进行重放，以将持久化Actor恢复到其当前（既最新）的状态。
 
 ### ReadJournal
 
-TODO 写、读的分离。监听 Event 事件，更新ConfigManager保存的dataId列表
+CQRS架构的查询取端（也称“读取端”）。
+
+写、读的分离。监听 Event 事件，更新ConfigManager保存的dataId列表
+
+@@@note { title=建议 }
+应通过 ReadJournal 将事件数据整合后迁移到查询端数据库（比如：Elasticsearch、RDBMS……），由另一个系统来提供更丰富的查询功能。
+@@@
