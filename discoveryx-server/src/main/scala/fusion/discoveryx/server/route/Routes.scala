@@ -54,7 +54,7 @@ class Routes(discoveryX: DiscoveryX) extends StrictLogging {
     consoleRoutes ::= n.consoleRoute
     grpcHandlers :::= n.grpcHandler
   }
-  private val grpcHandler = ServiceHandler.concatOrNotFound(grpcHandlers: _*)
+  private val grpcHandler: HttpRequest => Future[HttpResponse] = ServiceHandler.concatOrNotFound(grpcHandlers: _*)
 
   val route: Route = {
     pathPrefix("fusion" / Constants.DISCOVERYX) {
