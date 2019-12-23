@@ -37,18 +37,18 @@ class Routes(discoveryX: DiscoveryX) extends StrictLogging {
     val cluster = Cluster(system)
     val roles = cluster.selfMember.roles
     logger.debug(s"Cluster roles: $roles.")
-    if (roles.contains(Constants.MANAGEMENT)) {
+    if (roles(Constants.MANAGEMENT)) {
       val m = new ManagementRoute()
       consoleRoutes ::= m.consoleRoute
       grpcHandlers :::= m.grpcHandler
     }
-    if (roles.contains(Constants.CONFIG)) {
+    if (roles(Constants.CONFIG)) {
       val c = new ConfigRoute(discoveryX.namespaceRef)
       openRoutes ::= c.openRoute
       consoleRoutes ::= c.consoleRoute
       grpcHandlers :::= c.grpcHandler
     }
-    if (roles.contains(Constants.NAMING)) {
+    if (roles(Constants.NAMING)) {
       val n = new NamingRoute(discoveryX.namespaceRef)
       openRoutes ::= n.openRoute
       consoleRoutes ::= n.consoleRoute
@@ -57,7 +57,7 @@ class Routes(discoveryX: DiscoveryX) extends StrictLogging {
     this
   }
 
-  val route: Route = {
+  def route: Route = {
     val grpcHandler: HttpRequest => Future[HttpResponse] = ServiceHandler.concatOrNotFound(grpcHandlers: _*)
     pathPrefix("fusion" / Constants.DISCOVERYX) {
       pathPrefix("v1") {

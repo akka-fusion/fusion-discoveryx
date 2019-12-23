@@ -39,9 +39,6 @@ object NamingManager {
 
   val TypeKey: EntityTypeKey[Command] = EntityTypeKey("NamingManager")
 
-  val TOPIC_SERVICE_CREATED = "topic-service-created"
-  val TOPIC_SERVICE_REMOVED = "topic-service-removed"
-
   def init(system: ActorSystem[_]): ActorRef[ShardingEnvelope[Command]] = {
     ClusterSharding(system).init(
       Entity(TypeKey)(entityContext => NamingManager(entityContext.entityId))
@@ -52,7 +49,6 @@ object NamingManager {
     Behaviors.setup(context => new NamingManager(namespace, context).receive())
 }
 
-import akka.actor.typed.scaladsl.adapter._
 import fusion.discoveryx.server.naming.NamingManager._
 class NamingManager private (namespace: String, context: ActorContext[Command]) {
   import context.executionContext
@@ -61,12 +57,6 @@ class NamingManager private (namespace: String, context: ActorContext[Command]) 
   private val namingSettings = NamingSettings(context.system)
   private val serviceInstanceRegion = ServiceInstance.init(context.system)
   private var serviceNames = Vector.empty[String]
-  DistributedPubSub(context.system).mediator ! DistributedPubSubMediator.Subscribe(
-    TOPIC_SERVICE_CREATED,
-    context.self.toClassic)
-  DistributedPubSub(context.system).mediator ! DistributedPubSubMediator.Subscribe(
-    TOPIC_SERVICE_REMOVED,
-    context.self.toClassic)
 
   def receive(): Behavior[Command] =
     Behaviors

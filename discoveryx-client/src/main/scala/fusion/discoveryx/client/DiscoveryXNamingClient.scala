@@ -84,7 +84,8 @@ object DiscoveryXNamingClient {
   def apply(settings: NamingClientSettings, system: ActorSystem[_]): DiscoveryXNamingClient = {
     implicit val classicSystem = system.toClassic
     import system.executionContext
-    apply(settings, NamingServiceClient(GrpcClientSettings.fromConfig(NamingService.name)))(system)
+    val grpcClientSettings = GrpcClientSettings.fromConfig(NamingService.name)
+    apply(settings, NamingServiceClient(grpcClientSettings))(system)
   }
 
   // Java API

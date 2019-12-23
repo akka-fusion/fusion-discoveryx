@@ -16,9 +16,8 @@
 
 package fusion.discoveryx.server.naming
 
-import akka.actor.typed.scaladsl.{ ActorContext, Behaviors, TimerScheduler }
 import akka.actor.typed._
-import akka.cluster.pubsub.{ DistributedPubSub, DistributedPubSubMediator }
+import akka.actor.typed.scaladsl.{ ActorContext, Behaviors, TimerScheduler }
 import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, Entity, EntityTypeKey }
 import akka.cluster.sharding.typed.{ ClusterShardingSettings, ShardingEnvelope }
 import fusion.discoveryx.DiscoveryXUtils
@@ -66,12 +65,11 @@ object ServiceInstance {
       .unapply(entityId)
       .getOrElse(throw HSBadRequestException(
         s"${context.self} create child error. entityId invalid, need '[namespace] [serviceName]' format."))
-    Behaviors.withTimers(timers => new ServiceInstance(entityId, ServiceItem, timers, context).receive())
+    Behaviors.withTimers(timers => new ServiceInstance(ServiceItem, timers, context).receive())
   }
 }
 
 class ServiceInstance private (
-    entityId: String,
     private var serviceItem: ServiceItem,
     timers: TimerScheduler[ServiceInstance.Command],
     context: ActorContext[ServiceInstance.Command]) {
@@ -80,9 +78,7 @@ class ServiceInstance private (
   private val internalService = new InternalService(serviceItem, settings, context.self)
   private var listeners: Map[ActorRef[Event], ServiceListener] = Map()
 
-  DistributedPubSub(context.system).mediator ! DistributedPubSubMediator.Publish(
-    NamingManager.TOPIC_SERVICE_CREATED,
-    ServiceCreated(entityId))
+  NamingManager.init(context.system) ! ShardingEnvelope(serviceItem.namespace, ServiceCreated(serviceItem.serviceName))
   timers.startTimerWithFixedDelay(HealthCheckKey, HealthCheckKey, settings.heartbeatTimeout)
   context.log.info(s"ServiceInstance started: $serviceItem")
 
@@ -127,9 +123,9 @@ class ServiceInstance private (
     for ((ref, _) <- listeners) {
       ref ! ServiceEventStop()
     }
-    DistributedPubSub(context.system).mediator ! DistributedPubSubMediator.Publish(
-      NamingManager.TOPIC_SERVICE_REMOVED,
-      ServiceRemoved(entityId))
+    NamingManager.init(context.system) ! ShardingEnvelope(
+      serviceItem.namespace,
+      ServiceRemoved(serviceItem.serviceName))
   }
 
   private def healthCheck(): Behavior[Command] = {
