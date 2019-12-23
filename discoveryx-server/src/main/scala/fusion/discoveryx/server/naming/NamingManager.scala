@@ -18,13 +18,17 @@ package fusion.discoveryx.server.naming
 
 import akka.actor.typed.scaladsl.AskPattern._
 import akka.actor.typed.scaladsl.{ ActorContext, Behaviors }
-import akka.actor.typed.{ ActorRef, ActorSystem, Behavior }
-import akka.cluster.sharding.typed.ShardingEnvelope
+import akka.actor.typed.{ ActorRef, ActorSystem, Behavior, PostStop }
+import akka.cluster.pubsub.{ DistributedPubSub, DistributedPubSubMediator }
 import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, Entity, EntityTypeKey }
+import akka.cluster.sharding.typed.{ ClusterShardingSettings, ShardingEnvelope }
+import akka.stream.scaladsl.{ Sink, Source }
 import akka.util.Timeout
 import fusion.discoveryx.model._
+import fusion.discoveryx.server.protocol.NamingManagerCommand.Cmd
 import fusion.discoveryx.server.protocol._
 import helloscala.common.IntStatus
+import helloscala.common.util.StringUtils
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -36,7 +40,9 @@ object NamingManager {
   val TypeKey: EntityTypeKey[Command] = EntityTypeKey("NamingManager")
 
   def init(system: ActorSystem[_]): ActorRef[ShardingEnvelope[Command]] = {
-    ClusterSharding(system).init(Entity(TypeKey)(entityContext => NamingManager(entityContext.entityId)))
+    ClusterSharding(system).init(
+      Entity(TypeKey)(entityContext => NamingManager(entityContext.entityId))
+        .withSettings(ClusterShardingSettings(system).withPassivateIdleEntityAfter(Duration.Zero)))
   }
 
   private def apply(namespace: String): Behavior[Command] =
@@ -50,32 +56,49 @@ class NamingManager private (namespace: String, context: ActorContext[Command]) 
   private implicit val system: ActorSystem[_] = context.system
   private val namingSettings = NamingSettings(context.system)
   private val serviceInstanceRegion = ServiceInstance.init(context.system)
-  private var serviceInstanceIds = Vector.empty[String]
+  private var serviceNames = Vector.empty[String]
 
   def receive(): Behavior[Command] =
-    Behaviors.receiveMessage[Command] {
-      case NamingManagerCommand(replyTo, cmd) => onManagerCommand(cmd, replyTo)
-      case NamingRegisterToManager(entityId) =>
-        if (!serviceInstanceIds.contains(entityId)) {
-          serviceInstanceIds = serviceInstanceIds :+ entityId
-          context.log.debug(s"Received NamingRegisterToManager($entityId), add after size: ${serviceInstanceIds.size}")
-        } else {
-          context.log.debug(s"Received NamingRegisterToManager($entityId)")
-        }
-        Behaviors.same
-    }
+    Behaviors
+      .receiveMessage[Command] {
+        case NamingManagerCommand(replyTo, cmd) => onManagerCommand(cmd, replyTo)
+        case ServiceCreated(serviceName) =>
+          if (!serviceNames.contains(serviceName)) {
+            serviceNames = serviceNames :+ serviceName
+            context.log.debug(s"Received ServiceCreated($serviceName), add after size: ${serviceNames.size}")
+          } else {
+            context.log.debug(s"Received exists ServiceCreated($serviceName)")
+          }
+          Behaviors.same
+        case ServiceRemoved(serviceName) =>
+          serviceNames = serviceNames.filterNot(_ == serviceName)
+          Behaviors.same
+        case _: StopNamingManager =>
+          Behaviors.stopped
+      }
+      .receiveSignal {
+        case (_, PostStop) =>
+          cleanup()
+          Behaviors.same
+      }
 
-  private def onManagerCommand(
-      command: NamingManagerCommand.Cmd,
-      replyTo: ActorRef[NamingResponse]): Behavior[Command] = {
+  private def cleanup(): Unit = {
+    for {
+      serviceName <- serviceNames
+      entityId <- ServiceInstance.entityId(namespace, serviceName)
+    } {
+      serviceInstanceRegion ! ShardingEnvelope(entityId, StopServiceInstance())
+    }
+  }
+
+  private def onManagerCommand(command: Cmd, replyTo: ActorRef[NamingResponse]): Behavior[Command] = {
     command match {
-      case NamingManagerCommand.Cmd.ListService(cmd)   => futureReply(processListService(cmd), replyTo)
-      case NamingManagerCommand.Cmd.GetService(cmd)    => futureReply(processGetService(cmd), replyTo)
-      case NamingManagerCommand.Cmd.CreateService(cmd) => futureReply(processCreateService(cmd), replyTo)
-      case NamingManagerCommand.Cmd.ModifyService(cmd) => futureReply(processModifyService(cmd), replyTo)
-      case NamingManagerCommand.Cmd.RemoveService(cmd) => futureReply(processRemoveService(cmd), replyTo)
-      case NamingManagerCommand.Cmd.Empty =>
-        context.log.warn(s"Invalid message: ${NamingManagerCommand.Cmd.Empty}")
+      case Cmd.ListService(in)   => futureReply(processListService(in), replyTo)
+      case Cmd.GetService(in)    => futureReply(processGetService(in), replyTo)
+      case Cmd.CreateService(in) => futureReply(processCreateService(in), replyTo)
+      case Cmd.ModifyService(in) => futureReply(processModifyService(in), replyTo)
+      case Cmd.RemoveService(in) => futureReply(processRemoveService(in), replyTo)
+      case Cmd.Empty             => context.log.warn(s"Invalid message: ${Cmd.Empty}")
     }
     Behaviors.same
   }
@@ -85,45 +108,54 @@ class NamingManager private (namespace: String, context: ActorContext[Command]) 
     case Failure(e)     => NamingResponse(IntStatus.INTERNAL_ERROR, e.getMessage)
   }
 
-  private def processModifyService(cmd: ModifyService): Future[NamingResponse] =
-    askNaming(cmd.namespace, cmd.serviceName, NamingReplyCommand.Cmd.ModifyService(cmd)) { value =>
+  private def processModifyService(in: ModifyService): Future[NamingResponse] =
+    askNaming(in.namespace, in.serviceName, NamingReplyCommand.Cmd.ModifyService(in)) { value =>
       NamingResponse.Data.ServiceInfo(value.data.serviceInfo.get)
     }
 
-  private def processRemoveService(cmd: RemoveService): Future[NamingResponse] =
-    askNaming(cmd.namespace, cmd.serviceName, NamingReplyCommand.Cmd.RemoveService(cmd))(_ => NamingResponse.Data.Empty)
+  private def processRemoveService(in: RemoveService): Future[NamingResponse] =
+    askNaming(in.namespace, in.serviceName, NamingReplyCommand.Cmd.RemoveService(in))(_ => NamingResponse.Data.Empty)
 
-  private def processGetService(cmd: GetService): Future[NamingResponse] =
-    askNaming(
-      cmd.namespace,
-      cmd.serviceName,
-      NamingReplyCommand.Cmd.Query(InstanceQuery(cmd.namespace, cmd.serviceName))) { value =>
+  private def processGetService(in: GetService): Future[NamingResponse] =
+    askNaming(in.namespace, in.serviceName, NamingReplyCommand.Cmd.Query(InstanceQuery(in.namespace, in.serviceName))) {
+      value =>
+        NamingResponse.Data.ServiceInfo(value.data.serviceInfo.get)
+    }
+
+  private def processCreateService(in: CreateService): Future[NamingResponse] =
+    askNaming(in.namespace, in.serviceName, NamingReplyCommand.Cmd.CreateService(in)) { value =>
       NamingResponse.Data.ServiceInfo(value.data.serviceInfo.get)
     }
 
-  private def processCreateService(cmd: CreateService): Future[NamingResponse] =
-    askNaming(cmd.namespace, cmd.serviceName, NamingReplyCommand.Cmd.CreateService(cmd)) { value =>
-      NamingResponse.Data.ServiceInfo(value.data.serviceInfo.get)
-    }
-
-  private def processListService(cmd: ListService): Future[NamingResponse] = {
-    val (page, size, offset) = namingSettings.findPageSizeOffset(cmd.page, cmd.size)
-    if (offset < serviceInstanceIds.size) {
-      val ns = serviceInstanceIds.slice(offset, offset + size)
-      val futures = ns.map { entityId =>
-        serviceInstanceRegion.ask[ServiceInfo](ref => ShardingEnvelope(entityId, QueryServiceInfo(ref)))
-      }
-      Future.sequence(futures).map { serviceInfos =>
-        NamingResponse(
-          IntStatus.OK,
-          data = NamingResponse.Data.ListedService(ListedService(serviceInfos, page, size, serviceInstanceIds.size)))
-      }
+  private def processListService(in: ListService): Future[NamingResponse] = {
+    val (page, size, offset) = namingSettings.findPageSizeOffset(in.page, in.size)
+    if (offset < serviceNames.size) {
+      Source(serviceNames)
+        .filter { serviceName =>
+          if (StringUtils.isNoneBlank(in.serviceName)) serviceName.contains(in.serviceName)
+          else true
+        }
+        .mapConcat(serviceName => ServiceInstance.entityId(namespace, serviceName).toSeq)
+        .mapAsync(math.max(8, size)) { entityId =>
+          val cmd = NamingReplyCommand.Cmd.Query(
+            InstanceQuery(serviceName = in.serviceName, groupName = in.groupName, allHealthy = in.allHealthy))
+          serviceInstanceRegion.ask[NamingReply](ref => ShardingEnvelope(entityId, NamingReplyCommand(ref, cmd)))
+        }
+        .collect { case NamingReply(IntStatus.OK, _, NamingReply.Data.ServiceInfo(value)) => value }
+        .drop(offset)
+        .take(size)
+        .runWith(Sink.seq)
+        .map { serviceInfos =>
+          NamingResponse(
+            IntStatus.OK,
+            data = NamingResponse.Data.ListedService(ListedService(serviceInfos, page, size, serviceNames.size)))
+        }
     } else {
       Future.successful(
         NamingResponse(
           IntStatus.OK,
-          s"offset: $offset, but ServiceInstance size is ${serviceInstanceIds.size}",
-          NamingResponse.Data.ListedService(ListedService(Nil, page, size, serviceInstanceIds.size))))
+          s"offset: $offset, but ServiceInstance size is ${serviceNames.size}",
+          NamingResponse.Data.ListedService(ListedService(Nil, page, size, serviceNames.size))))
     }
   }
 

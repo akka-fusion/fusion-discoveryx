@@ -18,11 +18,12 @@ package fusion.discoveryx.server.config
 
 import akka.actor.typed.scaladsl.AskPattern._
 import akka.actor.typed.scaladsl.{ ActorContext, Behaviors }
-import akka.actor.typed.{ ActorRef, ActorSystem, Behavior }
-import akka.cluster.sharding.typed.{ ClusterShardingSettings, ShardingEnvelope }
+import akka.actor.typed.{ ActorRef, ActorSystem, Behavior, PostStop }
 import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, Entity, EntityTypeKey }
+import akka.cluster.sharding.typed.{ ClusterShardingSettings, ShardingEnvelope }
 import akka.util.Timeout
 import fusion.discoveryx.model._
+import fusion.discoveryx.server.management.Management
 import fusion.discoveryx.server.protocol.ConfigManagerCommand.Cmd
 import fusion.discoveryx.server.protocol.ConfigResponse.Data
 import fusion.discoveryx.server.protocol._
@@ -43,7 +44,7 @@ object ConfigManager {
         .withSettings(ClusterShardingSettings(system).withPassivateIdleEntityAfter(Duration.Zero)))
 
   private def apply(entityId: String): Behavior[Command] =
-    Behaviors.setup(context => new ConfigManager(entityId, context).init())
+    Behaviors.setup(context => new ConfigManager(entityId, context).receive())
 }
 
 import fusion.discoveryx.server.config.ConfigManager._
@@ -52,25 +53,45 @@ class ConfigManager private (namespace: String, context: ActorContext[Command]) 
   private implicit val system = context.system
   private val settings = ConfigSettings(context.system)
   private val configEntity = ConfigEntity.init(system)
+  private val managementRef = Management.init(system)
   private var configKeys = Vector.empty[ConfigKey]
 
-  def init(): Behavior[Command] =
-    Behaviors.receiveMessage[Command] {
-      case ConfigManagerCommand(replyTo, cmd) =>
-        onManagerCommand(cmd).onComplete {
-          case Success(value) => replyTo ! value
-          case Failure(e)     => replyTo ! ConfigResponse(IntStatus.INTERNAL_ERROR, e.getMessage)
-        }
-        Behaviors.same
-      case InternalConfigKeys(keys) =>
-        for (key <- keys if !configKeys.contains(key)) {
-          configKeys :+= key
-        }
-        Behaviors.same
-      case InternalRemoveKey(key) =>
-        configKeys = configKeys.filterNot(_ == key)
-        Behaviors.same
+  def receive(): Behavior[Command] =
+    Behaviors
+      .receiveMessage[Command] {
+        case ConfigManagerCommand(replyTo, cmd) =>
+          onManagerCommand(cmd).onComplete {
+            case Success(value) => replyTo ! value
+            case Failure(e)     => replyTo ! ConfigResponse(IntStatus.INTERNAL_ERROR, e.getMessage)
+          }
+          Behaviors.same
+        case InternalConfigKeys(keys) =>
+          for (key <- keys if !configKeys.contains(key)) {
+            saveConfigKeys(configKeys :+ key)
+          }
+          Behaviors.same
+        case InternalRemoveKey(key) =>
+          saveConfigKeys(configKeys.filterNot(_ == key))
+          Behaviors.same
+        case _: StopConfigManager =>
+          Behaviors.stopped
+      }
+      .receiveSignal {
+        case (_, PostStop) =>
+          cleanup()
+          Behaviors.same
+      }
+
+  private def cleanup(): Unit = {
+    for (key <- configKeys) {
+      configEntity ! ShardingEnvelope(ConfigEntity.makeEntityId(key), RemoveAndStopConfigEntity())
     }
+  }
+
+  private def saveConfigKeys(keys: Vector[ConfigKey]): Unit = {
+    configKeys = keys
+    managementRef ! ConfigSizeChangeEvent(namespace, configKeys.size)
+  }
 
   implicit val timeout: Timeout = 5.seconds
 
@@ -96,9 +117,11 @@ class ConfigManager private (namespace: String, context: ActorContext[Command]) 
     val (page, size, offset) = settings.findPageSizeOffset(cmd.page, cmd.size)
     context.log.info(s"dataIds: $configKeys")
     if (offset < configKeys.size) {
-      val futures = configKeys.view
+      val futures = cmd.dataId
+        .map(dataId => configKeys.view.filter(key => key.dataId.contains(dataId)))
+        .getOrElse(configKeys.view)
         .slice(offset, offset + size)
-        .map(configKey => askConfig(configKey, ConfigEntityCommand.Cmd.Get(ConfigGet(cmd.namespace))))
+        .map(configKey => askConfig(configKey, ConfigEntityCommand.Cmd.Query(ConfigQuery(cmd.groupName, cmd.tags))))
         .toVector
       Future.sequence(futures).map { replies =>
         val configs = replies.collect { case Some(item) => itemToBasic(item) }

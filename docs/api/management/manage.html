@@ -141,12 +141,12 @@ Version 1.0.0
 rpc ListNamespace (fusion.discoveryx.server.protocol.ListNamespace) returns (fusion.discoveryx.server.protocol.ManagementResponse) {
 }</code></pre>
 <p><strong>请求</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/management.proto#L30-L33" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ListNamespace {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/management.proto#L39-L42" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ListNamespace {
     int32 page = 1;
     int32 size = 2;
 }</code></pre>
 <p><strong>响应</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/management.proto#L76-L83" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ManagementResponse {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/management.proto#L100-L107" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ManagementResponse {
     int32 status = 1;
     string message = 2;
     oneof data {
@@ -155,18 +155,25 @@ rpc ListNamespace (fusion.discoveryx.server.protocol.ListNamespace) returns (fus
     }
 }</code></pre>
 <p><code>oneof</code>字段<code>listed</code>将返回匹配的namespace列表：</p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/management.proto#L54-L59" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ListedNamespace {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/management.proto#L65-L70" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ListedNamespace {
     repeated Namespace namespaces = 1;
     int32 page = 2;
     int32 size = 3;
     int32 total_elements = 4;
 }</code></pre>
 <h4><a href="#namespace" name="namespace" class="anchor"><span class="anchor-link"></span></a>Namespace</h4>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/management.proto#L15-L20" target="_blank" title="Go to snippet source"></a><code class="language-proto">message Namespace {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/management.proto#L15-L27" target="_blank" title="Go to snippet source"></a><code class="language-proto">// 命名空间
+message Namespace {
     option (scalapb.message).extends = &quot;fusion.discoveryx.server.management.Management.Event&quot;;
 
+    // ID
     string namespace = 1;
+    // 名称
     string name = 2;
+    // 描述
+    string description = 3;
+    // 配置数
+    int32 config_count = 4;
 }</code></pre>
 <h2><a href="#createnamespace" name="createnamespace" class="anchor"><span class="anchor-link"></span></a>CreateNamespace</h2>
 <p><strong>gRPC</strong></p>
@@ -174,11 +181,13 @@ rpc ListNamespace (fusion.discoveryx.server.protocol.ListNamespace) returns (fus
 rpc CreateNamespace (fusion.discoveryx.server.protocol.CreateNamespace) returns (fusion.discoveryx.server.protocol.ManagementResponse) {
 }</code></pre>
 <p><strong>请求</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/management.proto#L24-L26" target="_blank" title="Go to snippet source"></a><code class="language-proto">message CreateNamespace {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/management.proto#L31-L35" target="_blank" title="Go to snippet source"></a><code class="language-proto">message CreateNamespace {
     string name = 1;
+    // 描述
+    string description = 2;
 }</code></pre>
 <p><strong>响应</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/management.proto#L76-L83" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ManagementResponse {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/management.proto#L100-L107" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ManagementResponse {
     int32 status = 1;
     string message = 2;
     oneof data {
@@ -187,11 +196,18 @@ rpc CreateNamespace (fusion.discoveryx.server.protocol.CreateNamespace) returns 
     }
 }</code></pre>
 <p><code>oneof</code>字段<code>namespace</code>将返回创建的namespace：</p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/management.proto#L15-L20" target="_blank" title="Go to snippet source"></a><code class="language-proto">message Namespace {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/management.proto#L15-L27" target="_blank" title="Go to snippet source"></a><code class="language-proto">// 命名空间
+message Namespace {
     option (scalapb.message).extends = &quot;fusion.discoveryx.server.management.Management.Event&quot;;
 
+    // ID
     string namespace = 1;
+    // 名称
     string name = 2;
+    // 描述
+    string description = 3;
+    // 配置数
+    int32 config_count = 4;
 }</code></pre>
 <h2><a href="#modifynamespace" name="modifynamespace" class="anchor"><span class="anchor-link"></span></a>ModifyNamespace</h2>
 <p><strong>gRPC</strong></p>
@@ -199,14 +215,16 @@ rpc CreateNamespace (fusion.discoveryx.server.protocol.CreateNamespace) returns 
 rpc ModifyNamespace (fusion.discoveryx.server.protocol.ModifyNamespace) returns (fusion.discoveryx.server.protocol.ManagementResponse) {
 }</code></pre>
 <p><strong>请求</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/management.proto#L45-L50" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ModifyNamespace {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/management.proto#L54-L61" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ModifyNamespace {
     option (scalapb.message).extends = &quot;fusion.discoveryx.server.management.Management.Event&quot;;
 
     string namespace = 1;
     google.protobuf.StringValue name = 2;
+    // 描述
+    google.protobuf.StringValue description = 3;
 }</code></pre>
 <p><strong>响应</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/management.proto#L76-L83" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ManagementResponse {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/management.proto#L100-L107" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ManagementResponse {
     int32 status = 1;
     string message = 2;
     oneof data {
@@ -215,11 +233,18 @@ rpc ModifyNamespace (fusion.discoveryx.server.protocol.ModifyNamespace) returns 
     }
 }</code></pre>
 <p><code>oneof</code>字段<code>namespace</code>将返回修改后的namespace：</p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/management.proto#L15-L20" target="_blank" title="Go to snippet source"></a><code class="language-proto">message Namespace {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/management.proto#L15-L27" target="_blank" title="Go to snippet source"></a><code class="language-proto">// 命名空间
+message Namespace {
     option (scalapb.message).extends = &quot;fusion.discoveryx.server.management.Management.Event&quot;;
 
+    // ID
     string namespace = 1;
+    // 名称
     string name = 2;
+    // 描述
+    string description = 3;
+    // 配置数
+    int32 config_count = 4;
 }</code></pre>
 <h2><a href="#removenamespace" name="removenamespace" class="anchor"><span class="anchor-link"></span></a>RemoveNamespace</h2>
 <p>删除命名空间将导致此命名空间下所有配置（Config）和服务（Naming）不可用， <strong>慎重</strong>！</p>
@@ -228,13 +253,13 @@ rpc ModifyNamespace (fusion.discoveryx.server.protocol.ModifyNamespace) returns 
 rpc RemoveNamespace (fusion.discoveryx.server.protocol.RemoveNamespace) returns (fusion.discoveryx.server.protocol.ManagementResponse) {
 }</code></pre>
 <p><strong>请求</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/management.proto#L37-L41" target="_blank" title="Go to snippet source"></a><code class="language-proto">message RemoveNamespace {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/management.proto#L46-L50" target="_blank" title="Go to snippet source"></a><code class="language-proto">message RemoveNamespace {
     option (scalapb.message).extends = &quot;fusion.discoveryx.server.management.Management.Event&quot;;
 
     string namespace = 1;
 }</code></pre>
 <p><strong>响应</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/management.proto#L76-L83" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ManagementResponse {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/management.proto#L100-L107" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ManagementResponse {
     int32 status = 1;
     string message = 2;
     oneof data {

@@ -31,10 +31,18 @@ enum ChangeType {
 // Config
 ////////////////////////////////////////////////////////////////////////////////
 
+// #ConfigQuery
+message ConfigQuery {
+    google.protobuf.StringValue group_name = 1;
+    repeated string tags = 2;
+}
+// #ConfigQuery
+
 // #ConfigGet
 message ConfigGet {
     string namespace = 1;
     string data_id = 2;
+    google.protobuf.StringValue group_name = 3;
 }
 // #ConfigGet
 
@@ -45,6 +53,7 @@ message ConfigItem {
     string group_name = 3;
     string content = 4;
     ConfigType type = 5;
+    repeated string tags = 6;
 }
 // #ConfigItem
 
@@ -110,6 +119,25 @@ message ConfigReply {
 ////////////////////////////////////////////////////////////////////////////////
 // Instance
 ////////////////////////////////////////////////////////////////////////////////
+
+enum NamingChangeType {
+    SERVICE_CREATE = 0;
+    SERVICE_MODIFY = 1;
+    SERVICE_REMOVE = 2;
+    INSTANCE_REGISTER = 3;
+    INSTANCE_MODIFY = 4;
+    INSTANCE_REMOVE = 5;
+    INSTANCE_UNHEALTHY = 6;
+    INSTANCE_HEALTHY = 7;
+}
+
+message ServiceItem {
+    string namespace = 1;
+    string serviceName = 2;
+    string group_name = 3;
+    double protect_threshold = 4;
+    map<string, string> metadata = 5;
+}
 
 // #Instance
 message Instance {
@@ -197,6 +225,13 @@ message InstanceQuery {
 }
 // #InstanceQuery
 
+// #ServiceListener
+message ServiceListener {
+    string namespace = 1;
+    string service_name = 2;
+}
+// #ServiceListener
+
 // #InstanceHeartbeat
 message InstanceHeartbeat {
 }
@@ -209,9 +244,23 @@ message ServiceInfo {
     string group_name = 3;
     double protect_threshold = 4;
     map<string, string> metadata = 5;
-    repeated Instance instances = 6;
+    // 实例数
+    int32 instance_total = 6;
+    // 健康实例数
+    int32 instance_healthy_count = 7;
+    repeated Instance instances = 8;
 }
 // #ServiceInfo
+
+// #ServiceEvent
+message ServiceEvent {
+    NamingChangeType changeType = 1;
+    string namespace = 2;
+    string service_name = 3;
+    ServiceItem service = 4;
+    Instance instance = 5;
+}
+// #ServiceEvent
 
 // #NamingReply
 message NamingReply {

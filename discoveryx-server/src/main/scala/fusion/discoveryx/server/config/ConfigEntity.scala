@@ -21,8 +21,8 @@ import akka.actor.typed.{ ActorRef, ActorSystem, Behavior, Terminated }
 import akka.cluster.sharding.typed.ShardingEnvelope
 import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, Entity, EntityContext, EntityTypeKey }
 import akka.persistence.typed.PersistenceId
-import akka.persistence.typed.scaladsl.{ Effect, EventSourcedBehavior, RetentionCriteria }
-import fusion.discoveryx.model.{ ChangeType, ConfigItem, ConfigReply }
+import akka.persistence.typed.scaladsl.{ Effect, EventSourcedBehavior }
+import fusion.discoveryx.model.{ ChangeType, ConfigItem, ConfigQuery, ConfigReply }
 import fusion.discoveryx.server.protocol.ConfigEntityCommand.Cmd
 import fusion.discoveryx.server.protocol._
 import helloscala.common.IntStatus
@@ -37,7 +37,7 @@ object ConfigEntity {
   object ConfigKey {
     def unapply(entityId: String): Option[ConfigKey] = entityId.split(' ') match {
       case Array(namespace, dataId) => Some(new ConfigKey(namespace, dataId))
-      case others                   => None
+      case _                        => None
     }
   }
 
@@ -73,7 +73,8 @@ class ConfigEntity private (
   private var listeners = List.empty[ActorRef[ConfigEntity.Event]]
   context.log.info(s"Entity startup: persistenceId: $persistenceId")
 
-  def eventSourcedBehavior(): EventSourcedBehavior[Command, ChangedConfigEvent, ConfigState] =
+  def eventSourcedBehavior(): EventSourcedBehavior[Command, ChangedConfigEvent, ConfigState] = {
+    val settings = ConfigSettings(context.system)
     EventSourcedBehavior[Command, ChangedConfigEvent, ConfigState](
       persistenceId,
       ConfigState.defaultInstance,
@@ -84,17 +85,19 @@ class ConfigEntity private (
           listeners = listeners.filterNot(_ == ref)
       }
       .withTagger(_ => Set(ConfigEntity.TypeKey.name, namespace))
-      .withRetention(RetentionCriteria.snapshotEvery(100, 2).withDeleteEventsOnSnapshot)
+      .withRetention(settings.retentionCriteria)
       .snapshotWhen {
         case (_, ChangedConfigEvent(_, ChangeType.CHANGE_REMOVE), _) => true
         case _                                                       => false
       }
+  }
 
   def commandHandler(state: ConfigState, cmd: Command): Effect[ChangedConfigEvent, ConfigState] = cmd match {
     case ConfigEntityCommand(replyTo, cmd) =>
       cmd match {
         case Cmd.Get(_)      => processGet(state, replyTo)
-        case Cmd.Publish(in) => processGet(state, replyTo, in)
+        case Cmd.Query(in)   => processQuery(state, replyTo, in)
+        case Cmd.Publish(in) => processPublish(state, replyTo, in)
         case Cmd.Remove(_)   => processRemove(replyTo)
         case Cmd.Empty       => Effect.none
       }
@@ -104,8 +107,11 @@ class ConfigEntity private (
       context.watch(replyTo)
       Effect.none
 
-    case ConfigPassiveStop() =>
+    case _: ConfigPassiveStop =>
       Effect.stop()
+
+    case _: RemoveAndStopConfigEntity =>
+      Effect.persist(ChangedConfigEvent(`type` = ChangeType.CHANGE_REMOVE)).thenStop()
   }
 
   private def processRemove(replyTo: ActorRef[ConfigReply]): Effect[ChangedConfigEvent, ConfigState] =
@@ -117,7 +123,7 @@ class ConfigEntity private (
       }
       .thenStop()
 
-  private def processGet(
+  private def processPublish(
       state: ConfigState,
       replyTo: ActorRef[ConfigReply],
       in: ConfigItem): Effect[ChangedConfigEvent, ConfigState] = {
@@ -134,11 +140,33 @@ class ConfigEntity private (
     }
   }
 
-  private def processGet(state: ConfigState, replyTo: ActorRef[ConfigReply]): Effect[ChangedConfigEvent, ConfigState] =
-    Effect.reply(replyTo)(state.configItem match {
-      case Some(item) => ConfigReply(IntStatus.OK, data = ConfigReply.Data.Config(item))
-      case _          => ConfigReply(IntStatus.NOT_FOUND)
-    })
+  private def processGet(
+      state: ConfigState,
+      replyTo: ActorRef[ConfigReply]): Effect[ChangedConfigEvent, ConfigState] = {
+    val data = state.configItem.map(ConfigReply.Data.Config).getOrElse(ConfigReply.Data.Empty)
+    val resp = ConfigReply(if (data.isEmpty) IntStatus.OK else IntStatus.NOT_FOUND, data = data)
+    Effect.reply(replyTo)(resp)
+  }
+
+  private def processQuery(
+      state: ConfigState,
+      replyTo: ActorRef[ConfigReply],
+      in: ConfigQuery): Effect[ChangedConfigEvent, ConfigState] = {
+    val data = state.configItem
+      .collect {
+        case item if matchGroupName(in, item) && matchTags(in, item) =>
+          ConfigReply.Data.Config(item)
+      }
+      .getOrElse(ConfigReply.Data.Empty)
+    val resp = ConfigReply(if (data.isEmpty) IntStatus.OK else IntStatus.NOT_FOUND, data = data)
+    Effect.reply(replyTo)(resp)
+  }
+
+  @inline private def matchGroupName(in: ConfigQuery, item: ConfigItem): Boolean =
+    in.groupName.forall(groupName => item.groupName.contains(groupName))
+
+  @inline private def matchTags(in: ConfigQuery, item: ConfigItem): Boolean =
+    in.tags.isEmpty || item.tags.exists(tag => in.tags.contains(tag))
 
   def eventHandler(state: ConfigState, evt: ChangedConfigEvent): ConfigState = {
     context.log.debug(s"eventHandler($state, $evt)")

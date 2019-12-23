@@ -19,13 +19,13 @@ package fusion.discoveryx.server.management
 import akka.actor.typed.ActorSystem
 import com.typesafe.config.Config
 import fusion.discoveryx.common.Constants
-import fusion.discoveryx.server.naming.BaseSettings
+import fusion.discoveryx.server.{ BaseSettings, RetentionCriteriaSettings }
 import helloscala.common.Configuration
 
-class ManagementSettings(configuration: Configuration) extends BaseSettings {
-  val c = configuration.getConfiguration(s"${Constants.DISCOVERYX}.server.management")
-  val enable = c.getBoolean("enable")
+class ManagementSettings(configuration: Configuration) extends BaseSettings with RetentionCriteriaSettings {
+  val c: Configuration = configuration.getConfiguration(s"${Constants.DISCOVERYX}.server.management")
 }
+
 object ManagementSettings {
   def apply(system: ActorSystem[_]): ManagementSettings = apply(system.settings.config)
   def apply(config: Config): ManagementSettings = new ManagementSettings(Configuration(config))

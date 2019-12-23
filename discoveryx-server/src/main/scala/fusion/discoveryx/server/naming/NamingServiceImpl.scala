@@ -23,7 +23,9 @@ import akka.actor.typed.scaladsl.AskPattern._
 import akka.actor.typed.{ ActorRef, ActorSystem }
 import akka.cluster.sharding.typed.ShardingEnvelope
 import akka.grpc.scaladsl.Metadata
+import akka.stream.OverflowStrategy
 import akka.stream.scaladsl.Source
+import akka.stream.typed.scaladsl.ActorSource
 import akka.util.Timeout
 import com.typesafe.scalalogging.StrictLogging
 import fusion.discoveryx.common.Headers
@@ -32,10 +34,11 @@ import fusion.discoveryx.model._
 import fusion.discoveryx.server.management.NamespaceRef.{ ExistNamespace, NamespaceExists }
 import fusion.discoveryx.server.protocol._
 import helloscala.common.IntStatus
-import helloscala.common.exception.HSBadRequestException
+import helloscala.common.exception.{ HSBadRequestException, HSInternalErrorException }
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
+import scala.util.control.NonFatal
 
 class NamingServiceImpl(namespaceRef: ActorRef[ExistNamespace])(implicit system: ActorSystem[_])
     extends NamingServicePowerApi
@@ -77,6 +80,32 @@ class NamingServiceImpl(namespaceRef: ActorRef[ExistNamespace])(implicit system:
    */
   override def queryInstance(in: InstanceQuery, metadata: Metadata): Future[NamingReply] = {
     askNaming(in.namespace, in.serviceName, NamingReplyCommand.Cmd.Query(in))
+  }
+
+  override def listenerService(in: ServiceListener, metadata: Metadata): Source[ServiceEvent, NotUsed] = {
+    try {
+      val entityId = ServiceInstance.entityId(in.namespace, in.serviceName) match {
+        case Right(value) => value
+        case Left(errMsg) => throw HSBadRequestException(errMsg)
+      }
+
+      val (ref, source) = ActorSource
+        .actorRef[ServiceInstance.Event]({
+          case _: ServiceEventStop =>
+        }, { changed =>
+          throw HSInternalErrorException(s"Throw error: $changed.")
+        }, 2, OverflowStrategy.dropHead)
+        .preMaterialize()
+      serviceInstanceRegion ! ShardingEnvelope(entityId, NamingListenerCommand(ref, in))
+      source.mapConcat {
+        case evt: NamingServiceEvent => evt.event :: Nil
+        case _                       => Nil
+      }
+    } catch {
+      case NonFatal(e) =>
+        logger.error(s"listenerService($in, $metadata) error: ${e.getLocalizedMessage}")
+        Source.empty
+    }
   }
 
   // #heartbeat

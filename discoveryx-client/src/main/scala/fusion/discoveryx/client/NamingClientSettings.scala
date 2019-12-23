@@ -16,6 +16,8 @@
 
 package fusion.discoveryx.client
 
+import java.util.Properties
+
 import akka.actor.typed.ActorSystem
 import com.typesafe.config.Config
 import fusion.discoveryx.common.Constants
@@ -43,15 +45,7 @@ final class NamingClientSettings private (c: Configuration) {
   val enable: Boolean = c.getOrElse("enable", true)
   val weight: Double = c.getOrElse("weight", 1.0)
   val ephemeral: Boolean = c.getOrElse("ephemeral", false)
-  val metadata: Map[String, String] = if (c.hasPath("metadata")) {
-    c.get[Seq[String]]("metadata")
-      .flatMap(str =>
-        str.split("=").toList match {
-          case key :: value :: _ => Some(key.trim -> value.trim)
-          case key :: _          => Some(key.trim -> "")
-          case _                 => None
-        })
-      .toMap
-  } else Map()
+  val metadata: Map[String, String] =
+    if (c.hasPath("metadata")) c.get[Map[String, String]]("metadata") else Map()
   override def toString: String = c.underlying.root().toString
 }

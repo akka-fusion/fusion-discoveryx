@@ -19,12 +19,11 @@ package fusion.discoveryx.server.config
 import akka.actor.typed.ActorSystem
 import com.typesafe.config.Config
 import fusion.discoveryx.common.Constants
-import fusion.discoveryx.server.naming.BaseSettings
+import fusion.discoveryx.server.{ BaseSettings, RetentionCriteriaSettings }
 import helloscala.common.Configuration
 
-final class ConfigSettings(configuration: Configuration) extends BaseSettings {
+final class ConfigSettings(configuration: Configuration) extends BaseSettings with RetentionCriteriaSettings {
   val c = configuration.getConfiguration(s"${Constants.DISCOVERYX}.server.config")
-  val enable = c.getBoolean("enable")
 }
 
 object ConfigSettings {

@@ -16,28 +16,33 @@
 
 package fusion.discoveryx.server.naming
 
+import akka.actor.typed._
 import akka.actor.typed.scaladsl.{ ActorContext, Behaviors, TimerScheduler }
-import akka.actor.typed.{ ActorRef, ActorSystem, Behavior }
-import akka.cluster.sharding.typed.ShardingEnvelope
 import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, Entity, EntityTypeKey }
+import akka.cluster.sharding.typed.{ ClusterShardingSettings, ShardingEnvelope }
 import fusion.discoveryx.DiscoveryXUtils
 import fusion.discoveryx.common.Constants
 import fusion.discoveryx.model._
+import fusion.discoveryx.server.protocol.NamingReplyCommand.Cmd
 import fusion.discoveryx.server.protocol._
 import helloscala.common.IntStatus
 import helloscala.common.exception.HSBadRequestException
 import helloscala.common.util.StringUtils
 
+import scala.concurrent.duration.Duration
+import scala.util.control.NonFatal
+
 object ServiceInstance {
   trait Command
+  trait Event
 
   private case object HealthCheckKey extends Command
-  private case object StopNaming extends Command
+  private[naming] case class InternalHealthyChanged(inst: Instance, healthy: Boolean) extends Command
 
   object ServiceKey {
-    def unapply(entityId: String): Option[NamingServiceKey] = entityId.split(' ') match {
+    def unapply(entityId: String): Option[ServiceItem] = entityId.split(' ') match {
       case Array(namespace, serviceName) =>
-        Some(new NamingServiceKey(namespace, serviceName, Constants.DEFAULT_GROUP_NAME))
+        Some(new ServiceItem(namespace, serviceName, Constants.DEFAULT_GROUP_NAME))
       case _ => None
     }
   }
@@ -51,54 +56,76 @@ object ServiceInstance {
   }
 
   def init(system: ActorSystem[_]): ActorRef[ShardingEnvelope[Command]] =
-    ClusterSharding(system).init(Entity(ServiceInstance.TypeKey)(entityContext => apply(entityContext.entityId)))
+    ClusterSharding(system).init(
+      Entity(ServiceInstance.TypeKey)(entityContext => apply(entityContext.entityId))
+        .withSettings(ClusterShardingSettings(system).withPassivateIdleEntityAfter(Duration.Zero)))
 
   private def apply(entityId: String): Behavior[Command] = Behaviors.setup[Command] { context =>
-    context.log.debug(s"apply entityId is '$entityId'")
-    val namingServiceKey = ServiceKey
+    val ServiceItem = ServiceKey
       .unapply(entityId)
       .getOrElse(throw HSBadRequestException(
         s"${context.self} create child error. entityId invalid, need '[namespace] [serviceName]' format."))
-    Behaviors.withTimers(timers => new ServiceInstance(entityId, namingServiceKey, timers, context).receive())
+    Behaviors.withTimers(timers => new ServiceInstance(ServiceItem, timers, context).receive())
   }
 }
 
 class ServiceInstance private (
-    entityId: String,
-    private var serviceKey: NamingServiceKey,
+    private var serviceItem: ServiceItem,
     timers: TimerScheduler[ServiceInstance.Command],
     context: ActorContext[ServiceInstance.Command]) {
   import ServiceInstance._
   private val settings = NamingSettings(context.system)
-  private val internalService = new InternalService(serviceKey, settings)
+  private val internalService = new InternalService(serviceItem, settings, context.self)
+  private var listeners: Map[ActorRef[Event], ServiceListener] = Map()
 
-  NamingManager.init(context.system) ! ShardingEnvelope(serviceKey.namespace, NamingRegisterToManager(entityId))
-  timers.startTimerWithFixedDelay(HealthCheckKey, HealthCheckKey, settings.heartbeatInterval)
-  context.log.info(s"ServiceInstance started: $serviceKey")
+  NamingManager.init(context.system) ! ShardingEnvelope(serviceItem.namespace, ServiceCreated(serviceItem.serviceName))
+  timers.startTimerWithFixedDelay(HealthCheckKey, HealthCheckKey, settings.heartbeatTimeout)
+  context.log.info(s"ServiceInstance started: $serviceItem")
 
-  def receive(): Behavior[Command] = Behaviors.receiveMessage {
-    case NamingReplyCommand(replyTo, cmd) =>
-      replyTo ! processReplyCommand(cmd)
-      Behaviors.same
-    case Heartbeat(_, _, instId) =>
-      processHeartbeat(instId)
-    case QueryServiceInfo(replyTo) =>
-      replyTo ! queryServiceInfo()
-      Behaviors.same
-    case HealthCheckKey =>
-      healthCheck()
-    case StopNaming =>
-      Behaviors.stopped
-  }
+  def receive(): Behavior[Command] =
+    Behaviors
+      .receiveMessage[Command] {
+        case NamingReplyCommand(replyTo, cmd) =>
+          replyTo ! processReplyCommand(cmd)
+          Behaviors.same
 
-  private def queryServiceInfo(): ServiceInfo = {
-    ServiceInfo(
-      serviceKey.namespace,
-      serviceKey.serviceName,
-      serviceKey.groupName,
-      serviceKey.protectThreshold,
-      serviceKey.metadata,
-      internalService.allRealInstance())
+        case Heartbeat(_, _, instId) =>
+          processHeartbeat(instId)
+
+        case HealthCheckKey =>
+          healthCheck()
+
+        case NamingListenerCommand(ref, in) =>
+          listeners = listeners.updated(ref, in)
+          context.watch(ref)
+          Behaviors.same
+
+        case InternalHealthyChanged(inst, healthy) =>
+          notifyServiceEventListeners(inst, healthy)
+
+        case _: StopServiceInstance =>
+          Behaviors.stopped
+      }
+      .receiveSignal {
+        case (_, PostStop) =>
+          cleanup()
+          Behaviors.same
+        case (_, Terminated(ref)) =>
+          try {
+            listeners = listeners.removed(ref.unsafeUpcast[Event])
+          } catch {
+            case NonFatal(_) => // do nothing
+          }
+          Behaviors.same
+      }
+
+  private def cleanup(): Unit = {
+    for ((ref, _) <- listeners) {
+      ref ! ServiceEventStop()
+    }
+    NamingManager.init(context.system) ! ShardingEnvelope(
+      serviceItem.namespace,
+      ServiceRemoved(serviceItem.serviceName))
   }
 
   private def healthCheck(): Behavior[Command] = {
@@ -111,69 +138,122 @@ class ServiceInstance private (
     Behaviors.same
   }
 
-  private def processReplyCommand(cmd: NamingReplyCommand.Cmd): NamingReply = {
-    import NamingReplyCommand.Cmd
-    cmd match {
-      case Cmd.Query(value)    => queryInstance(value)
-      case Cmd.Register(value) => registerInstance(value)
-      case Cmd.Remove(value)   => removeInstance(value)
-      case Cmd.Modify(value)   => modifyInstance(value)
-      case Cmd.CreateService(value) =>
-        serviceKey = serviceKey.copy(
-          groupName = if (StringUtils.isBlank(value.groupName)) Constants.DEFAULT_GROUP_NAME else value.groupName,
-          protectThreshold = value.protectThreshold,
-          metadata = value.metadata)
-        NamingReply(IntStatus.OK, data = NamingReply.Data.ServiceInfo(queryServiceInfo()))
-      case Cmd.ModifyService(value) =>
-        val old = serviceKey
-        serviceKey = serviceKey.copy(
-          groupName = value.groupName.filterNot(str => StringUtils.isBlank(str)).getOrElse(old.groupName),
-          protectThreshold = value.protectThreshold.getOrElse(old.protectThreshold),
-          metadata = if (value.replaceMetadata) value.metadata else old.metadata ++ value.metadata)
-        NamingReply(IntStatus.OK, data = NamingReply.Data.ServiceInfo(queryServiceInfo()))
-      case Cmd.RemoveService(_) =>
-        context.self ! StopNaming
-        NamingReply(IntStatus.OK)
-      case Cmd.Empty => NamingReply(IntStatus.BAD_REQUEST, "Invalid Cmd.")
+  private def processReplyCommand(cmd: Cmd): NamingReply =
+    try {
+      val reply = cmd match {
+        case Cmd.Query(value)         => queryInstance(value)
+        case Cmd.Register(value)      => registerInstance(value)
+        case Cmd.Remove(value)        => removeInstance(value)
+        case Cmd.Modify(value)        => modifyInstance(value)
+        case Cmd.CreateService(value) => createService(value)
+        case Cmd.ModifyService(value) => modifyService(value)
+        case Cmd.RemoveService(_)     => removeService()
+        case Cmd.Empty                => NamingReply(IntStatus.BAD_REQUEST, "Invalid Cmd.")
+      }
+
+      if (IntStatus.isSuccess(reply.status)) {
+        notifyServiceEventListeners(cmd, reply.data)
+      }
+
+      reply
+    } catch {
+      case NonFatal(e) => NamingReply(IntStatus.INTERNAL_ERROR, e.getLocalizedMessage)
+    }
+
+  private def removeService(): NamingReply = {
+    context.self ! StopServiceInstance()
+    NamingReply(IntStatus.OK)
+  }
+
+  private def modifyService(value: ModifyService): NamingReply = {
+    val old = serviceItem
+    serviceItem = serviceItem.copy(
+      groupName = value.groupName.filterNot(str => StringUtils.isBlank(str)).getOrElse(old.groupName),
+      protectThreshold = value.protectThreshold.getOrElse(old.protectThreshold),
+      metadata = if (value.replaceMetadata) value.metadata else old.metadata ++ value.metadata)
+    NamingReply(IntStatus.OK, data = NamingReply.Data.ServiceInfo(currentServiceInfo()))
+  }
+
+  private def createService(value: CreateService): NamingReply = {
+    serviceItem = serviceItem.copy(
+      groupName = if (StringUtils.isBlank(value.groupName)) Constants.DEFAULT_GROUP_NAME else value.groupName,
+      protectThreshold = value.protectThreshold,
+      metadata = value.metadata)
+    NamingReply(IntStatus.OK, data = NamingReply.Data.ServiceInfo(currentServiceInfo()))
+  }
+
+  private def notifyServiceEventListeners(cmd: Cmd, data: NamingReply.Data): Unit = {
+    val changeType = cmd match {
+      case _: Cmd.Register      => NamingChangeType.INSTANCE_REGISTER
+      case _: Cmd.Modify        => NamingChangeType.INSTANCE_MODIFY
+      case _: Cmd.Remove        => NamingChangeType.INSTANCE_REMOVE
+      case _: Cmd.CreateService => NamingChangeType.SERVICE_CREATE
+      case _: Cmd.ModifyService => NamingChangeType.SERVICE_MODIFY
+      case _: Cmd.RemoveService => NamingChangeType.SERVICE_REMOVE
+      case _                    => return
+    }
+    val event = NamingServiceEvent(
+      ServiceEvent(
+        changeType,
+        serviceItem.namespace,
+        serviceItem.serviceName,
+        data.serviceInfo.map(si =>
+          ServiceItem(si.namespace, si.serviceName, si.groupName, si.protectThreshold, si.metadata)),
+        data.instance))
+    for ((ref, _) <- listeners) {
+      ref ! event
     }
   }
 
-  private def queryInstance(in: InstanceQuery): NamingReply =
-    try {
-      val items = internalService.queryInstance(in)
-      NamingReply(
-        IntStatus.OK,
-        data = NamingReply.Data.ServiceInfo(
-          ServiceInfo(
-            serviceKey.namespace,
-            serviceKey.serviceName,
-            serviceKey.groupName,
-            serviceKey.protectThreshold,
-            serviceKey.metadata,
-            items)))
-    } catch {
-      case _: IllegalArgumentException => NamingReply(IntStatus.BAD_REQUEST)
+  private def notifyServiceEventListeners(inst: Instance, healthy: Boolean): Behavior[Command] = {
+    val event = NamingServiceEvent(
+      ServiceEvent(
+        if (healthy) NamingChangeType.INSTANCE_HEALTHY else NamingChangeType.INSTANCE_UNHEALTHY,
+        serviceItem.namespace,
+        serviceItem.serviceName,
+        instance = Some(inst)))
+    for ((ref, _) <- listeners) {
+      ref ! event
     }
+    Behaviors.same
+  }
 
-  private def modifyInstance(in: InstanceModify): NamingReply =
-    try {
-      internalService.modifyInstance(in) match {
-        case Some(inst) => NamingReply(IntStatus.OK, data = NamingReply.Data.Instance(inst))
-        case None       => NamingReply(IntStatus.NOT_FOUND)
-      }
-    } catch {
-      case _: IllegalArgumentException => NamingReply(IntStatus.BAD_REQUEST)
+  private def queryInstance(in: InstanceQuery): NamingReply = {
+    if (StringUtils.isNoneBlank(in.groupName) || serviceItem.groupName.contains(in.groupName)) {
+      val items = internalService.queryInstance(in)
+      NamingReply(IntStatus.OK, data = NamingReply.Data.ServiceInfo(currentServiceInfo().copy(instances = items)))
+    } else {
+      NamingReply(IntStatus.NOT_FOUND)
     }
+  }
+
+  private def modifyInstance(in: InstanceModify): NamingReply = {
+    internalService.modifyInstance(in) match {
+      case Some(inst) =>
+        NamingReply(IntStatus.OK, data = NamingReply.Data.Instance(inst))
+      case None => NamingReply(IntStatus.NOT_FOUND)
+    }
+  }
 
   private def removeInstance(in: InstanceRemove): NamingReply = {
-    NamingReply(if (internalService.removeInstance(in.instanceId)) IntStatus.OK else IntStatus.NOT_FOUND)
+    val ret = internalService.removeInstance(in.instanceId)
+    NamingReply(if (ret) IntStatus.OK else IntStatus.NOT_FOUND)
   }
 
-  private def registerInstance(in: InstanceRegister): NamingReply =
-    try {
-      val inst = internalService.addInstance(DiscoveryXUtils.toInstance(in))
-      NamingReply(IntStatus.OK, data = NamingReply.Data.Instance(inst))
-    } catch {
-      case _: IllegalArgumentException => NamingReply(IntStatus.BAD_REQUEST)
-    }
+  private def registerInstance(in: InstanceRegister): NamingReply = {
+    val inst = internalService.addInstance(DiscoveryXUtils.toInstance(in))
+    NamingReply(IntStatus.OK, data = NamingReply.Data.Instance(inst))
+  }
+
+  private def currentServiceInfo(): ServiceInfo = {
+    val size = internalService.instanceSize()
+    ServiceInfo(
+      serviceItem.namespace,
+      serviceItem.serviceName,
+      serviceItem.groupName,
+      serviceItem.protectThreshold,
+      serviceItem.metadata,
+      size.total,
+      size.healthyCount)
+  }
 }

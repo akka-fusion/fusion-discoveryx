@@ -29,6 +29,7 @@ import akka.persistence.typed.{ PersistenceId, RecoveryCompleted }
 import fusion.discoveryx.model.ChangeType
 import fusion.discoveryx.server.DiscoveryPersistenceQuery
 import fusion.discoveryx.server.config.{ ConfigEntity, ConfigManager }
+import fusion.discoveryx.server.naming.NamingManager
 import fusion.discoveryx.server.protocol.ManagementCommand.Cmd
 import fusion.discoveryx.server.protocol.ManagementResponse.Data
 import fusion.discoveryx.server.protocol._
@@ -116,18 +117,23 @@ class Management private (context: ActorContext[Command]) {
               case Cmd.Create(in) => processCreate(oldState, replyTo, in)
               case Cmd.Modify(in) => processModify(oldState, replyTo, in)
               case Cmd.Remove(in) => processRemove(oldState, replyTo, in)
+              case Cmd.Get(in)    => processGet(oldState, replyTo, in)
               case Cmd.Empty      => Effect.reply(replyTo)(ManagementResponse(IntStatus.BAD_REQUEST, "Invalid command."))
             }
+          case evt: ConfigSizeChangeEvent =>
+            if (oldState.namespaces.exists(_.namespace == evt.namespace)) Effect.persist(evt) else Effect.none
           case InternalUpdateResponse(resp) =>
             context.log.debug(s"ORSet response: $resp.")
             Effect.none
         }
       },
-      eventHandler).receiveSignal {
-      case (state, RecoveryCompleted) =>
-        context.log.debug(s"RecoveryCompleted, state: $state")
-        storeNamespace(set => state.namespaces.foldLeft(set)((data, ns) => data :+ ns.namespace))
-    }
+      eventHandler)
+      .receiveSignal {
+        case (state, RecoveryCompleted) =>
+          context.log.debug(s"RecoveryCompleted, state: $state")
+          storeNamespace(set => state.namespaces.foldLeft(set)((data, ns) => data :+ ns.namespace))
+      }
+      .withRetention(settings.retentionCriteria)
 
   private def storeNamespace(func: ORSet[String] => ORSet[String]): Unit = {
     distributedData.replicator ! Replicator.Update(
@@ -137,12 +143,28 @@ class Management private (context: ActorContext[Command]) {
       messageAdapter)(func)
   }
 
+  private def processGet(
+      oldState: ManagementState,
+      replyTo: ActorRef[ManagementResponse],
+      in: GetNamespace): Effect[Event, ManagementState] = {
+    val resp = oldState.namespaces
+      .find(_.namespace == in.namespace)
+      .map(ns => ManagementResponse(IntStatus.OK, data = Data.Namespace(ns)))
+      .getOrElse(ManagementResponse(IntStatus.NOT_FOUND, s"Namespace not found, namespace is ${in.namespace}"))
+    Effect.reply(replyTo)(resp)
+  }
+
   private def processRemove(
       oldState: ManagementState,
       replyTo: ActorRef[ManagementResponse],
       in: RemoveNamespace): Effect[Event, ManagementState] = {
     if (oldState.namespaces.exists(_.namespace == in.namespace)) {
-      Effect.persist(in).thenReply(replyTo)(_ => ManagementResponse(IntStatus.OK))
+      Effect.persist(in).thenReply(replyTo) { _ =>
+        storeNamespace(set => set.remove(in.namespace))
+        NamingManager.init(context.system) ! ShardingEnvelope(in.namespace, StopNamingManager())
+        configManager ! ShardingEnvelope(in.namespace, StopConfigManager())
+        ManagementResponse(IntStatus.OK)
+      }
     } else {
       Effect.reply(replyTo)(ManagementResponse(IntStatus.NOT_FOUND))
     }
@@ -179,43 +201,49 @@ class Management private (context: ActorContext[Command]) {
       oldState: ManagementState,
       replyTo: ActorRef[ManagementResponse],
       in: CreateNamespace): Effect[Event, ManagementState] = {
-    val either =
-      if (oldState.namespaces.exists(_.name == in.name))
-        Left(s"Name: ${in.name} already exists, duplicate is not allowed.")
-      else Right(Namespace(Utils.timeBasedUuid().toString, in.name))
-
-    either match {
-      case Right(in) =>
-        Effect.persist[Event, ManagementState](in).thenReply(replyTo) { state =>
-          storeNamespace(set => set :+ in.namespace)
-          ManagementResponse(
-            IntStatus.OK,
-            data = state.namespaces.find(_.namespace == in.namespace).map(Data.Namespace).getOrElse(Data.Empty))
-        }
-
-      case Left(message) =>
-        Effect.reply(replyTo)(ManagementResponse(IntStatus.CONFLICT, message))
+    if (oldState.namespaces.exists(_.name == in.name)) {
+      Effect.reply(replyTo)(
+        ManagementResponse(IntStatus.CONFLICT, s"Name: ${in.name} already exists, duplicate is not allowed."))
+    } else {
+      val namespace = Namespace(Utils.timeBasedUuid().toString, in.name, in.description)
+      Effect.persist[Event, ManagementState](namespace).thenReply(replyTo) { _ =>
+        storeNamespace(set => set :+ namespace.namespace)
+        ManagementResponse(IntStatus.OK, data = Data.Namespace(namespace))
+      }
     }
   }
 
   private def eventHandler(state: ManagementState, event: Event): ManagementState = event match {
     case in: ModifyNamespace => eventHandleModify(in, state)
-    case in: Namespace       => state.copy(namespaces = in +: state.namespaces)
-    case in: RemoveNamespace =>
-      val ns = state.namespaces.filterNot(_.namespace == in.namespace)
-      state.copy(namespaces = ns)
+    case in: Namespace       => eventHandleCreate(in, state)
+    case in: RemoveNamespace => eventHandleRemove(state, in)
+    case in: ConfigSizeChangeEvent =>
+      val idx = state.namespaces.indexWhere(_.namespace == in.namespace)
+      if (idx < 0) {
+        state
+      } else {
+        val namespaces = state.namespaces.updated(idx, state.namespaces(idx).copy(configCount = in.configCount))
+        state.copy(namespaces = namespaces)
+      }
+  }
+
+  private def eventHandleRemove(state: ManagementState, in: RemoveNamespace): ManagementState = {
+    state.copy(namespaces = state.namespaces.filterNot(_.namespace == in.namespace))
+  }
+
+  private def eventHandleCreate(in: Namespace, state: ManagementState): ManagementState = {
+    state.copy(namespaces = in +: state.namespaces)
   }
 
   private def eventHandleModify(in: ModifyNamespace, state: ManagementState): ManagementState = {
-    var namespaces = state.namespaces
-    val idx = namespaces.indexWhere(_.namespace == in.namespace)
+    val idx = state.namespaces.indexWhere(_.namespace == in.namespace)
     if (idx < 0) {
-      ManagementState(namespaces)
+      state
     } else {
-      val old = namespaces(idx)
-      val namespace = old.copy(name = in.name.getOrElse(old.name))
-      namespaces = namespaces.updated(idx, namespace)
-      ManagementState(namespaces)
+      val old = state.namespaces(idx)
+      val namespace =
+        old.copy(name = in.name.getOrElse(old.name), description = in.description.getOrElse(old.description))
+      state.copy(namespaces = state.namespaces.updated(idx, namespace))
     }
   }
 }

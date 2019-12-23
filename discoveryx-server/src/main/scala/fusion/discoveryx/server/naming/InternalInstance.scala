@@ -16,26 +16,42 @@
 
 package fusion.discoveryx.server.naming
 
+import akka.actor.typed.ActorRef
 import com.typesafe.scalalogging.StrictLogging
-import fusion.discoveryx.model.{ Instance, InstanceModify, InstanceQuery }
-import fusion.discoveryx.server.protocol.NamingServiceKey
+import fusion.discoveryx.model.{ Instance, InstanceModify, InstanceQuery, ServiceItem }
+import fusion.discoveryx.server.naming.ServiceInstance.InternalHealthyChanged
 
-final private[discoveryx] class InternalInstance(private[naming] val inst: Instance, settings: NamingSettings)
+final private[discoveryx] class InternalInstance(
+    private[naming] var inst: Instance,
+    settings: NamingSettings,
+    ref: ActorRef[ServiceInstance.Command])
     extends Ordered[InternalInstance]
-    with Equals {
-  @transient private val UNHEALTHY_CHECK_THRESHOLD_MILLIS = settings.heartbeatInterval.toMillis + 2000
-  @transient val instanceId: String = inst.instanceId
-
+    with Equals
+    with StrictLogging {
+  @transient private val UNHEALTHY_CHECK_THRESHOLD_MILLIS = settings.heartbeatTimeout.toMillis + 5000
+  @inline def instanceId: String = inst.instanceId
+  @transient private var preHealthy = inst.healthy
   @transient var lastTickTimestamp: Long = System.currentTimeMillis()
 
-  def healthy: Boolean = (System.currentTimeMillis() - lastTickTimestamp) < UNHEALTHY_CHECK_THRESHOLD_MILLIS
+  def healthy: Boolean = {
+    val now = System.currentTimeMillis()
+    val d = now - lastTickTimestamp
+    logger.debug(s"$inst healthy, $now - $lastTickTimestamp = $d, $UNHEALTHY_CHECK_THRESHOLD_MILLIS")
+    val curHealthy = d < UNHEALTHY_CHECK_THRESHOLD_MILLIS
+    if (preHealthy != curHealthy) {
+      preHealthy = curHealthy
+      inst = inst.copy(healthy = curHealthy)
+      ref ! InternalHealthyChanged(inst, curHealthy)
+    }
+    curHealthy
+  }
 
   def refresh(): InternalInstance = {
     lastTickTimestamp = System.currentTimeMillis()
     this
   }
 
-  def withInstance(in: Instance): InternalInstance = new InternalInstance(in, settings)
+  def withInstance(in: Instance): InternalInstance = new InternalInstance(in, settings, ref)
 
   def toInstance: Instance = inst.copy(healthy = healthy)
 
@@ -58,23 +74,17 @@ final private[discoveryx] class InternalInstance(private[naming] val inst: Insta
     s"InternalInstance(${inst.instanceId}, ${inst.namespace}, ${inst.groupName}, ${inst.serviceName}, ${inst.ip}, ${inst.port}, $healthy, $lastTickTimestamp)"
 }
 
-final private[discoveryx] class InternalService(namingServiceKey: NamingServiceKey, settings: NamingSettings)
+final private[discoveryx] class InternalService(
+    ServiceItem: ServiceItem,
+    settings: NamingSettings,
+    selfRef: ActorRef[ServiceInstance.Command])
     extends StrictLogging {
   private var curHealthyIdx = 0
   private var instances = Vector[InternalInstance]()
   private var instIds = Map[String, Int]() // instance id, insts index
 
-  def queryInstance(in: InstanceQuery): Vector[Instance] = {
-    logger.debug(s"queryInstance($in); curHealthyIdx: $curHealthyIdx; instIds: $instIds; $instances")
-    val selects =
-      if (in.allHealthy) allHealthy()
-      else if (in.oneHealthy) oneHealthy()
-      else allInstance()
-    selects.map(_.toInstance)
-  }
-
   def addInstance(inst: Instance): Instance = {
-    val internalInstance = new InternalInstance(inst, settings)
+    val internalInstance = new InternalInstance(inst, settings, selfRef)
     val items = instIds.get(inst.instanceId) match {
       case Some(idx) => instances.updated(idx, internalInstance)
       case None      => internalInstance +: instances
@@ -110,9 +120,16 @@ final private[discoveryx] class InternalService(namingServiceKey: NamingServiceK
     }
   }
 
-  def allInstance(): Vector[InternalInstance] = instances
+  def queryInstance(in: InstanceQuery): Vector[Instance] = {
+    logger.debug(s"queryInstance($in); curHealthyIdx: $curHealthyIdx; instIds: $instIds; $instances")
+    val selects =
+      if (in.allHealthy) allHealthy()
+      else if (in.oneHealthy) oneHealthy()
+      else allInstance()
+    selects.map(_.toInstance)
+  }
 
-  def allRealInstance(): Vector[Instance] = allInstance().map(_.toInstance)
+  def allInstance(): Vector[InternalInstance] = instances
 
   def allHealthy(): Vector[InternalInstance] = instances.filter(_.healthy)
 
@@ -150,8 +167,12 @@ final private[discoveryx] class InternalService(namingServiceKey: NamingServiceK
     this
   }
 
+  def instanceSize(): InstanceSize = new InstanceSize(instances.size, instances.count(_.healthy))
+
   private def saveInstances(items: Vector[InternalInstance]): Unit = {
     this.instances = items.sortWith(_ > _)
     instIds = this.instances.view.map(_.instanceId).zipWithIndex.toMap
   }
 }
+
+final class InstanceSize(val total: Int, val healthyCount: Int)

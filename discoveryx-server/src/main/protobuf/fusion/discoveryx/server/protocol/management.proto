@@ -12,17 +12,26 @@ option (scalapb.options) = {
 };
 
 // #Namespace
+// 命名空间
 message Namespace {
     option (scalapb.message).extends = "fusion.discoveryx.server.management.Management.Event";
 
+    // ID
     string namespace = 1;
+    // 名称
     string name = 2;
+    // 描述
+    string description = 3;
+    // 配置数
+    int32 config_count = 4;
 }
 // #Namespace
 
 // #CreateNamespace
 message CreateNamespace {
     string name = 1;
+    // 描述
+    string description = 2;
 }
 // #CreateNamespace
 
@@ -47,6 +56,8 @@ message ModifyNamespace {
 
     string namespace = 1;
     google.protobuf.StringValue name = 2;
+    // 描述
+    google.protobuf.StringValue description = 3;
 }
 // #ModifyNamespace
 
@@ -59,6 +70,18 @@ message ListedNamespace {
 }
 // #ListedNamespace
 
+message GetNamespace {
+    string namespace = 1;
+}
+
+message ConfigSizeChangeEvent {
+    option (scalapb.message).extends = "fusion.discoveryx.server.management.Management.Command";
+    option (scalapb.message).extends = "fusion.discoveryx.server.management.Management.Event";
+
+    string namespace = 1;
+    int32 config_count = 2;
+}
+
 message ManagementCommand {
     option (scalapb.message).extends = "fusion.discoveryx.server.management.Management.Command";
     option (scalapb.message).companion_extends = "fusion.protobuf.ActorRefCompanion";
@@ -69,6 +92,7 @@ message ManagementCommand {
         ListNamespace list = 3;
         ModifyNamespace modify = 4;
         RemoveNamespace remove = 5;
+        GetNamespace get = 6;
     }
 }
 
