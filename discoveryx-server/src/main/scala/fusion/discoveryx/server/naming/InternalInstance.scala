@@ -22,13 +22,19 @@ import fusion.discoveryx.server.protocol.NamingServiceKey
 
 final private[discoveryx] class InternalInstance(private[naming] val inst: Instance, settings: NamingSettings)
     extends Ordered[InternalInstance]
-    with Equals {
-  @transient private val UNHEALTHY_CHECK_THRESHOLD_MILLIS = settings.heartbeatInterval.toMillis + 2000
+    with Equals
+    with StrictLogging {
+  @transient private val UNHEALTHY_CHECK_THRESHOLD_MILLIS = settings.heartbeatTimeout.toMillis + 5000
   @transient val instanceId: String = inst.instanceId
 
   @transient var lastTickTimestamp: Long = System.currentTimeMillis()
 
-  def healthy: Boolean = (System.currentTimeMillis() - lastTickTimestamp) < UNHEALTHY_CHECK_THRESHOLD_MILLIS
+  def healthy: Boolean = {
+    val now = System.currentTimeMillis()
+    val d = now - lastTickTimestamp
+    logger.debug(s"$inst healthy, $now - $lastTickTimestamp = $d, $UNHEALTHY_CHECK_THRESHOLD_MILLIS")
+    d < UNHEALTHY_CHECK_THRESHOLD_MILLIS
+  }
 
   def refresh(): InternalInstance = {
     lastTickTimestamp = System.currentTimeMillis()

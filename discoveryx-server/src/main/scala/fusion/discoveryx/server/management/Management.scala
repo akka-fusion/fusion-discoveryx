@@ -200,22 +200,17 @@ class Management private (context: ActorContext[Command]) {
       Effect.reply(replyTo)(
         ManagementResponse(IntStatus.CONFLICT, s"Name: ${in.name} already exists, duplicate is not allowed."))
     } else {
-      Effect.persist[Event, ManagementState](in).thenReply(replyTo) { state =>
-        val option = state.namespaces.find(ns => !oldState.namespaces.exists(_.namespace == ns.namespace))
-        option match {
-          case Some(ns) =>
-            storeNamespace(set => set :+ ns.namespace)
-            ManagementResponse(IntStatus.OK, data = Data.Namespace(ns))
-          case _ =>
-            ManagementResponse(IntStatus.INTERNAL_ERROR, "Create namespace error.")
-        }
+      val namespace = Namespace(Utils.timeBasedUuid().toString, in.name, in.description)
+      Effect.persist[Event, ManagementState](namespace).thenReply(replyTo) { _ =>
+        storeNamespace(set => set :+ namespace.namespace)
+        ManagementResponse(IntStatus.OK, data = Data.Namespace(namespace))
       }
     }
   }
 
   private def eventHandler(state: ManagementState, event: Event): ManagementState = event match {
     case in: ModifyNamespace => eventHandleModify(in, state)
-    case in: CreateNamespace => eventHandleCreate(in, state)
+    case in: Namespace       => eventHandleCreate(in, state)
     case in: RemoveNamespace => eventHandleRemove(state, in)
     case in: ConfigSizeChangeEvent =>
       val idx = state.namespaces.indexWhere(_.namespace == in.namespace)
@@ -231,9 +226,8 @@ class Management private (context: ActorContext[Command]) {
     state.copy(namespaces = state.namespaces.filterNot(_.namespace == in.namespace))
   }
 
-  private def eventHandleCreate(in: CreateNamespace, state: ManagementState): ManagementState = {
-    val namespace = Namespace(Utils.timeBasedUuid().toString, in.name, in.description)
-    state.copy(namespaces = namespace +: state.namespaces)
+  private def eventHandleCreate(in: Namespace, state: ManagementState): ManagementState = {
+    state.copy(namespaces = in +: state.namespaces)
   }
 
   private def eventHandleModify(in: ModifyNamespace, state: ManagementState): ManagementState = {

@@ -22,7 +22,7 @@ import akka.cluster.sharding.typed.ShardingEnvelope
 import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, Entity, EntityContext, EntityTypeKey }
 import akka.persistence.typed.PersistenceId
 import akka.persistence.typed.scaladsl.{ Effect, EventSourcedBehavior, RetentionCriteria }
-import fusion.discoveryx.model.{ ChangeType, ConfigItem, ConfigReply }
+import fusion.discoveryx.model.{ ChangeType, ConfigGet, ConfigItem, ConfigQuery, ConfigReply }
 import fusion.discoveryx.server.protocol.ConfigEntityCommand.Cmd
 import fusion.discoveryx.server.protocol._
 import helloscala.common.IntStatus
@@ -94,6 +94,7 @@ class ConfigEntity private (
     case ConfigEntityCommand(replyTo, cmd) =>
       cmd match {
         case Cmd.Get(_)      => processGet(state, replyTo)
+        case Cmd.Query(in)   => processQuery(state, replyTo, in)
         case Cmd.Publish(in) => processPublish(state, replyTo, in)
         case Cmd.Remove(_)   => processRemove(replyTo)
         case Cmd.Empty       => Effect.none
@@ -134,11 +135,27 @@ class ConfigEntity private (
     }
   }
 
-  private def processGet(state: ConfigState, replyTo: ActorRef[ConfigReply]): Effect[ChangedConfigEvent, ConfigState] =
-    Effect.reply(replyTo)(state.configItem match {
-      case Some(item) => ConfigReply(IntStatus.OK, data = ConfigReply.Data.Config(item))
-      case _          => ConfigReply(IntStatus.NOT_FOUND)
-    })
+  private def processGet(
+      state: ConfigState,
+      replyTo: ActorRef[ConfigReply]): Effect[ChangedConfigEvent, ConfigState] = {
+    val data = state.configItem.map(ConfigReply.Data.Config).getOrElse(ConfigReply.Data.Empty)
+    val resp = ConfigReply(if (data.isEmpty) IntStatus.OK else IntStatus.NOT_FOUND, data = data)
+    Effect.reply(replyTo)(resp)
+  }
+
+  private def processQuery(
+      state: ConfigState,
+      replyTo: ActorRef[ConfigReply],
+      in: ConfigQuery): Effect[ChangedConfigEvent, ConfigState] = {
+    val data = state.configItem
+      .collect {
+        case item if in.groupName.forall(groupName => item.groupName.contains(groupName)) =>
+          ConfigReply.Data.Config(item)
+      }
+      .getOrElse(ConfigReply.Data.Empty)
+    val resp = ConfigReply(if (data.isEmpty) IntStatus.OK else IntStatus.NOT_FOUND, data = data)
+    Effect.reply(replyTo)(resp)
+  }
 
   def eventHandler(state: ConfigState, evt: ChangedConfigEvent): ConfigState = {
     context.log.debug(s"eventHandler($state, $evt)")

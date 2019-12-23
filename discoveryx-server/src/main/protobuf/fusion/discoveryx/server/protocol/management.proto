@@ -14,6 +14,8 @@ option (scalapb.options) = {
 // #Namespace
 // 命名空间
 message Namespace {
+    option (scalapb.message).extends = "fusion.discoveryx.server.management.Management.Event";
+
     // ID
     string namespace = 1;
     // 名称
@@ -27,8 +29,6 @@ message Namespace {
 
 // #CreateNamespace
 message CreateNamespace {
-    option (scalapb.message).extends = "fusion.discoveryx.server.management.Management.Event";
-
     string name = 1;
     // 描述
     string description = 2;

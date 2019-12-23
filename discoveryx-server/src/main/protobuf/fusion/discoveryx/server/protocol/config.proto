@@ -37,6 +37,7 @@ message ConfigEntityCommand {
         fusion.discoveryx.model.ConfigGet get = 2;
         fusion.discoveryx.model.ConfigItem publish = 3;
         fusion.discoveryx.model.ConfigRemove remove = 4;
+        fusion.discoveryx.model.ConfigQuery query = 5;
     }
 }
 
@@ -69,7 +70,9 @@ message ConfigState {
 // #ListConfig
 message ListConfig {
     string namespace = 1;
+    // 支持模糊查询
     google.protobuf.StringValue data_id = 2;
+    // 支持模糊查询
     google.protobuf.StringValue group_name = 3;
     int32 page = 4;
     int32 size = 5;

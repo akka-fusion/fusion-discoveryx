@@ -103,9 +103,11 @@ class ConfigManager private (namespace: String, context: ActorContext[Command]) 
     val (page, size, offset) = settings.findPageSizeOffset(cmd.page, cmd.size)
     context.log.info(s"dataIds: $configKeys")
     if (offset < configKeys.size) {
-      val futures = configKeys.view
+      val futures = cmd.dataId
+        .map(dataId => configKeys.view.filter(key => key.dataId.contains(dataId)))
+        .getOrElse(configKeys.view)
         .slice(offset, offset + size)
-        .map(configKey => askConfig(configKey, ConfigEntityCommand.Cmd.Get(ConfigGet(cmd.namespace))))
+        .map(configKey => askConfig(configKey, ConfigEntityCommand.Cmd.Query(ConfigQuery(cmd.groupName))))
         .toVector
       Future.sequence(futures).map { replies =>
         val configs = replies.collect { case Some(item) => itemToBasic(item) }

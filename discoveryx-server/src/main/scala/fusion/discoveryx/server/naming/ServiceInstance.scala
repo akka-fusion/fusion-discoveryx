@@ -73,7 +73,7 @@ class ServiceInstance private (
   private val internalService = new InternalService(serviceKey, settings)
 
   NamingManager.init(context.system) ! ShardingEnvelope(serviceKey.namespace, NamingRegisterToManager(entityId))
-  timers.startTimerWithFixedDelay(HealthCheckKey, HealthCheckKey, settings.heartbeatInterval)
+  timers.startTimerWithFixedDelay(HealthCheckKey, HealthCheckKey, settings.heartbeatTimeout)
   context.log.info(s"ServiceInstance started: $serviceKey")
 
   def receive(): Behavior[Command] = Behaviors.receiveMessage {

@@ -25,7 +25,7 @@ import scala.concurrent.duration.Duration
 
 object NamingClientDemo {
   def main(args: Array[String]): Unit = {
-    val system = ActorSystem(FusionProtocol.behavior, "NamingClient", ConfigFactory.load("application-local.conf"))
+    val system = ActorSystem(FusionProtocol.behavior, "NamingClient", ConfigFactory.load())
     val settings = NamingClientSettings(system)
     val namingClient = DiscoveryXNamingClient(settings, system)
 
