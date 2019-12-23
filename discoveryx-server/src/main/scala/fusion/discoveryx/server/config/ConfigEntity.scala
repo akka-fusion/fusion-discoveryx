@@ -94,7 +94,7 @@ class ConfigEntity private (
     case ConfigEntityCommand(replyTo, cmd) =>
       cmd match {
         case Cmd.Get(_)      => processGet(state, replyTo)
-        case Cmd.Publish(in) => processGet(state, replyTo, in)
+        case Cmd.Publish(in) => processPublish(state, replyTo, in)
         case Cmd.Remove(_)   => processRemove(replyTo)
         case Cmd.Empty       => Effect.none
       }
@@ -117,7 +117,7 @@ class ConfigEntity private (
       }
       .thenStop()
 
-  private def processGet(
+  private def processPublish(
       state: ConfigState,
       replyTo: ActorRef[ConfigReply],
       in: ConfigItem): Effect[ChangedConfigEvent, ConfigState] = {

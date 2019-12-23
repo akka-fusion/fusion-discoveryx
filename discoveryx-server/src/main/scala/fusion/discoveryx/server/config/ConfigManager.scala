@@ -19,10 +19,11 @@ package fusion.discoveryx.server.config
 import akka.actor.typed.scaladsl.AskPattern._
 import akka.actor.typed.scaladsl.{ ActorContext, Behaviors }
 import akka.actor.typed.{ ActorRef, ActorSystem, Behavior }
-import akka.cluster.sharding.typed.{ ClusterShardingSettings, ShardingEnvelope }
 import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, Entity, EntityTypeKey }
+import akka.cluster.sharding.typed.{ ClusterShardingSettings, ShardingEnvelope }
 import akka.util.Timeout
 import fusion.discoveryx.model._
+import fusion.discoveryx.server.management.Management
 import fusion.discoveryx.server.protocol.ConfigManagerCommand.Cmd
 import fusion.discoveryx.server.protocol.ConfigResponse.Data
 import fusion.discoveryx.server.protocol._
@@ -52,6 +53,7 @@ class ConfigManager private (namespace: String, context: ActorContext[Command]) 
   private implicit val system = context.system
   private val settings = ConfigSettings(context.system)
   private val configEntity = ConfigEntity.init(system)
+  private val managementRef = Management.init(system)
   private var configKeys = Vector.empty[ConfigKey]
 
   def init(): Behavior[Command] =
@@ -64,13 +66,18 @@ class ConfigManager private (namespace: String, context: ActorContext[Command]) 
         Behaviors.same
       case InternalConfigKeys(keys) =>
         for (key <- keys if !configKeys.contains(key)) {
-          configKeys :+= key
+          saveConfigKeys(configKeys :+ key)
         }
         Behaviors.same
       case InternalRemoveKey(key) =>
-        configKeys = configKeys.filterNot(_ == key)
+        saveConfigKeys(configKeys.filterNot(_ == key))
         Behaviors.same
     }
+
+  private def saveConfigKeys(keys: Vector[ConfigKey]): Unit = {
+    configKeys = keys
+    managementRef ! ConfigSizeChangeEvent(namespace, configKeys.size)
+  }
 
   implicit val timeout: Timeout = 5.seconds
 

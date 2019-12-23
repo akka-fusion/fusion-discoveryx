@@ -23,9 +23,10 @@ import fusion.discoveryx.server.naming.BaseSettings
 import helloscala.common.Configuration
 
 class ManagementSettings(configuration: Configuration) extends BaseSettings {
-  val c = configuration.getConfiguration(s"${Constants.DISCOVERYX}.server.management")
-  val enable = c.getBoolean("enable")
+  val c: Configuration = configuration.getConfiguration(s"${Constants.DISCOVERYX}.server.management")
+  val enable: Boolean = c.getBoolean("enable")
 }
+
 object ManagementSettings {
   def apply(system: ActorSystem[_]): ManagementSettings = apply(system.settings.config)
   def apply(config: Config): ManagementSettings = new ManagementSettings(Configuration(config))
