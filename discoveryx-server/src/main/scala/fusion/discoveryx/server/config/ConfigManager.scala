@@ -107,7 +107,7 @@ class ConfigManager private (namespace: String, context: ActorContext[Command]) 
         .map(dataId => configKeys.view.filter(key => key.dataId.contains(dataId)))
         .getOrElse(configKeys.view)
         .slice(offset, offset + size)
-        .map(configKey => askConfig(configKey, ConfigEntityCommand.Cmd.Query(ConfigQuery(cmd.groupName))))
+        .map(configKey => askConfig(configKey, ConfigEntityCommand.Cmd.Query(ConfigQuery(cmd.groupName, cmd.tags))))
         .toVector
       Future.sequence(futures).map { replies =>
         val configs = replies.collect { case Some(item) => itemToBasic(item) }

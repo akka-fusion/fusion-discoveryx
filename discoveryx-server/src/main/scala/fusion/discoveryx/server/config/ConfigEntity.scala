@@ -22,7 +22,7 @@ import akka.cluster.sharding.typed.ShardingEnvelope
 import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, Entity, EntityContext, EntityTypeKey }
 import akka.persistence.typed.PersistenceId
 import akka.persistence.typed.scaladsl.{ Effect, EventSourcedBehavior, RetentionCriteria }
-import fusion.discoveryx.model.{ ChangeType, ConfigGet, ConfigItem, ConfigQuery, ConfigReply }
+import fusion.discoveryx.model.{ ChangeType, ConfigItem, ConfigQuery, ConfigReply }
 import fusion.discoveryx.server.protocol.ConfigEntityCommand.Cmd
 import fusion.discoveryx.server.protocol._
 import helloscala.common.IntStatus
@@ -149,13 +149,19 @@ class ConfigEntity private (
       in: ConfigQuery): Effect[ChangedConfigEvent, ConfigState] = {
     val data = state.configItem
       .collect {
-        case item if in.groupName.forall(groupName => item.groupName.contains(groupName)) =>
+        case item if matchGroupName(in, item) && matchTags(in, item) =>
           ConfigReply.Data.Config(item)
       }
       .getOrElse(ConfigReply.Data.Empty)
     val resp = ConfigReply(if (data.isEmpty) IntStatus.OK else IntStatus.NOT_FOUND, data = data)
     Effect.reply(replyTo)(resp)
   }
+
+  @inline private def matchGroupName(in: ConfigQuery, item: ConfigItem): Boolean =
+    in.groupName.forall(groupName => item.groupName.contains(groupName))
+
+  @inline private def matchTags(in: ConfigQuery, item: ConfigItem): Boolean =
+    in.tags.isEmpty || item.tags.exists(tag => in.tags.contains(tag))
 
   def eventHandler(state: ConfigState, evt: ChangedConfigEvent): ConfigState = {
     context.log.debug(s"eventHandler($state, $evt)")

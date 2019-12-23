@@ -76,6 +76,7 @@ message ListConfig {
     google.protobuf.StringValue group_name = 3;
     int32 page = 4;
     int32 size = 5;
+    repeated string tags = 6;
 }
 // #ListConfig
 
