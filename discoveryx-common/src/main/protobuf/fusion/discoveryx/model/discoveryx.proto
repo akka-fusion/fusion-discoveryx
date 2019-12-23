@@ -131,7 +131,7 @@ enum NamingChangeType {
     INSTANCE_HEALTHY = 7;
 }
 
-message NamingServiceKey {
+message ServiceItem {
     string namespace = 1;
     string serviceName = 2;
     string group_name = 3;
@@ -244,7 +244,11 @@ message ServiceInfo {
     string group_name = 3;
     double protect_threshold = 4;
     map<string, string> metadata = 5;
-    repeated Instance instances = 6;
+    // 实例数
+    int32 instance_total = 6;
+    // 健康实例数
+    int32 instance_healthy_count = 7;
+    repeated Instance instances = 8;
 }
 // #ServiceInfo
 
@@ -253,7 +257,7 @@ message ServiceEvent {
     NamingChangeType changeType = 1;
     string namespace = 2;
     string service_name = 3;
-    NamingServiceKey service = 4;
+    ServiceItem service = 4;
     Instance instance = 5;
 }
 // #ServiceEvent

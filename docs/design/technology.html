@@ -120,7 +120,7 @@ Version 1.0.0
 <h3><a href="#grpc" name="grpc" class="anchor"><span class="anchor-link"></span></a>gRPC</h3>
 <p>DiscoveryX 使用 gRPC 作为内部及开放API的数据通信协议，Akka gRPC提供了 gRPC/Protobuf 与 Akka 的集成。</p>
 <p>Naming服务可通过gRPC服务描述语言进行定义，Akka gRPC将生成相应的Scala/Java代码及服务接口。</p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/grpc/discoveryx.proto#L41-L82" target="_blank" title="Go to snippet source"></a><code class="language-proto">service NamingService {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/grpc/discoveryx.proto#L41-L87" target="_blank" title="Go to snippet source"></a><code class="language-proto">service NamingService {
     // 查询实例
     rpc QueryInstance (fusion.discoveryx.model.InstanceQuery) returns (fusion.discoveryx.model.NamingReply) {
     }
@@ -137,6 +137,9 @@ Version 1.0.0
     rpc RemoveInstance (fusion.discoveryx.model.InstanceRemove) returns (fusion.discoveryx.model.NamingReply) {
     }
 
+    // 监听服务事件
+    rpc ListenerService (fusion.discoveryx.model.ServiceListener) returns (stream fusion.discoveryx.model.ServiceEvent) {}
+
     // 实例心跳消息。namespace, serviceName, ip, port, instanceId等使用metadata（HTTP Header发送）
     //- `x-discoveryx-namespace`：命名空间
     //- `x-discoveryx-service-name`：服务名
@@ -152,7 +155,7 @@ Version 1.0.0
 }</code></pre>
 <h3><a href="#protobuf" name="protobuf" class="anchor"><span class="anchor-link"></span></a>Protobuf</h3>
 <p>DiscoveryX 使用 Protobuf 来定义和序列化数据消息，服务需要的请求参数、响应结果通过Protobuf定义，它将被自动编译并生成相应的case class。</p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L115-L136" target="_blank" title="Go to snippet source"></a><code class="language-proto">message Instance {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L143-L164" target="_blank" title="Go to snippet source"></a><code class="language-proto">message Instance {
     // unique id of this instance.
     string instance_id = 1;
     // Service information of instance
@@ -281,7 +284,7 @@ val grpcHandler: PartialFunction[HttpRequest, Future[HttpResponse]] = Management
 </code></pre>
 <h2><a href="#actor" name="actor" class="anchor"><span class="anchor-link"></span></a>Actor</h2>
 <h3><a href="#protobuf与typed-actor" name="protobuf与typed-actor" class="anchor"><span class="anchor-link"></span></a>Protobuf与Typed Actor</h3>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/naming.proto#L117-L129" target="_blank" title="Go to snippet source"></a><code class="language-proto">message NamingManagerCommand {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/naming.proto#L126-L138" target="_blank" title="Go to snippet source"></a><code class="language-proto">message NamingManagerCommand {
     option (scalapb.message).extends = &quot;fusion.discoveryx.server.naming.NamingManager.Command&quot;;
     option (scalapb.message).companion_extends = &quot;fusion.protobuf.ActorRefCompanion&quot;;
 
@@ -317,7 +320,7 @@ val grpcHandler: PartialFunction[HttpRequest, Future[HttpResponse]] = Management
   <li>减少需要通过 <code>option (scalapb.message).extends</code> 定义 protobuf 消息扩展某个接口的次数</li>
   <li>这样可以减少需要通过 <code>[(scalapb.field).type]</code> 自定义 <code>ActorRef[T]</code> 转换的次数。</li>
 </ol></div>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/naming.proto#L133-L141" target="_blank" title="Go to snippet source"></a><code class="language-proto">message NamingResponse {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/naming.proto#L142-L150" target="_blank" title="Go to snippet source"></a><code class="language-proto">message NamingResponse {
     int32 status = 1;
     string message = 2;
     oneof data {

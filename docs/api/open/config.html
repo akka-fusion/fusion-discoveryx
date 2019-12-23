@@ -139,12 +139,13 @@ Version 1.0.0
 rpc GetConfig (fusion.discoveryx.model.ConfigGet) returns (fusion.discoveryx.model.ConfigReply) {
 }</code></pre>
 <p><strong>请求</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L35-L38" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ConfigGet {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L42-L46" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ConfigGet {
     string namespace = 1;
     string data_id = 2;
+    google.protobuf.StringValue group_name = 3;
 }</code></pre>
 <p><strong>响应</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L100-L107" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ConfigReply {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L109-L116" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ConfigReply {
     int32 status = 1;
     string message = 2;
     oneof data {
@@ -153,7 +154,7 @@ rpc GetConfig (fusion.discoveryx.model.ConfigGet) returns (fusion.discoveryx.mod
     }
 }</code></pre>
 <p><code>oneof</code>的<code>queried</code>字段将返回已注册实例信息，如下：</p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L53-L74" target="_blank" title="Go to snippet source"></a><code class="language-proto">enum ConfigType {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L62-L83" target="_blank" title="Go to snippet source"></a><code class="language-proto">enum ConfigType {
     TEXT = 0;
     HOCON = 1;
     JSON = 2;
@@ -180,15 +181,16 @@ message ConfigQueried {
 rpc PublishConfig (fusion.discoveryx.model.ConfigItem) returns (fusion.discoveryx.model.ConfigReply) {
 }</code></pre>
 <p><strong>请求</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L42-L48" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ConfigItem {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L50-L57" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ConfigItem {
     string namespace = 1;
     string data_id = 2;
     string group_name = 3;
     string content = 4;
     ConfigType type = 5;
+    repeated string tags = 6;
 }</code></pre>
 <p><strong>响应</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L100-L107" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ConfigReply {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L109-L116" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ConfigReply {
     int32 status = 1;
     string message = 2;
     oneof data {
@@ -202,12 +204,12 @@ rpc PublishConfig (fusion.discoveryx.model.ConfigItem) returns (fusion.discovery
 rpc RemoveConfig (fusion.discoveryx.model.ConfigRemove) returns (fusion.discoveryx.model.ConfigReply) {
 }</code></pre>
 <p><strong>请求</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L78-L81" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ConfigRemove {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L87-L90" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ConfigRemove {
     string namespace = 1;
     string data_id = 2;
 }</code></pre>
 <p><strong>响应</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L100-L107" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ConfigReply {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L109-L116" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ConfigReply {
     int32 status = 1;
     string message = 2;
     oneof data {
@@ -221,12 +223,12 @@ rpc RemoveConfig (fusion.discoveryx.model.ConfigRemove) returns (fusion.discover
 rpc ListenerConfig (fusion.discoveryx.model.ConfigChangeListen) returns (stream fusion.discoveryx.model.ConfigChanged) {
 }</code></pre>
 <p><strong>请求</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L85-L88" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ConfigChangeListen {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L94-L97" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ConfigChangeListen {
     string namespace = 1;
     string data_id = 2;
 }</code></pre>
 <p><strong>响应</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L92-L96" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ConfigChanged {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L101-L105" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ConfigChanged {
     fusion.discoveryx.model.ConfigItem config = 1;
     int32 version = 2;
     ChangeType change_type = 3;

@@ -18,7 +18,7 @@ package fusion.discoveryx.server.naming
 
 import akka.actor.typed.ActorRef
 import com.typesafe.scalalogging.StrictLogging
-import fusion.discoveryx.model.{ Instance, InstanceModify, InstanceQuery, NamingServiceKey }
+import fusion.discoveryx.model.{ Instance, InstanceModify, InstanceQuery, ServiceItem }
 import fusion.discoveryx.server.naming.ServiceInstance.InternalHealthyChanged
 
 final private[discoveryx] class InternalInstance(
@@ -75,22 +75,13 @@ final private[discoveryx] class InternalInstance(
 }
 
 final private[discoveryx] class InternalService(
-    namingServiceKey: NamingServiceKey,
+    ServiceItem: ServiceItem,
     settings: NamingSettings,
     selfRef: ActorRef[ServiceInstance.Command])
     extends StrictLogging {
   private var curHealthyIdx = 0
   private var instances = Vector[InternalInstance]()
   private var instIds = Map[String, Int]() // instance id, insts index
-
-  def queryInstance(in: InstanceQuery): Vector[Instance] = {
-    logger.debug(s"queryInstance($in); curHealthyIdx: $curHealthyIdx; instIds: $instIds; $instances")
-    val selects =
-      if (in.allHealthy) allHealthy()
-      else if (in.oneHealthy) oneHealthy()
-      else allInstance()
-    selects.map(_.toInstance)
-  }
 
   def addInstance(inst: Instance): Instance = {
     val internalInstance = new InternalInstance(inst, settings, selfRef)
@@ -129,9 +120,16 @@ final private[discoveryx] class InternalService(
     }
   }
 
-  def allInstance(): Vector[InternalInstance] = instances
+  def queryInstance(in: InstanceQuery): Vector[Instance] = {
+    logger.debug(s"queryInstance($in); curHealthyIdx: $curHealthyIdx; instIds: $instIds; $instances")
+    val selects =
+      if (in.allHealthy) allHealthy()
+      else if (in.oneHealthy) oneHealthy()
+      else allInstance()
+    selects.map(_.toInstance)
+  }
 
-  def allRealInstance(): Vector[Instance] = allInstance().map(_.toInstance)
+  def allInstance(): Vector[InternalInstance] = instances
 
   def allHealthy(): Vector[InternalInstance] = instances.filter(_.healthy)
 
@@ -169,8 +167,12 @@ final private[discoveryx] class InternalService(
     this
   }
 
+  def instanceSize(): InstanceSize = new InstanceSize(instances.size, instances.count(_.healthy))
+
   private def saveInstances(items: Vector[InternalInstance]): Unit = {
     this.instances = items.sortWith(_ > _)
     instIds = this.instances.view.map(_.instanceId).zipWithIndex.toMap
   }
 }
+
+final class InstanceSize(val total: Int, val healthyCount: Int)

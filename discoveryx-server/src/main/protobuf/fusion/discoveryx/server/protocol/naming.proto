@@ -49,21 +49,20 @@ message Heartbeat {
     string instance_id = 3;
 }
 
-message QueryServiceInfo {
-    option (scalapb.message).extends = "fusion.discoveryx.server.naming.ServiceInstance.Command";
-    option (scalapb.message).companion_extends = "fusion.protobuf.ActorRefCompanion";
-    string reply_to = 1 [(scalapb.field).type = "akka.actor.typed.ActorRef[fusion.discoveryx.model.ServiceInfo]"];
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 // NamingManager 使用
 ////////////////////////////////////////////////////////////////////////////////
 
-// 通过 PubSub 发布 fusion.discoveryx.server.naming.ServiceInstance 自身的 ActorRef，并注册到 NamingManager
-message NamingRegisterToManager {
+message ServiceCreated {
     option (scalapb.message).extends = "fusion.discoveryx.server.naming.NamingManager.Command";
     option (scalapb.message).companion_extends = "fusion.protobuf.ActorRefCompanion";
-    string entity_id = 1;
+    string service_name = 1;
+}
+
+message ServiceRemoved {
+    option (scalapb.message).extends = "fusion.discoveryx.server.naming.NamingManager.Command";
+    option (scalapb.message).companion_extends = "fusion.protobuf.ActorRefCompanion";
+    string service_name = 1;
 }
 
 // #ListService
@@ -73,6 +72,8 @@ message ListService {
     int32 size = 3;
     string service_name = 4;
     string group_name = 5;
+    // only return all healthy instances
+    bool all_healthy = 6;
 }
 // #ListService
 

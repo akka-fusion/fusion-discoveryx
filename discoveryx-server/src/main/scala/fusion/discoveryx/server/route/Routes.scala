@@ -36,6 +36,7 @@ class Routes(discoveryX: DiscoveryX) extends StrictLogging {
   def init(): Routes = {
     val cluster = Cluster(system)
     val roles = cluster.selfMember.roles
+    logger.debug(s"Cluster roles: $roles.")
     if (roles.contains(Constants.MANAGEMENT)) {
       val m = new ManagementRoute()
       consoleRoutes ::= m.consoleRoute

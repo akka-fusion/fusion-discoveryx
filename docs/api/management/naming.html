@@ -147,15 +147,17 @@ Version 1.0.0
 rpc ListService (fusion.discoveryx.server.protocol.ListService) returns (fusion.discoveryx.server.protocol.NamingResponse) {
 }</code></pre>
 <p><strong>请求</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/naming.proto#L62-L68" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ListService {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/naming.proto#L69-L77" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ListService {
     string namespace = 1;
     int32 page = 2;
     int32 size = 3;
     string service_name = 4;
     string group_name = 5;
+    // only return all healthy instances
+    bool all_healthy = 6;
 }</code></pre>
 <p><strong>响应</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/naming.proto#L133-L141" target="_blank" title="Go to snippet source"></a><code class="language-proto">message NamingResponse {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/naming.proto#L142-L150" target="_blank" title="Go to snippet source"></a><code class="language-proto">message NamingResponse {
     int32 status = 1;
     string message = 2;
     oneof data {
@@ -165,19 +167,23 @@ rpc ListService (fusion.discoveryx.server.protocol.ListService) returns (fusion.
     }
 }</code></pre>
 <p><code>oneof</code>的<code>listed_service</code>字段将返回匹配查询的服务列表：</p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/naming.proto#L72-L77" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ListedService {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/naming.proto#L81-L86" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ListedService {
     repeated fusion.discoveryx.model.ServiceInfo service_infos = 1;
     int32 page = 2;
     int32 size = 3;
     int32 total_elements = 4;
 }</code></pre>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L206-L213" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ServiceInfo {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L241-L252" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ServiceInfo {
     string namespace = 1;
     string service_name = 2;
     string group_name = 3;
     double protect_threshold = 4;
     map&lt;string, string&gt; metadata = 5;
-    repeated Instance instances = 6;
+    // 实例数
+    int32 instance_total = 6;
+    // 健康实例数
+    int32 instance_healthy_count = 7;
+    repeated Instance instances = 8;
 }</code></pre>
 <p><code>Instance</code>见 <a href="../open/naming.html#instance">开放API#instance</a>。</p>
 <h2><a href="#getservice" name="getservice" class="anchor"><span class="anchor-link"></span></a>GetService</h2>
@@ -186,13 +192,13 @@ rpc ListService (fusion.discoveryx.server.protocol.ListService) returns (fusion.
 rpc GetService (fusion.discoveryx.server.protocol.GetService) returns (fusion.discoveryx.server.protocol.NamingResponse) {
 }</code></pre>
 <p><strong>请求</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/naming.proto#L81-L85" target="_blank" title="Go to snippet source"></a><code class="language-proto">message GetService {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/naming.proto#L90-L94" target="_blank" title="Go to snippet source"></a><code class="language-proto">message GetService {
     string namespace = 1;
     string service_name = 2;
     google.protobuf.StringValue group_name = 3;
 }</code></pre>
 <p><strong>响应</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/naming.proto#L133-L141" target="_blank" title="Go to snippet source"></a><code class="language-proto">message NamingResponse {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/naming.proto#L142-L150" target="_blank" title="Go to snippet source"></a><code class="language-proto">message NamingResponse {
     int32 status = 1;
     string message = 2;
     oneof data {
@@ -202,13 +208,17 @@ rpc GetService (fusion.discoveryx.server.protocol.GetService) returns (fusion.di
     }
 }</code></pre>
 <p><code>oneof</code>的<code>listed_service</code>字段将返回匹配查询的服务列表：</p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L206-L213" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ServiceInfo {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L241-L252" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ServiceInfo {
     string namespace = 1;
     string service_name = 2;
     string group_name = 3;
     double protect_threshold = 4;
     map&lt;string, string&gt; metadata = 5;
-    repeated Instance instances = 6;
+    // 实例数
+    int32 instance_total = 6;
+    // 健康实例数
+    int32 instance_healthy_count = 7;
+    repeated Instance instances = 8;
 }</code></pre>
 <h2><a href="#createservice" name="createservice" class="anchor"><span class="anchor-link"></span></a>CreateService</h2>
 <p><strong>gRPC</strong></p>
@@ -216,7 +226,7 @@ rpc GetService (fusion.discoveryx.server.protocol.GetService) returns (fusion.di
 rpc CreateService (fusion.discoveryx.server.protocol.CreateService) returns (fusion.discoveryx.server.protocol.NamingResponse) {
 }</code></pre>
 <p><strong>请求</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/naming.proto#L89-L95" target="_blank" title="Go to snippet source"></a><code class="language-proto">message CreateService {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/naming.proto#L98-L104" target="_blank" title="Go to snippet source"></a><code class="language-proto">message CreateService {
     string namespace = 1;
     string service_name = 2;
     string group_name = 3;
@@ -224,7 +234,7 @@ rpc CreateService (fusion.discoveryx.server.protocol.CreateService) returns (fus
     map&lt;string, string&gt; metadata = 5;
 }</code></pre>
 <p><strong>响应</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/naming.proto#L133-L141" target="_blank" title="Go to snippet source"></a><code class="language-proto">message NamingResponse {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/naming.proto#L142-L150" target="_blank" title="Go to snippet source"></a><code class="language-proto">message NamingResponse {
     int32 status = 1;
     string message = 2;
     oneof data {
@@ -234,13 +244,17 @@ rpc CreateService (fusion.discoveryx.server.protocol.CreateService) returns (fus
     }
 }</code></pre>
 <p><code>oneof</code>的<code>listed_service</code>字段将返回匹配查询的服务列表：</p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L206-L213" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ServiceInfo {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L241-L252" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ServiceInfo {
     string namespace = 1;
     string service_name = 2;
     string group_name = 3;
     double protect_threshold = 4;
     map&lt;string, string&gt; metadata = 5;
-    repeated Instance instances = 6;
+    // 实例数
+    int32 instance_total = 6;
+    // 健康实例数
+    int32 instance_healthy_count = 7;
+    repeated Instance instances = 8;
 }</code></pre>
 <h2><a href="#modifyservice" name="modifyservice" class="anchor"><span class="anchor-link"></span></a>ModifyService</h2>
 <p><strong>gRPC</strong></p>
@@ -248,7 +262,7 @@ rpc CreateService (fusion.discoveryx.server.protocol.CreateService) returns (fus
 rpc ModifyService (fusion.discoveryx.server.protocol.ModifyService) returns (fusion.discoveryx.server.protocol.NamingResponse) {
 }</code></pre>
 <p><strong>请求</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/naming.proto#L106-L113" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ModifyService {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/naming.proto#L115-L122" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ModifyService {
     string namespace = 1;
     string service_name = 2;
     google.protobuf.StringValue group_name = 3;
@@ -257,7 +271,7 @@ rpc ModifyService (fusion.discoveryx.server.protocol.ModifyService) returns (fus
     bool replace_metadata = 6;
 }</code></pre>
 <p><strong>响应</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/naming.proto#L133-L141" target="_blank" title="Go to snippet source"></a><code class="language-proto">message NamingResponse {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/naming.proto#L142-L150" target="_blank" title="Go to snippet source"></a><code class="language-proto">message NamingResponse {
     int32 status = 1;
     string message = 2;
     oneof data {
@@ -267,13 +281,17 @@ rpc ModifyService (fusion.discoveryx.server.protocol.ModifyService) returns (fus
     }
 }</code></pre>
 <p><code>oneof</code>的<code>listed_service</code>字段将返回匹配查询的服务列表：</p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L206-L213" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ServiceInfo {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L241-L252" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ServiceInfo {
     string namespace = 1;
     string service_name = 2;
     string group_name = 3;
     double protect_threshold = 4;
     map&lt;string, string&gt; metadata = 5;
-    repeated Instance instances = 6;
+    // 实例数
+    int32 instance_total = 6;
+    // 健康实例数
+    int32 instance_healthy_count = 7;
+    repeated Instance instances = 8;
 }</code></pre>
 <h2><a href="#removeservice" name="removeservice" class="anchor"><span class="anchor-link"></span></a>RemoveService</h2>
 <p><strong>gRPC</strong></p>
@@ -281,12 +299,12 @@ rpc ModifyService (fusion.discoveryx.server.protocol.ModifyService) returns (fus
 rpc RemoveService (fusion.discoveryx.server.protocol.RemoveService) returns (fusion.discoveryx.server.protocol.NamingResponse) {
 }</code></pre>
 <p><strong>请求</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/naming.proto#L99-L102" target="_blank" title="Go to snippet source"></a><code class="language-proto">message RemoveService {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/naming.proto#L108-L111" target="_blank" title="Go to snippet source"></a><code class="language-proto">message RemoveService {
     string namespace = 1;
     string service_name = 2;
 }</code></pre>
 <p><strong>响应</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/naming.proto#L133-L141" target="_blank" title="Go to snippet source"></a><code class="language-proto">message NamingResponse {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/naming.proto#L142-L150" target="_blank" title="Go to snippet source"></a><code class="language-proto">message NamingResponse {
     int32 status = 1;
     string message = 2;
     oneof data {

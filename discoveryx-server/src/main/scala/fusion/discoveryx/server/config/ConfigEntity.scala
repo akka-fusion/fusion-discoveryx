@@ -21,7 +21,7 @@ import akka.actor.typed.{ ActorRef, ActorSystem, Behavior, Terminated }
 import akka.cluster.sharding.typed.ShardingEnvelope
 import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, Entity, EntityContext, EntityTypeKey }
 import akka.persistence.typed.PersistenceId
-import akka.persistence.typed.scaladsl.{ Effect, EventSourcedBehavior, RetentionCriteria }
+import akka.persistence.typed.scaladsl.{ Effect, EventSourcedBehavior }
 import fusion.discoveryx.model.{ ChangeType, ConfigItem, ConfigQuery, ConfigReply }
 import fusion.discoveryx.server.protocol.ConfigEntityCommand.Cmd
 import fusion.discoveryx.server.protocol._

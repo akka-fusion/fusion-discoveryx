@@ -181,6 +181,11 @@ service NamingService {
     }
     // #RemoveInstance
 
+    // #ListenerService
+    // 监听服务事件
+    rpc ListenerService (fusion.discoveryx.model.ServiceListener) returns (stream fusion.discoveryx.model.ServiceEvent) {}
+    // #ListenerService
+
     // #Heartbeat
     // 实例心跳消息。namespace, serviceName, ip, port, instanceId等使用metadata（HTTP Header发送）
     //- `x-discoveryx-namespace`：命名空间
