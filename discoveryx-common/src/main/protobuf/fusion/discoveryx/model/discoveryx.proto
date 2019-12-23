@@ -120,6 +120,25 @@ message ConfigReply {
 // Instance
 ////////////////////////////////////////////////////////////////////////////////
 
+enum NamingChangeType {
+    SERVICE_CREATE = 0;
+    SERVICE_MODIFY = 1;
+    SERVICE_REMOVE = 2;
+    INSTANCE_REGISTER = 3;
+    INSTANCE_MODIFY = 4;
+    INSTANCE_REMOVE = 5;
+    INSTANCE_UNHEALTHY = 6;
+    INSTANCE_HEALTHY = 7;
+}
+
+message NamingServiceKey {
+    string namespace = 1;
+    string serviceName = 2;
+    string group_name = 3;
+    double protect_threshold = 4;
+    map<string, string> metadata = 5;
+}
+
 // #Instance
 message Instance {
     // unique id of this instance.
@@ -206,6 +225,13 @@ message InstanceQuery {
 }
 // #InstanceQuery
 
+// #ServiceListener
+message ServiceListener {
+    string namespace = 1;
+    string service_name = 2;
+}
+// #ServiceListener
+
 // #InstanceHeartbeat
 message InstanceHeartbeat {
 }
@@ -221,6 +247,16 @@ message ServiceInfo {
     repeated Instance instances = 6;
 }
 // #ServiceInfo
+
+// #ServiceEvent
+message ServiceEvent {
+    NamingChangeType changeType = 1;
+    string namespace = 2;
+    string service_name = 3;
+    NamingServiceKey service = 4;
+    Instance instance = 5;
+}
+// #ServiceEvent
 
 // #NamingReply
 message NamingReply {

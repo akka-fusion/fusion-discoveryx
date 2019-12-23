@@ -16,24 +16,34 @@
 
 package fusion.discoveryx.server.naming
 
+import akka.actor.typed.ActorRef
 import com.typesafe.scalalogging.StrictLogging
-import fusion.discoveryx.model.{ Instance, InstanceModify, InstanceQuery }
-import fusion.discoveryx.server.protocol.NamingServiceKey
+import fusion.discoveryx.model.{ Instance, InstanceModify, InstanceQuery, NamingServiceKey }
+import fusion.discoveryx.server.naming.ServiceInstance.InternalHealthyChanged
 
-final private[discoveryx] class InternalInstance(private[naming] val inst: Instance, settings: NamingSettings)
+final private[discoveryx] class InternalInstance(
+    private[naming] var inst: Instance,
+    settings: NamingSettings,
+    ref: ActorRef[ServiceInstance.Command])
     extends Ordered[InternalInstance]
     with Equals
     with StrictLogging {
   @transient private val UNHEALTHY_CHECK_THRESHOLD_MILLIS = settings.heartbeatTimeout.toMillis + 5000
-  @transient val instanceId: String = inst.instanceId
-
+  @inline def instanceId: String = inst.instanceId
+  @transient private var preHealthy = inst.healthy
   @transient var lastTickTimestamp: Long = System.currentTimeMillis()
 
   def healthy: Boolean = {
     val now = System.currentTimeMillis()
     val d = now - lastTickTimestamp
     logger.debug(s"$inst healthy, $now - $lastTickTimestamp = $d, $UNHEALTHY_CHECK_THRESHOLD_MILLIS")
-    d < UNHEALTHY_CHECK_THRESHOLD_MILLIS
+    val curHealthy = d < UNHEALTHY_CHECK_THRESHOLD_MILLIS
+    if (preHealthy != curHealthy) {
+      preHealthy = curHealthy
+      inst = inst.copy(healthy = curHealthy)
+      ref ! InternalHealthyChanged(inst, curHealthy)
+    }
+    curHealthy
   }
 
   def refresh(): InternalInstance = {
@@ -41,7 +51,7 @@ final private[discoveryx] class InternalInstance(private[naming] val inst: Insta
     this
   }
 
-  def withInstance(in: Instance): InternalInstance = new InternalInstance(in, settings)
+  def withInstance(in: Instance): InternalInstance = new InternalInstance(in, settings, ref)
 
   def toInstance: Instance = inst.copy(healthy = healthy)
 
@@ -64,7 +74,10 @@ final private[discoveryx] class InternalInstance(private[naming] val inst: Insta
     s"InternalInstance(${inst.instanceId}, ${inst.namespace}, ${inst.groupName}, ${inst.serviceName}, ${inst.ip}, ${inst.port}, $healthy, $lastTickTimestamp)"
 }
 
-final private[discoveryx] class InternalService(namingServiceKey: NamingServiceKey, settings: NamingSettings)
+final private[discoveryx] class InternalService(
+    namingServiceKey: NamingServiceKey,
+    settings: NamingSettings,
+    selfRef: ActorRef[ServiceInstance.Command])
     extends StrictLogging {
   private var curHealthyIdx = 0
   private var instances = Vector[InternalInstance]()
@@ -80,7 +93,7 @@ final private[discoveryx] class InternalService(namingServiceKey: NamingServiceK
   }
 
   def addInstance(inst: Instance): Instance = {
-    val internalInstance = new InternalInstance(inst, settings)
+    val internalInstance = new InternalInstance(inst, settings, selfRef)
     val items = instIds.get(inst.instanceId) match {
       case Some(idx) => instances.updated(idx, internalInstance)
       case None      => internalInstance +: instances

@@ -40,7 +40,7 @@ class DiscoveryXServer private (discoveryX: DiscoveryX) extends StrictLogging {
   }
 
   private def startHttp()(implicit system: classic.ActorSystem): Unit = {
-    val route = new Routes(discoveryX).route
+    val route = new Routes(discoveryX).init().route
     val config = discoveryX.config
     Http()
       .bindAndHandleAsync(

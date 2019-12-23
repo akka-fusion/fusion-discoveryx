@@ -37,7 +37,7 @@ object ConfigEntity {
   object ConfigKey {
     def unapply(entityId: String): Option[ConfigKey] = entityId.split(' ') match {
       case Array(namespace, dataId) => Some(new ConfigKey(namespace, dataId))
-      case others                   => None
+      case _                        => None
     }
   }
 
@@ -73,7 +73,8 @@ class ConfigEntity private (
   private var listeners = List.empty[ActorRef[ConfigEntity.Event]]
   context.log.info(s"Entity startup: persistenceId: $persistenceId")
 
-  def eventSourcedBehavior(): EventSourcedBehavior[Command, ChangedConfigEvent, ConfigState] =
+  def eventSourcedBehavior(): EventSourcedBehavior[Command, ChangedConfigEvent, ConfigState] = {
+    val settings = ConfigSettings(context.system)
     EventSourcedBehavior[Command, ChangedConfigEvent, ConfigState](
       persistenceId,
       ConfigState.defaultInstance,
@@ -84,11 +85,12 @@ class ConfigEntity private (
           listeners = listeners.filterNot(_ == ref)
       }
       .withTagger(_ => Set(ConfigEntity.TypeKey.name, namespace))
-      .withRetention(RetentionCriteria.snapshotEvery(100, 2).withDeleteEventsOnSnapshot)
+      .withRetention(settings.retentionCriteria)
       .snapshotWhen {
         case (_, ChangedConfigEvent(_, ChangeType.CHANGE_REMOVE), _) => true
         case _                                                       => false
       }
+  }
 
   def commandHandler(state: ConfigState, cmd: Command): Effect[ChangedConfigEvent, ConfigState] = cmd match {
     case ConfigEntityCommand(replyTo, cmd) =>
@@ -105,8 +107,11 @@ class ConfigEntity private (
       context.watch(replyTo)
       Effect.none
 
-    case ConfigPassiveStop() =>
+    case _: ConfigPassiveStop =>
       Effect.stop()
+
+    case _: RemoveAndStopConfigEntity =>
+      Effect.persist(ChangedConfigEvent(`type` = ChangeType.CHANGE_REMOVE)).thenStop()
   }
 
   private def processRemove(replyTo: ActorRef[ConfigReply]): Effect[ChangedConfigEvent, ConfigState] =

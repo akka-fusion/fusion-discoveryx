@@ -18,9 +18,9 @@ package fusion.discoveryx.server.naming
 
 import akka.actor.typed.scaladsl.AskPattern._
 import akka.actor.typed.scaladsl.{ ActorContext, Behaviors }
-import akka.actor.typed.{ ActorRef, ActorSystem, Behavior }
-import akka.cluster.sharding.typed.ShardingEnvelope
+import akka.actor.typed.{ ActorRef, ActorSystem, Behavior, PostStop }
 import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, Entity, EntityTypeKey }
+import akka.cluster.sharding.typed.{ ClusterShardingSettings, ShardingEnvelope }
 import akka.util.Timeout
 import fusion.discoveryx.model._
 import fusion.discoveryx.server.protocol._
@@ -36,7 +36,9 @@ object NamingManager {
   val TypeKey: EntityTypeKey[Command] = EntityTypeKey("NamingManager")
 
   def init(system: ActorSystem[_]): ActorRef[ShardingEnvelope[Command]] = {
-    ClusterSharding(system).init(Entity(TypeKey)(entityContext => NamingManager(entityContext.entityId)))
+    ClusterSharding(system).init(
+      Entity(TypeKey)(entityContext => NamingManager(entityContext.entityId))
+        .withSettings(ClusterShardingSettings(system).withPassivateIdleEntityAfter(Duration.Zero)))
   }
 
   private def apply(namespace: String): Behavior[Command] =
@@ -50,20 +52,35 @@ class NamingManager private (namespace: String, context: ActorContext[Command]) 
   private implicit val system: ActorSystem[_] = context.system
   private val namingSettings = NamingSettings(context.system)
   private val serviceInstanceRegion = ServiceInstance.init(context.system)
-  private var serviceInstanceIds = Vector.empty[String]
+  private var serviceInstanceEntityIds = Vector.empty[String]
 
   def receive(): Behavior[Command] =
-    Behaviors.receiveMessage[Command] {
-      case NamingManagerCommand(replyTo, cmd) => onManagerCommand(cmd, replyTo)
-      case NamingRegisterToManager(entityId) =>
-        if (!serviceInstanceIds.contains(entityId)) {
-          serviceInstanceIds = serviceInstanceIds :+ entityId
-          context.log.debug(s"Received NamingRegisterToManager($entityId), add after size: ${serviceInstanceIds.size}")
-        } else {
-          context.log.debug(s"Received NamingRegisterToManager($entityId)")
-        }
-        Behaviors.same
+    Behaviors
+      .receiveMessage[Command] {
+        case NamingManagerCommand(replyTo, cmd) => onManagerCommand(cmd, replyTo)
+        case NamingRegisterToManager(entityId) =>
+          if (!serviceInstanceEntityIds.contains(entityId)) {
+            serviceInstanceEntityIds = serviceInstanceEntityIds :+ entityId
+            context.log.debug(
+              s"Received NamingRegisterToManager($entityId), add after size: ${serviceInstanceEntityIds.size}")
+          } else {
+            context.log.debug(s"Received NamingRegisterToManager($entityId)")
+          }
+          Behaviors.same
+        case _: StopNamingManager =>
+          Behaviors.stopped
+      }
+      .receiveSignal {
+        case (_, PostStop) =>
+          cleanup()
+          Behaviors.same
+      }
+
+  private def cleanup(): Unit = {
+    for (entityId <- serviceInstanceEntityIds) {
+      serviceInstanceRegion ! ShardingEnvelope(entityId, StopServiceInstance())
     }
+  }
 
   private def onManagerCommand(
       command: NamingManagerCommand.Cmd,
@@ -108,22 +125,22 @@ class NamingManager private (namespace: String, context: ActorContext[Command]) 
 
   private def processListService(cmd: ListService): Future[NamingResponse] = {
     val (page, size, offset) = namingSettings.findPageSizeOffset(cmd.page, cmd.size)
-    if (offset < serviceInstanceIds.size) {
-      val ns = serviceInstanceIds.slice(offset, offset + size)
-      val futures = ns.map { entityId =>
+    if (offset < serviceInstanceEntityIds.size) {
+      val futures = serviceInstanceEntityIds.slice(offset, offset + size).map { entityId =>
         serviceInstanceRegion.ask[ServiceInfo](ref => ShardingEnvelope(entityId, QueryServiceInfo(ref)))
       }
       Future.sequence(futures).map { serviceInfos =>
         NamingResponse(
           IntStatus.OK,
-          data = NamingResponse.Data.ListedService(ListedService(serviceInfos, page, size, serviceInstanceIds.size)))
+          data =
+            NamingResponse.Data.ListedService(ListedService(serviceInfos, page, size, serviceInstanceEntityIds.size)))
       }
     } else {
       Future.successful(
         NamingResponse(
           IntStatus.OK,
-          s"offset: $offset, but ServiceInstance size is ${serviceInstanceIds.size}",
-          NamingResponse.Data.ListedService(ListedService(Nil, page, size, serviceInstanceIds.size))))
+          s"offset: $offset, but ServiceInstance size is ${serviceInstanceEntityIds.size}",
+          NamingResponse.Data.ListedService(ListedService(Nil, page, size, serviceInstanceEntityIds.size))))
     }
   }
 

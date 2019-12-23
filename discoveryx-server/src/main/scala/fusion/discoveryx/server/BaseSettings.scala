@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package fusion.discoveryx.server.naming
+package fusion.discoveryx.server
 
+import akka.persistence.typed.scaladsl.{ RetentionCriteria, SnapshotCountRetentionCriteria }
 import helloscala.common.Configuration
 
 trait BaseSettings {
@@ -38,5 +39,20 @@ trait BaseSettings {
     val size = findSize(_size)
     val offset = if (page > 0) (page - 1) * size else 0
     (page, size, offset)
+  }
+}
+
+trait RetentionCriteriaSettings {
+  val c: Configuration
+  def journalOnDelete: Boolean = c.getBoolean("journal-on-delete")
+  def numberOfEvents: Int = c.getInt("snapshot.number-of-events")
+  def keepNSnapshots: Int = c.getInt("snapshot.keep-n-snapshots")
+
+  def retentionCriteria: SnapshotCountRetentionCriteria = {
+    var retention = RetentionCriteria.snapshotEvery(100, 2)
+    if (journalOnDelete) {
+      retention = retention.withDeleteEventsOnSnapshot
+    }
+    retention
   }
 }

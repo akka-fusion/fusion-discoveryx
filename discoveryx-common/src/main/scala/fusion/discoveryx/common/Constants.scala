@@ -20,6 +20,10 @@ object Constants {
   val DISCOVERYX = "discoveryx"
   val NODE_SERVER = "server"
   val DEFAULT_GROUP_NAME = "default"
+
+  val MANAGEMENT = "management"
+  val CONFIG = "config"
+  val NAMING = "naming"
 }
 
 object Headers {

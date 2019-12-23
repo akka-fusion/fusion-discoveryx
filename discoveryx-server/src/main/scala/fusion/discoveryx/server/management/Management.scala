@@ -29,6 +29,7 @@ import akka.persistence.typed.{ PersistenceId, RecoveryCompleted }
 import fusion.discoveryx.model.ChangeType
 import fusion.discoveryx.server.DiscoveryPersistenceQuery
 import fusion.discoveryx.server.config.{ ConfigEntity, ConfigManager }
+import fusion.discoveryx.server.naming.NamingManager
 import fusion.discoveryx.server.protocol.ManagementCommand.Cmd
 import fusion.discoveryx.server.protocol.ManagementResponse.Data
 import fusion.discoveryx.server.protocol._
@@ -126,11 +127,13 @@ class Management private (context: ActorContext[Command]) {
             Effect.none
         }
       },
-      eventHandler).receiveSignal {
-      case (state, RecoveryCompleted) =>
-        context.log.debug(s"RecoveryCompleted, state: $state")
-        storeNamespace(set => state.namespaces.foldLeft(set)((data, ns) => data :+ ns.namespace))
-    }
+      eventHandler)
+      .receiveSignal {
+        case (state, RecoveryCompleted) =>
+          context.log.debug(s"RecoveryCompleted, state: $state")
+          storeNamespace(set => state.namespaces.foldLeft(set)((data, ns) => data :+ ns.namespace))
+      }
+      .withRetention(settings.retentionCriteria)
 
   private def storeNamespace(func: ORSet[String] => ORSet[String]): Unit = {
     distributedData.replicator ! Replicator.Update(
@@ -158,6 +161,8 @@ class Management private (context: ActorContext[Command]) {
     if (oldState.namespaces.exists(_.namespace == in.namespace)) {
       Effect.persist(in).thenReply(replyTo) { _ =>
         storeNamespace(set => set.remove(in.namespace))
+        NamingManager.init(context.system) ! ShardingEnvelope(in.namespace, StopNamingManager())
+        configManager ! ShardingEnvelope(in.namespace, StopConfigManager())
         ManagementResponse(IntStatus.OK)
       }
     } else {
