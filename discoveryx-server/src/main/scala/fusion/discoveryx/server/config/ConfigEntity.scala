@@ -144,7 +144,7 @@ class ConfigEntity private (
       state: ConfigState,
       replyTo: ActorRef[ConfigReply]): Effect[ChangedConfigEvent, ConfigState] = {
     val data = state.configItem.map(ConfigReply.Data.Config).getOrElse(ConfigReply.Data.Empty)
-    val resp = ConfigReply(if (data.isEmpty) IntStatus.OK else IntStatus.NOT_FOUND, data = data)
+    val resp = ConfigReply(if (data.isEmpty) IntStatus.NOT_FOUND else IntStatus.OK, data = data)
     Effect.reply(replyTo)(resp)
   }
 
@@ -158,7 +158,7 @@ class ConfigEntity private (
           ConfigReply.Data.Config(item)
       }
       .getOrElse(ConfigReply.Data.Empty)
-    val resp = ConfigReply(if (data.isEmpty) IntStatus.OK else IntStatus.NOT_FOUND, data = data)
+    val resp = ConfigReply(if (data.isEmpty) IntStatus.NOT_FOUND else IntStatus.OK, data = data)
     Effect.reply(replyTo)(resp)
   }
 
