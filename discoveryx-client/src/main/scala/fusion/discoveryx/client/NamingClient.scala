@@ -19,14 +19,14 @@ package fusion.discoveryx.client
 import akka.actor.typed.ActorSystem
 import akka.actor.typed.scaladsl.adapter._
 import akka.grpc.GrpcClientSettings
-import fusion.discoveryx.client.impl.DiscoveryXNamingClientImpl
+import fusion.discoveryx.client.impl.NamingClientImpl
 import fusion.discoveryx.grpc.{ NamingService, NamingServiceClient }
 import fusion.discoveryx.model._
 
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 
-trait DiscoveryXNamingClient {
+trait NamingClient {
   val settings: NamingClientSettings
   val serviceClient: NamingServiceClient
 
@@ -67,21 +67,21 @@ trait DiscoveryXNamingClient {
   def queryInstance(in: InstanceQuery): Future[NamingReply]
 }
 
-object DiscoveryXNamingClient {
+object NamingClient {
   case class InstanceKey(namespace: String, serviceName: String, instanceId: String)
   object InstanceKey {
     def apply(in: Instance): InstanceKey = InstanceKey(in.namespace, in.serviceName, in.instanceId)
     def apply(in: InstanceRemove): InstanceKey = InstanceKey(in.namespace, in.serviceName, in.instanceId)
   }
 
-  def apply(system: ActorSystem[_]): DiscoveryXNamingClient = {
+  def apply(system: ActorSystem[_]): NamingClient = {
     apply(NamingClientSettings(system), system)
   }
 
   // Java API
-  def create(system: ActorSystem[_]): DiscoveryXNamingClient = apply(system)
+  def create(system: ActorSystem[_]): NamingClient = apply(system)
 
-  def apply(settings: NamingClientSettings, system: ActorSystem[_]): DiscoveryXNamingClient = {
+  def apply(settings: NamingClientSettings, system: ActorSystem[_]): NamingClient = {
     implicit val classicSystem = system.toClassic
     import system.executionContext
     val grpcClientSettings = GrpcClientSettings.fromConfig(NamingService.name)
@@ -89,15 +89,13 @@ object DiscoveryXNamingClient {
   }
 
   // Java API
-  def create(settings: NamingClientSettings, system: ActorSystem[_]): DiscoveryXNamingClient = apply(settings, system)
+  def create(settings: NamingClientSettings, system: ActorSystem[_]): NamingClient = apply(settings, system)
 
   def apply(settings: NamingClientSettings, serviceClient: NamingServiceClient)(
-      implicit system: ActorSystem[_]): DiscoveryXNamingClient =
-    new DiscoveryXNamingClientImpl(settings, serviceClient)(system)
+      implicit system: ActorSystem[_]): NamingClient =
+    new NamingClientImpl(settings, serviceClient)(system)
 
   // Java API
-  def create(
-      settings: NamingClientSettings,
-      serviceClient: NamingServiceClient,
-      system: ActorSystem[_]): DiscoveryXNamingClient = apply(settings, serviceClient)(system)
+  def create(settings: NamingClientSettings, serviceClient: NamingServiceClient, system: ActorSystem[_]): NamingClient =
+    apply(settings, serviceClient)(system)
 }

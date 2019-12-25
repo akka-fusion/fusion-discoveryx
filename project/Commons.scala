@@ -46,7 +46,7 @@ object Publishing {
   lazy val publishing = Seq(
     bintrayOrganization := Some("akka-fusion"),
     bintrayRepository := "maven",
-    maintainer := "yangbajing <yang.xunjing@qq.com>",
+    maintainer := "Yang Jing <yangbajing@gmail.com>",
     scmInfo := Some(
         ScmInfo(
           url("https://github.com/akka-fusion/fusion-discoveryx.git"),
@@ -55,7 +55,7 @@ object Publishing {
         Developer(
           id = "yangbajing",
           name = "Yang Jing",
-          email = "yang.xunjing@qq.com",
+          email = "yangbajing@gmail.com",
           url = url("https://github.com/yangbajing"))))
 }
 

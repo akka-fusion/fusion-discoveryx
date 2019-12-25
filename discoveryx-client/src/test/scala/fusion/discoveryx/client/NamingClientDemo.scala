@@ -27,7 +27,7 @@ object NamingClientDemo {
   def main(args: Array[String]): Unit = {
     val system = ActorSystem(FusionProtocol.behavior, "NamingClient", ConfigFactory.load())
     val settings = NamingClientSettings(system)
-    val namingClient = DiscoveryXNamingClient(settings, system)
+    val namingClient = NamingClient(settings, system)
 
     val f = namingClient.registerOnSettings()
     val reply = Await.result(f, Duration.Inf)

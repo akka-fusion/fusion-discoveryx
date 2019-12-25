@@ -30,9 +30,9 @@ import helloscala.common.IntStatus
 import scala.concurrent.Future
 
 trait SessionRoute {
-  val userEntity: ActorRef[ShardingEnvelope[UserEntity.Command]]
-
-  def validationSession()(implicit system: ActorSystem[_], timeout: Timeout): Directive0 =
+  def validationSession(userEntity: ActorRef[ShardingEnvelope[UserEntity.Command]])(
+      implicit system: ActorSystem[_],
+      timeout: Timeout): Directive0 =
     extractRequestContext.flatMap { ctx =>
       val metadata = new MetadataImpl(ctx.request.headers)
       val future =
