@@ -33,8 +33,11 @@ object NamingClientSettings {
       prefix: String = s"${Constants.DISCOVERYX}.client.naming"): NamingClientSettings =
     new NamingClientSettings(config.getConfiguration(prefix))
 }
-final class NamingClientSettings private (c: Configuration) {
+
+final class NamingClientSettings private (val c: Configuration) {
   val heartbeatInterval: FiniteDuration = c.getDuration("heartbeat-interval").toScala
+  val oneHealthy: Boolean = c.getBoolean("one-healthy")
+  val allHealthy: Boolean = c.getBoolean("all-healthy")
   val namespace: Option[String] = c.get[Option[String]]("namespace")
   val serviceName: Option[String] = c.get[Option[String]]("service-name") orElse c.get[Option[String]]("serviceName")
   val groupName: Option[String] = c.get[Option[String]]("group-name") orElse c.get[Option[String]]("groupName")
