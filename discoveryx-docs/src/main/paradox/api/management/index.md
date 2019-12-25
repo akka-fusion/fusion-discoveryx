@@ -11,6 +11,7 @@
 - [config](config.md)
 - [naming](naming.md)
 - [manage](manage.md)
+- [user](user.md)
 - [grpc](grpc.md)
 
 @@@

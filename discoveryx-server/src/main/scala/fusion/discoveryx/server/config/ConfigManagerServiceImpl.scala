@@ -23,7 +23,7 @@ import akka.util.Timeout
 import com.typesafe.scalalogging.StrictLogging
 import fusion.discoveryx.server.grpc.ConfigManagerService
 import fusion.discoveryx.server.management.NamespaceRef
-import fusion.discoveryx.server.management.NamespaceRef.NamespaceExists
+import fusion.discoveryx.server.management.NamespaceRef.{ ExistNamespace, NamespaceExists }
 import fusion.discoveryx.server.protocol.ConfigManagerCommand.Cmd
 import fusion.discoveryx.server.protocol._
 import helloscala.common.IntStatus
@@ -45,7 +45,7 @@ class ConfigManagerServiceImpl(namespaceRef: ActorRef[NamespaceRef.ExistNamespac
 
   @inline private def askConfig(namespace: String, cmd: ConfigManagerCommand.Cmd): Future[ConfigResponse] =
     namespaceRef
-      .ask[NamespaceExists](replyTo => NamespaceRef.ExistNamespace(namespace, replyTo))
+      .ask[NamespaceExists](replyTo => ExistNamespace(namespace, replyTo))
       .flatMap {
         case NamespaceExists(true) =>
           configManager.ask[ConfigResponse](replyTo => ShardingEnvelope(namespace, ConfigManagerCommand(replyTo, cmd)))

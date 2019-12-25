@@ -19,7 +19,6 @@ package fusion.discoveryx.server.naming
 import akka.actor.typed.scaladsl.AskPattern._
 import akka.actor.typed.scaladsl.{ ActorContext, Behaviors }
 import akka.actor.typed.{ ActorRef, ActorSystem, Behavior, PostStop }
-import akka.cluster.pubsub.{ DistributedPubSub, DistributedPubSubMediator }
 import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, Entity, EntityTypeKey }
 import akka.cluster.sharding.typed.{ ClusterShardingSettings, ShardingEnvelope }
 import akka.stream.scaladsl.{ Sink, Source }
@@ -128,7 +127,7 @@ class NamingManager private (namespace: String, context: ActorContext[Command]) 
     }
 
   private def processListService(in: ListService): Future[NamingResponse] = {
-    val (page, size, offset) = namingSettings.findPageSizeOffset(in.page, in.size)
+    val (page, size, offset) = namingSettings.generatePageSizeOffset(in.page, in.size)
     if (offset < serviceNames.size) {
       Source(serviceNames)
         .filter { serviceName =>

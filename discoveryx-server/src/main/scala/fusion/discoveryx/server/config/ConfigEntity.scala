@@ -32,7 +32,8 @@ object ConfigEntity {
   trait Command
   trait Event
 
-  val TypeKey: EntityTypeKey[Command] = EntityTypeKey("ConfigEntity")
+  val NAME = "ConfigEntity"
+  val TypeKey: EntityTypeKey[Command] = EntityTypeKey(NAME)
 
   object ConfigKey {
     def unapply(entityId: String): Option[ConfigKey] = entityId.split(' ') match {
@@ -84,7 +85,7 @@ class ConfigEntity private (
         case (_, Terminated(ref)) =>
           listeners = listeners.filterNot(_ == ref)
       }
-      .withTagger(_ => Set(ConfigEntity.TypeKey.name, namespace))
+      .withTagger(_ => Set(ConfigEntity.NAME, namespace))
       .withRetention(settings.retentionCriteria)
       .snapshotWhen {
         case (_, ChangedConfigEvent(_, ChangeType.CHANGE_REMOVE), _) => true
@@ -144,7 +145,7 @@ class ConfigEntity private (
       state: ConfigState,
       replyTo: ActorRef[ConfigReply]): Effect[ChangedConfigEvent, ConfigState] = {
     val data = state.configItem.map(ConfigReply.Data.Config).getOrElse(ConfigReply.Data.Empty)
-    val resp = ConfigReply(if (data.isEmpty) IntStatus.OK else IntStatus.NOT_FOUND, data = data)
+    val resp = ConfigReply(if (data.isEmpty) IntStatus.NOT_FOUND else IntStatus.OK, data = data)
     Effect.reply(replyTo)(resp)
   }
 
@@ -158,7 +159,7 @@ class ConfigEntity private (
           ConfigReply.Data.Config(item)
       }
       .getOrElse(ConfigReply.Data.Empty)
-    val resp = ConfigReply(if (data.isEmpty) IntStatus.OK else IntStatus.NOT_FOUND, data = data)
+    val resp = ConfigReply(if (data.isEmpty) IntStatus.NOT_FOUND else IntStatus.OK, data = data)
     Effect.reply(replyTo)(resp)
   }
 

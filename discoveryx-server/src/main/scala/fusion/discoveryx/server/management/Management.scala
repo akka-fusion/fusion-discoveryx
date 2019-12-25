@@ -171,7 +171,7 @@ class Management private (context: ActorContext[Command]) {
   }
 
   private def processList(in: ListNamespace, state: ManagementState): ManagementResponse = {
-    val (page, size, offset) = settings.findPageSizeOffset(in.page, in.size)
+    val (page, size, offset) = settings.generatePageSizeOffset(in.page, in.size)
     val finds = if (offset < state.namespaces.size) {
       state.namespaces.slice(offset, offset + size)
     } else {

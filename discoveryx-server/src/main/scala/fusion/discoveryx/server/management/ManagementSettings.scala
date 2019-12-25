@@ -22,8 +22,11 @@ import fusion.discoveryx.common.Constants
 import fusion.discoveryx.server.{ BaseSettings, RetentionCriteriaSettings }
 import helloscala.common.Configuration
 
+import scala.concurrent.duration.FiniteDuration
+
 class ManagementSettings(configuration: Configuration) extends BaseSettings with RetentionCriteriaSettings {
   val c: Configuration = configuration.getConfiguration(s"${Constants.DISCOVERYX}.server.management")
+  lazy val sessionTimeout: Long = c.get[FiniteDuration]("session-timeout").toMillis
 }
 
 object ManagementSettings {

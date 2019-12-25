@@ -34,7 +34,7 @@ trait BaseSettings {
   /**
    * @return (page, size, offset)
    */
-  def findPageSizeOffset(_page: Int, _size: Int): (Int, Int, Int) = {
+  def generatePageSizeOffset(_page: Int, _size: Int): (Int, Int, Int) = {
     val page = findPage(_page)
     val size = findSize(_size)
     val offset = if (page > 0) (page - 1) * size else 0

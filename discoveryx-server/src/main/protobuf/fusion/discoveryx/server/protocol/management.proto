@@ -4,7 +4,6 @@ package fusion.discoveryx.server.protocol;
 
 import "google/protobuf/wrappers.proto";
 import "scalapb/scalapb.proto";
-import "fusion/define.proto";
 import "fusion/discoveryx/model/discoveryx.proto";
 
 option (scalapb.options) = {
