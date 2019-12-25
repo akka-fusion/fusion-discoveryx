@@ -16,15 +16,11 @@
 
 package fusion.discoveryx
 
-import akka.persistence.query.scaladsl.{
-  CurrentPersistenceIdsQuery,
-  EventsByPersistenceIdQuery,
-  EventsByTagQuery,
-  ReadJournal
-}
+import akka.persistence.query.scaladsl._
 
 package object server {
   type DiscoveryXReadJournal = ReadJournal
+    with PersistenceIdsQuery
     with CurrentPersistenceIdsQuery
     with EventsByTagQuery
     with EventsByPersistenceIdQuery

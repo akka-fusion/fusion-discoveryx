@@ -24,6 +24,7 @@ import akka.http.scaladsl.server.Route
 import com.typesafe.scalalogging.StrictLogging
 import fusion.discoveryx.common.Constants
 import fusion.discoveryx.server.DiscoveryX
+import fusion.discoveryx.server.management.route.ManagementRoute
 
 import scala.concurrent.Future
 
@@ -40,6 +41,8 @@ class Routes(discoveryX: DiscoveryX) extends StrictLogging {
     if (roles(Constants.MANAGEMENT)) {
       val m = new ManagementRoute()
       consoleRoutes ::= m.consoleRoute
+      consoleRoutes ::= m.userRoute
+      consoleRoutes ::= m.signRoute
       grpcHandlers :::= m.grpcHandler
     }
     if (roles(Constants.CONFIG)) {

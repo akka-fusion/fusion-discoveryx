@@ -71,7 +71,8 @@ lazy val discoveryxServer = _project("discoveryx-server")
   .settings(
     skip in publish := true,
     javaAgents += _alpnAgent % "runtime;test",
-    akkaGrpcGeneratedSources := Seq(AkkaGrpc.Server),
+    akkaGrpcCodeGeneratorSettings += "server_power_apis",
+    //akkaGrpcGeneratedSources := Seq(AkkaGrpc.Server),
     mainClass in Compile := Some("fusion.discoveryx.server.FusionDiscoveryXMain"),
     maintainer := "yang.xunjing@qq.com",
     bashScriptExtraDefines ++= Seq(

@@ -32,7 +32,8 @@ object ConfigEntity {
   trait Command
   trait Event
 
-  val TypeKey: EntityTypeKey[Command] = EntityTypeKey("ConfigEntity")
+  val NAME = "ConfigEntity"
+  val TypeKey: EntityTypeKey[Command] = EntityTypeKey(NAME)
 
   object ConfigKey {
     def unapply(entityId: String): Option[ConfigKey] = entityId.split(' ') match {
@@ -84,7 +85,7 @@ class ConfigEntity private (
         case (_, Terminated(ref)) =>
           listeners = listeners.filterNot(_ == ref)
       }
-      .withTagger(_ => Set(ConfigEntity.TypeKey.name, namespace))
+      .withTagger(_ => Set(ConfigEntity.NAME, namespace))
       .withRetention(settings.retentionCriteria)
       .snapshotWhen {
         case (_, ChangedConfigEvent(_, ChangeType.CHANGE_REMOVE), _) => true

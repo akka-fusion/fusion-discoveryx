@@ -22,6 +22,7 @@ import akka.http.scaladsl.model.{ HttpRequest, HttpResponse }
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.stream.{ Materializer, SystemMaterializer }
+import fusion.core.extension.FusionCore
 import fusion.discoveryx.grpc.ConfigServiceHandler
 import fusion.discoveryx.model.{ ConfigGet, ConfigItem, ConfigRemove }
 import fusion.discoveryx.server.config.{ ConfigManagerServiceImpl, ConfigServiceImpl }
@@ -36,9 +37,8 @@ class ConfigRoute(namespaceRef: ActorRef[NamespaceRef.ExistNamespace])(implicit 
   private val configManagerService = new ConfigManagerServiceImpl(namespaceRef)
 
   val grpcHandler: List[PartialFunction[HttpRequest, Future[HttpResponse]]] = {
-    import akka.actor.typed.scaladsl.adapter._
     implicit val mat: Materializer = SystemMaterializer(system).materializer
-    implicit val classicSystem: actor.ActorSystem = system.toClassic
+    implicit val classicSystem: actor.ActorSystem = FusionCore(system).classicSystem
     ConfigServiceHandler.partial(configService) :: ConfigManagerServiceHandler.partial(configManagerService) :: Nil
   }
 

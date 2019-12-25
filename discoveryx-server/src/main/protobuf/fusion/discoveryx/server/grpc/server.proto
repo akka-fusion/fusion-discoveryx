@@ -6,6 +6,7 @@ import "fusion/discoveryx/model/discoveryx.proto";
 import "fusion/discoveryx/server/protocol/config.proto";
 import "fusion/discoveryx/server/protocol/naming.proto";
 import "fusion/discoveryx/server/protocol/management.proto";
+import "fusion/discoveryx/server/protocol/user.proto";
 
 option (scalapb.options) = {
   collection_type: "scala.collection.immutable.Seq"
@@ -75,4 +76,36 @@ service ManagementService {
     rpc RemoveNamespace (fusion.discoveryx.server.protocol.RemoveNamespace) returns (fusion.discoveryx.server.protocol.ManagementResponse) {
     }
     // #RemoveNamespace
+}
+
+service UserService {
+    // #Login
+    rpc Login (fusion.discoveryx.server.protocol.Login) returns (fusion.discoveryx.server.protocol.UserResponse) {
+    }
+    // #Login
+
+    // #Logout
+    rpc Logout (fusion.discoveryx.server.protocol.Logout) returns (fusion.discoveryx.server.protocol.UserResponse) {
+    }
+    // #Logout
+
+    // #CreateUser
+    rpc CreateUser (fusion.discoveryx.server.protocol.CreateUser) returns (fusion.discoveryx.server.protocol.UserResponse) {
+    }
+    // #CreateUser
+
+    // #ModifyUser
+    rpc ModifyUser (fusion.discoveryx.server.protocol.ModifyUser) returns (fusion.discoveryx.server.protocol.UserResponse) {
+    }
+    // #ModifyUser
+
+    // #RemoveUser
+    rpc RemoveUser (fusion.discoveryx.server.protocol.RemoveUser) returns (fusion.discoveryx.server.protocol.UserResponse) {
+    }
+    // #RemoveUser
+
+    // #ListUser
+    rpc ListUser (fusion.discoveryx.server.protocol.ListUser) returns (fusion.discoveryx.server.protocol.UserResponse) {
+    }
+    // #ListUser
 }

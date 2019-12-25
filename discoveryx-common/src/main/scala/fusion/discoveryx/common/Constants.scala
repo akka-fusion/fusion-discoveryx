@@ -24,6 +24,8 @@ object Constants {
   val MANAGEMENT = "management"
   val CONFIG = "config"
   val NAMING = "naming"
+
+  val SESSION_TOKEN_NAME = "discoveryx-session-token"
 }
 
 object Headers {

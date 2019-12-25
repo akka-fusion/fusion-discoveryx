@@ -19,6 +19,7 @@ package fusion.discoveryx.server.config
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import fusion.discoveryx.server.management.NamespaceRef.ExistNamespace
 import fusion.discoveryx.server.management.{ Management, NamespaceRef }
+import fusion.discoveryx.server.management.Management
 import fusion.discoveryx.server.protocol.ListConfig
 import fusion.discoveryx.server.util.ProtobufJson4s
 import helloscala.common.IntStatus

@@ -115,17 +115,16 @@ class ConfigManager private (namespace: String, context: ActorContext[Command]) 
   }
 
   private def processList(cmd: ListConfig): Future[ConfigResponse] = {
-    val (page, size, offset) = settings.findPageSizeOffset(cmd.page, cmd.size)
-    context.log.info(s"dataIds: $configKeys; page: $page, size: $size, offset: $offset.")
+    val (page, size, offset) = settings.generatePageSizeOffset(cmd.page, cmd.size)
     if (offset < configKeys.size) {
       Source(configKeys)
         .filter(key => cmd.dataId.forall(dataId => key.dataId.contains(dataId)))
         .mapAsync(math.min(8, size)) { configKey =>
           askConfig(configKey, ConfigEntityCommand.Cmd.Query(ConfigQuery(cmd.groupName, cmd.tags)))
         }
+        .collect { case Some(item) => itemToBasic(item) }
         .drop(offset)
         .take(size)
-        .collect { case Some(item) => itemToBasic(item) }
         .runWith(Sink.seq)
         .map { configs =>
           ConfigResponse(
@@ -134,7 +133,10 @@ class ConfigManager private (namespace: String, context: ActorContext[Command]) 
         }
     } else {
       Future.successful(
-        ConfigResponse(IntStatus.OK, data = Data.Listed(ConfigQueried(Nil, namespace, page, size, configKeys.size))))
+        ConfigResponse(
+          IntStatus.OK,
+          s"offset: $offset, but ConfigEntity size is ${configKeys.size}",
+          Data.Listed(ConfigQueried(Nil, namespace, page, size, configKeys.size))))
     }
   }
 

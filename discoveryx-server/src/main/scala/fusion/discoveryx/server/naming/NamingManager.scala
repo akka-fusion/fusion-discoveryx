@@ -127,7 +127,7 @@ class NamingManager private (namespace: String, context: ActorContext[Command]) 
     }
 
   private def processListService(in: ListService): Future[NamingResponse] = {
-    val (page, size, offset) = namingSettings.findPageSizeOffset(in.page, in.size)
+    val (page, size, offset) = namingSettings.generatePageSizeOffset(in.page, in.size)
     if (offset < serviceNames.size) {
       Source(serviceNames)
         .filter { serviceName =>

@@ -1,0 +1,185 @@
+syntax = "proto3";
+
+package fusion.discoveryx.server.protocol;
+
+import "google/protobuf/wrappers.proto";
+import "scalapb/scalapb.proto";
+
+option (scalapb.options) = {
+  collection_type: "scala.collection.immutable.Seq"
+};
+
+// #User
+enum UserRole {
+    DEFAULT = 0;
+    USER = 1;
+    ADMIN = 2;
+}
+message User {
+    // Valid format: email or [a-zA-Z0-9\-\.\_]
+    string account = 1;
+    string name = 2;
+    UserRole userRole = 3;
+}
+// #User
+
+// #ListUser
+message ListUser {
+    google.protobuf.StringValue account = 1;
+    google.protobuf.StringValue name = 2;
+    int32 page = 3;
+    int32 size = 4;
+}
+// #ListUser
+
+message QueryUser {
+    google.protobuf.StringValue name = 2;
+}
+
+// #ListedUser
+message ListedUser {
+    repeated User users = 1;
+    int32 page = 2;
+    int32 size = 3;
+    int32 total_elements = 4;
+}
+// #ListedUser
+
+// #Login
+message Login {
+    option (scalapb.message).extends = "fusion.discoveryx.server.management.UserEntity.Event";
+
+    string account = 1;
+    string password = 2;
+}
+// #Login
+
+// #Logined
+message Logined {
+    string token = 1;
+    string account = 2;
+    string name = 3;
+}
+// #Logined
+
+// #Logout
+message Logout {
+    string account = 1;
+}
+// #Logout
+
+message Logouted {
+    string token = 1;
+    string account = 2;
+}
+
+// #CreateUser
+message CreateUser {
+    option (scalapb.message).extends = "fusion.discoveryx.server.management.UserEntity.Event";
+
+    string account = 1;
+    string password = 2;
+    string name = 3;
+    UserRole userRole = 4;
+}
+// #CreateUser
+
+// #RemoveUser
+message RemoveUser {
+    option (scalapb.message).extends = "fusion.discoveryx.server.management.UserEntity.Event";
+
+    string account = 1;
+}
+// #RemoveUser
+
+// #ModifyUser
+message ModifyUser {
+    option (scalapb.message).extends = "fusion.discoveryx.server.management.UserEntity.Event";
+
+    string account = 1;
+    google.protobuf.StringValue name = 2;
+    UserRole userRole = 3;
+    google.protobuf.StringValue password = 4;
+}
+// #ModifyUser
+
+message UserSession {
+    string token = 1;
+    // 活动时间
+    int64 active_time = 2;
+}
+
+message UserState {
+    User user = 1;
+    string password = 2;
+    UserSession session = 3;
+}
+
+message CheckSession {
+    string token = 1;
+}
+
+message RefreshSession {
+    option (scalapb.message).extends = "fusion.discoveryx.server.management.UserEntity.Event";
+}
+
+message UserCommand {
+    option (scalapb.message).extends = "fusion.discoveryx.server.management.UserEntity.Command";
+    option (scalapb.message).companion_extends = "fusion.protobuf.ActorRefCompanion";
+
+    string reply_to = 1 [(scalapb.field).type = "akka.actor.typed.ActorRef[UserResponse]"];
+    oneof cmd {
+        Login login = 2;
+        Logout logout = 3;
+        CreateUser create = 4;
+        ModifyUser modify = 5;
+        RemoveUser remove = 6;
+        QueryUser query = 7;
+        CheckSession check_session = 8;
+    }
+}
+
+// #UserResponse
+message UserResponse {
+    int32 status = 1;
+    string message = 2;
+    oneof data {
+        User user = 3;
+        ListedUser listed = 4;
+        Logined logined = 5;
+        Logouted logouted = 6;
+    }
+}
+// #UserResponse
+
+////////////////////////////////////////////////////////////////
+// UserManager
+////////////////////////////////////////////////////////////////
+
+message UserManagerState {
+    repeated string accounts = 1;
+}
+
+message CreatedUserAccount {
+    option (scalapb.message).extends = "fusion.discoveryx.server.management.UserEntity.Command";
+    option (scalapb.message).extends = "fusion.discoveryx.server.management.UserManager.Event";
+
+    string accounts = 1;
+}
+
+message RemovedUserAccount {
+    option (scalapb.message).extends = "fusion.discoveryx.server.management.UserEntity.Command";
+    option (scalapb.message).extends = "fusion.discoveryx.server.management.UserManager.Event";
+
+    string account = 1;
+}
+
+message UserManagerCommand {
+    option (scalapb.message).extends = "fusion.discoveryx.server.management.UserManager.Command";
+    option (scalapb.message).companion_extends = "fusion.protobuf.ActorRefCompanion";
+
+    string reply_to = 1 [(scalapb.field).type = "akka.actor.typed.ActorRef[UserResponse]"];
+    oneof cmd {
+        ListUser list = 2;
+    }
+}
