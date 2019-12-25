@@ -19,8 +19,7 @@ package fusion.discoveryx.server.management.route
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 
-import akka.actor.typed.{ ActorRef, ActorSystem }
-import akka.cluster.sharding.typed.ShardingEnvelope
+import akka.actor.typed.ActorSystem
 import akka.http.scaladsl.model.headers.HttpCookie
 import akka.http.scaladsl.model.{ DateTime, HttpRequest, HttpResponse }
 import akka.http.scaladsl.server.Directives._
@@ -39,11 +38,11 @@ import scala.concurrent.Future
 import scala.concurrent.duration._
 
 class ManagementRoute()(implicit system: ActorSystem[_]) extends SessionRoute {
-  override val userEntity: ActorRef[ShardingEnvelope[UserEntity.Command]] = UserEntity.init(system)
   private implicit val timeout: Timeout = 5.seconds
   private val managementRef = Management.init(system)
   private val managementService = new ManagementServiceImpl(managementRef)
   private val userService = new UserServiceImpl()
+  private val sessionValidation: Directive0 = validationSession(UserEntity.init(system))
 
   val grpcHandler: List[PartialFunction[HttpRequest, Future[HttpResponse]]] = {
     implicit val mat = SystemMaterializer(system).materializer
@@ -52,8 +51,6 @@ class ManagementRoute()(implicit system: ActorSystem[_]) extends SessionRoute {
   }
 
   import fusion.discoveryx.server.util.ProtobufJsonSupport._
-
-  private val sessionValidation: Directive0 = validationSession()
 
   def consoleRoute: Route = pathPrefix("management") {
     sessionValidation {

@@ -16,8 +16,6 @@
 
 package fusion.discoveryx.client
 
-import java.util.Properties
-
 import akka.actor.typed.ActorSystem
 import com.typesafe.config.Config
 import fusion.discoveryx.common.Constants

@@ -23,9 +23,9 @@ import fusion.discoveryx.model.{ Instance, InstanceQuery, InstanceRegister, Inst
 import helloscala.common.IntStatus
 import org.scalatest.{ OptionValues, WordSpecLike }
 
-class DiscoveryXNamingClientTest extends ScalaTestWithActorTestKit with WordSpecLike with OptionValues {
+class NamingClientTest extends ScalaTestWithActorTestKit with WordSpecLike with OptionValues {
   private val settings = NamingClientSettings(system)
-  private val namingClient = DiscoveryXNamingClient(settings, system)
+  private val namingClient = NamingClient(settings, system)
   private val namespace = settings.namespace.getOrElse("890cd0cd-22d8-11ea-8bfe-5254002e9e52")
   private val serviceName = "akka"
   private val groupName = ""

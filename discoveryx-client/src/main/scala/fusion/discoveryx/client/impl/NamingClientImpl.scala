@@ -22,7 +22,7 @@ import akka.actor.typed.ActorSystem
 import akka.stream.scaladsl.Source
 import com.typesafe.scalalogging.StrictLogging
 import fusion.common.extension.FusionCoordinatedShutdown
-import fusion.discoveryx.client.{ DiscoveryXNamingClient, NamingClientSettings }
+import fusion.discoveryx.client.{ NamingClient, NamingClientSettings }
 import fusion.discoveryx.common.Headers
 import fusion.discoveryx.grpc.NamingServiceClient
 import fusion.discoveryx.model._
@@ -33,16 +33,15 @@ import scala.concurrent.duration._
 import scala.util.control.NonFatal
 import scala.util.{ Failure, Success }
 
-private[client] class DiscoveryXNamingClientImpl(
-    val settings: NamingClientSettings,
-    val serviceClient: NamingServiceClient)(implicit system: ActorSystem[_])
-    extends DiscoveryXNamingClient
+private[client] class NamingClientImpl(val settings: NamingClientSettings, val serviceClient: NamingServiceClient)(
+    implicit system: ActorSystem[_])
+    extends NamingClient
     with StrictLogging {
-  import DiscoveryXNamingClient._
+  import NamingClient._
   private var heartbeatInstances = Map[InstanceKey, Cancellable]()
-  logger.info(s"DiscoveryXNamingClient instanced: $settings")
+  logger.info(s"NamingClient instanced: $settings")
 
-  FusionCoordinatedShutdown(system).beforeServiceUnbind("DiscoveryXNamingService") { () =>
+  FusionCoordinatedShutdown(system).beforeServiceUnbind("NamingClient") { () =>
     for ((_, cancellable) <- heartbeatInstances if !cancellable.isCancelled) {
       cancellable.cancel
     }
