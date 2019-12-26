@@ -16,7 +16,7 @@
 
 package fusion.discoveryx.server.management
 
-import akka.actor.typed.scaladsl.{ ActorContext, Behaviors }
+import akka.actor.typed.scaladsl.{ ActorContext, Behaviors, TimerScheduler }
 import akka.actor.typed.{ ActorRef, ActorSystem, Behavior }
 import akka.cluster.sharding.typed.ShardingEnvelope
 import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, Entity, EntityContext, EntityTypeKey }
@@ -48,14 +48,19 @@ object UserEntity {
   private def apply(entityContext: EntityContext[Command]): Behavior[Command] =
     Behaviors.setup(
       context =>
-        new UserEntity(PersistenceId.of(entityContext.entityTypeKey.name, entityContext.entityId), context)
-          .eventSourcedBehavior())
+        Behaviors.withTimers(timers =>
+          new UserEntity(PersistenceId.of(entityContext.entityTypeKey.name, entityContext.entityId), timers, context)
+            .eventSourcedBehavior()))
 }
 
 import fusion.discoveryx.server.management.UserEntity._
-class UserEntity private (persistenceId: PersistenceId, context: ActorContext[Command]) {
+class UserEntity private (
+    persistenceId: PersistenceId,
+    timers: TimerScheduler[Command],
+    context: ActorContext[Command]) {
   private val settings = ManagementSettings(context.system)
   private val userManager = UserManager.init(context.system)
+  beginCleanSessionTimer()
 
   def eventSourcedBehavior(): EventSourcedBehavior[Command, Event, UserState] =
     EventSourcedBehavior[Command, Event, UserState](
@@ -79,6 +84,9 @@ class UserEntity private (persistenceId: PersistenceId, context: ActorContext[Co
           case Cmd.Logout(_)           => processLogout(oldState, replyTo)
           case Cmd.Empty               => Effect.none
         }
+      case value: CleanSession =>
+        beginCleanSessionTimer()
+        Effect.persist(value)
       case _ => Effect.none
     }
   }
@@ -161,13 +169,16 @@ class UserEntity private (persistenceId: PersistenceId, context: ActorContext[Co
       oldState: UserState,
       replyTo: ActorRef[UserResponse],
       value: TokenAccount): Effect[Event, UserState] = {
-    val status = checkSession(oldState, value.token)
-    if (status == IntStatus.OK) {
-      Effect
-        .persist(CheckSession(value.token))
-        .thenReply(replyTo)(state => UserResponse(status, data = Data.User(state.user.get)))
-    } else {
-      Effect.reply(replyTo)(UserResponse(status))
+    checkSession(oldState, value.token) match {
+      case IntStatus.NOT_FOUND => Effect.reply(replyTo)(UserResponse(IntStatus.UNAUTHORIZED))
+      case IntStatus.OK =>
+        Effect
+          .persist(CheckSession(value.token))
+          .thenReply(replyTo)(state => UserResponse(IntStatus.OK, data = Data.User(state.user.get)))
+      case IntStatus.UNAUTHORIZED =>
+        Effect
+          .persist(CleanSession(value.token))
+          .thenReply(replyTo)(state => UserResponse(IntStatus.UNAUTHORIZED, data = Data.User(state.user.get)))
     }
   }
 
@@ -201,17 +212,18 @@ class UserEntity private (persistenceId: PersistenceId, context: ActorContext[Co
       oldState: UserState,
       replyTo: ActorRef[UserResponse],
       value: CheckSession): Effect[Event, UserState] = {
-    val status = checkSession(oldState, value.token)
-    if (status == IntStatus.OK) Effect.persist(value).thenReply(replyTo)(_ => UserResponse(status))
-    else Effect.reply(replyTo)(UserResponse(status))
+    checkSession(oldState, value.token) match {
+      case IntStatus.NOT_FOUND => Effect.reply(replyTo)(UserResponse(IntStatus.UNAUTHORIZED))
+      case IntStatus.OK =>
+        Effect.persist(CheckSession(value.token)).thenReply(replyTo)(_ => UserResponse(IntStatus.OK))
+      case IntStatus.UNAUTHORIZED =>
+        Effect.persist(CleanSession(value.token)).thenReply(replyTo)(_ => UserResponse(IntStatus.UNAUTHORIZED))
+    }
   }
 
-  private def checkSession(oldState: UserState, token: String): Int = {
-    if (oldState.user.isDefined && oldState.sessions
-          .get(token)
-          .exists(activeTime => (System.currentTimeMillis() - activeTime) < settings.sessionTimeout))
-      IntStatus.OK
-    else IntStatus.UNAUTHORIZED
+  @inline private def checkSession(oldState: UserState, token: String): Int = oldState.sessions.get(token) match {
+    case Some(activeTime) => if (settings.isValidSession(activeTime)) IntStatus.OK else IntStatus.UNAUTHORIZED
+    case _                => IntStatus.NOT_FOUND
   }
 
   private def eventHandler(state: UserState, event: Event): UserState = {
@@ -221,6 +233,7 @@ class UserEntity private (persistenceId: PersistenceId, context: ActorContext[Co
       case value: ModifyUser   => handleModifyUser(state, value)
       case value: RemoveUser   => handleRemoveUser(state, value)
       case value: LoginEvent   => handleUpdateToken(state, value.token)
+      case value: CleanSession => handleCleanSession(state, value)
       case _                   => state
     }
   }
@@ -246,5 +259,17 @@ class UserEntity private (persistenceId: PersistenceId, context: ActorContext[Co
 
   private def handleUpdateToken(state: UserState, token: String): UserState = {
     state.copy(sessions = state.sessions.updated(token, System.currentTimeMillis()))
+  }
+
+  private def handleCleanSession(state: UserState, value: CleanSession): UserState = {
+    val sessions =
+      if (value.token.isEmpty) state.sessions.filter { case (_, activeTime) => settings.isValidSession(activeTime) }
+      else state.sessions.removed(value.token)
+    state.copy(sessions = sessions)
+  }
+
+  private def beginCleanSessionTimer(): Unit = {
+    import scala.concurrent.duration._
+    timers.startSingleTimer(CleanSession(), 30.minutes)
   }
 }

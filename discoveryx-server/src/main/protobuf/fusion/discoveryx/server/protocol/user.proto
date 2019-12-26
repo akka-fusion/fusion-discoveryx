@@ -122,6 +122,7 @@ message UserState {
 message CleanSession {
     option (scalapb.message).extends = "fusion.discoveryx.server.management.UserEntity.Command";
     option (scalapb.message).extends = "fusion.discoveryx.server.management.UserEntity.Event";
+    string token = 1;
 }
 
 message CheckSession {
