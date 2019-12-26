@@ -5,7 +5,7 @@ import { Button, Divider, Popconfirm, Tabs } from 'antd';
 import qs from 'query-string';
 import PropTypes from 'prop-types';
 import SearchTable from '../../../../components/SearchTable';
-import { CONFIG_MANAGEMENT_CREATE } from '../../../../router/constants';
+import { CONFIG_MANAGEMENT_CREATE, CONFIG_MANAGEMENT_DETAIL } from '../../../../router/constants';
 
 const { TabPane } = Tabs;
 
@@ -25,14 +25,14 @@ const fields = [
 @inject(({ store: { configStore, namespaceStore } }) => ({ configStore, namespaceStore }))
 @observer
 export default class List extends Component {
+  state = { namespace: null };
+
+  searchTableRef = React.createRef();
+
   static propTypes = {
     configStore: PropTypes.object.isRequired,
     namespaceStore: PropTypes.object.isRequired,
   };
-
-  state = { namespace: null };
-
-  searchTableRef = React.createRef();
 
   componentDidMount() {}
 
@@ -93,13 +93,17 @@ export default class List extends Component {
         dataIndex: 'action',
         key: 'action',
         width: '10%',
-        render: (text, record) => (
+        render: (text, { dataId, groupName }) => (
           <span>
-            <a>详情</a>
+            <Link
+              to={`${CONFIG_MANAGEMENT_DETAIL}?${qs.stringify({ namespace, dataId, groupName })}`}
+            >
+              详情
+            </Link>
             <Divider type="vertical" />
             <Popconfirm
               title="确定要删除该配置吗?"
-              onConfirm={this.handleDeleteConfig(record.dataId)}
+              onConfirm={this.handleDeleteConfig(dataId)}
               okText="确认"
               cancelText="取消"
             >
@@ -111,7 +115,7 @@ export default class List extends Component {
     ];
 
     return (
-      <div id="config">
+      <div>
         <Tabs onChange={this.handleTabsChange}>
           {namespaceList.map(item => (
             <TabPane tab={item.name} key={item.namespace} />

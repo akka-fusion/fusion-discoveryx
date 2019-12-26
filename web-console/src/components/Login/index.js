@@ -5,30 +5,44 @@
  * */
 
 import React, { Component } from 'react';
-import { observer } from 'mobx-react';
+import { inject, observer } from 'mobx-react';
 import { Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import { Form, Icon, Input, Button, Checkbox } from 'antd';
 import Particles from 'particlesjs';
 import './index.less';
 import { browserRedirect } from '../../utils/constants';
+import { CONFIG_MANAGEMENT_LIST } from '../../router/constants';
 
 const { Item: FormItem, create } = Form;
 
 @create()
+@inject(({ store: { userStore } }) => ({ userStore }))
 @observer
 export default class Login extends Component {
+  state = {
+    loading: false,
+  };
+
+  particles = null;
+
   static propTypes = {
     form: PropTypes.object.isRequired,
+    userStore: PropTypes.object.isRequired,
+    history: PropTypes.object.isRequired,
   };
 
   componentDidMount() {
     this.particlesInit();
   }
 
+  componentWillUnmount() {
+    this.particles?.destroy();
+  }
+
   particlesInit = () => {
     if (browserRedirect() === 'pc') {
-      Particles.init({
+      this.particles = Particles.init({
         selector: '.particles-background',
         connectParticles: true,
         color: '#999999',
@@ -42,21 +56,27 @@ export default class Login extends Component {
     this.props.form.validateFields((err, values) => {
       if (!err) {
         console.log('Received values of form: ', values);
+        this.setState({ loading: true });
+        this.props.userStore
+          .login(values)
+          .then(() => this.props.history.push(CONFIG_MANAGEMENT_LIST))
+          .finally(() => this.setState({ loading: false }));
       }
     });
   };
 
   render() {
     const { getFieldDecorator } = this.props.form;
+    const { loading } = this.state;
     return (
       <div id="login">
         <canvas className="particles-background" />
         <div className="login-box">
-          <div className="message">单点登陆</div>
+          <div className="message">Fusion DiscoveryX</div>
           <div id="darkbannerwrap" />
           <Form onSubmit={this.handleSubmit} className="login-form">
             <FormItem>
-              {getFieldDecorator('userName', {
+              {getFieldDecorator('account', {
                 rules: [{ required: true, message: '请输入您的用户名!' }],
               })(
                 <Input
@@ -83,14 +103,19 @@ export default class Login extends Component {
                 valuePropName: 'checked',
                 initialValue: true,
               })(<Checkbox>记住密码</Checkbox>)}
-              <Link className="login-form-forgot" to="/forgot">
+              <Link className="login-form-forgot" to="/#">
                 忘记密码
               </Link>
-              <Button type="primary" htmlType="submit" className="login-form-button">
-                Log in
+              <Button
+                loading={loading}
+                type="primary"
+                htmlType="submit"
+                className="login-form-button"
+              >
+                登录
               </Button>
               或者
-              <Link to="/register">现在去注册!</Link>
+              <Link to="/#">现在去注册!</Link>
             </FormItem>
           </Form>
         </div>

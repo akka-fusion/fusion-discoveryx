@@ -61,4 +61,4 @@ function run() {
   }
 }
 
-run();
+store.userStore.getCurrentSessionUser().then(run, run);

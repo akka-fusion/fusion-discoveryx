@@ -4,23 +4,48 @@ import { Button, Modal, Form, Input, Divider, Popconfirm } from 'antd';
 import PropTypes from 'prop-types';
 import SearchTable from '../../../../components/SearchTable';
 
+const fields = [
+  {
+    type: 'input',
+    key: 'account',
+    label: 'account',
+  },
+  {
+    type: 'input',
+    key: 'name',
+    label: 'name',
+  },
+];
+
 const CollectionCreateForm = Form.create({ name: 'form_in_modal' })(
   class extends React.Component {
     render() {
-      const { visible, onCancel, onCreate, form, namespace } = this.props;
+      const { visible, onCancel, onCreate, form, user } = this.props;
       const { getFieldDecorator } = form;
       return (
         <Modal
           visible={visible}
-          title={`${namespace ? '编辑' : '新建'}命名空间`}
+          title={`${user ? '编辑' : '新建'}用户`}
           onCancel={onCancel}
           onOk={onCreate}
         >
           <Form layout="vertical">
-            <Form.Item label="命名空间名称">
+            <Form.Item label="account">
+              {getFieldDecorator('account', {
+                rules: [{ required: true, message: '请输入 account !' }],
+                initialValue: user?.account,
+              })(<Input disabled={!!user} />)}
+            </Form.Item>
+            <Form.Item label="name">
               {getFieldDecorator('name', {
-                rules: [{ required: true, message: '请输入命名空间名称!' }],
-                initialValue: namespace?.name,
+                rules: [{ required: true, message: '请输入 name !' }],
+                initialValue: user?.name,
+              })(<Input />)}
+            </Form.Item>
+            <Form.Item label="password">
+              {getFieldDecorator('password', {
+                rules: [{ required: !user, message: '请输入 password !' }],
+                initialValue: user?.password,
               })(<Input />)}
             </Form.Item>
           </Form>
@@ -30,16 +55,16 @@ const CollectionCreateForm = Form.create({ name: 'form_in_modal' })(
   },
 );
 
-@inject(({ store: { namespaceStore } }) => ({ namespaceStore }))
+@inject(({ store: { userStore } }) => ({ userStore }))
 @observer
 export default class List extends Component {
   static propTypes = {
-    namespaceStore: PropTypes.object.isRequired,
+    userStore: PropTypes.object.isRequired,
   };
 
   state = {
     visible: false,
-    namespace: null,
+    user: null,
   };
 
   searchTableRef = React.createRef();
@@ -49,34 +74,32 @@ export default class List extends Component {
   componentDidMount() {}
 
   componentWillUnmount() {
-    this.props.namespaceStore.setNamespacePage();
+    this.props.userStore.setUserPage();
   }
 
-  handleDeleteNamespace = namespace => () =>
-    this.props.namespaceStore
-      .deleteNamespace({ namespace })
-      .then(this.searchTableRef.current.fetchData);
+  handleDeleteUser = user => () =>
+    this.props.userStore.deleteUser({ user }).then(this.searchTableRef.current.fetchData);
 
-  showModal = namespace => () => {
-    this.setState({ visible: true, namespace });
+  showModal = user => () => {
+    this.setState({ visible: true, user });
   };
 
   handleCancel = () => {
-    this.setState({ visible: false, namespace: null });
+    this.setState({ visible: false, user: null });
     this.formRef.current.props.form.resetFields();
   };
 
   handleCreate = () => {
     const { form } = this.formRef.current.props;
-    const { namespace } = this.state;
+    const { user } = this.state;
 
     form.validateFields((err, values) => {
       if (err) {
         return;
       }
       console.log('Received values of form: ', values);
-      this.props.namespaceStore[`${namespace ? 'update' : 'create'}Namespace`]({
-        ...namespace,
+      this.props.userStore[`${user ? 'update' : 'create'}User`]({
+        ...user,
         ...values,
       }).then(() => {
         this.searchTableRef.current.fetchData();
@@ -87,23 +110,23 @@ export default class List extends Component {
 
   render() {
     const {
-      namespaceStore: {
-        namespacePage: { page, size, totalElements, data },
+      userStore: {
+        userPage: { page, size, totalElements, data },
       },
     } = this.props;
 
-    const { visible, namespace } = this.state;
+    const { visible, user } = this.state;
 
     const columns = [
       {
-        title: '命名空间名称',
-        dataIndex: 'name',
-        key: 'name',
+        title: 'account',
+        dataIndex: 'account',
+        key: 'account',
       },
       {
-        title: '命名空间ID',
-        dataIndex: 'namespace',
-        key: 'namespace',
+        title: 'name',
+        dataIndex: 'name',
+        key: 'name',
       },
       {
         title: '操作',
@@ -117,8 +140,8 @@ export default class List extends Component {
             </a>
             <Divider type="vertical" />
             <Popconfirm
-              title="确定要删除该命名空间吗?"
-              onConfirm={this.handleDeleteNamespace(record.namespace)}
+              title="确定要删除该用户吗?"
+              onConfirm={this.handleDeleteUser(record.user)}
               okText="确认"
               cancelText="取消"
             >
@@ -131,23 +154,24 @@ export default class List extends Component {
 
     const expandChildren = (
       <Button type="primary" onClick={this.showModal()}>
-        新建命名空间
+        新建用户
       </Button>
     );
 
     return (
       <div>
         <SearchTable
+          fields={fields}
           ref={this.searchTableRef}
           expandChildren={expandChildren}
-          callback={this.props.namespaceStore.getNamespacePage}
-          tableProps={{ dataSource: data, columns, rowKey: 'namespace' }}
+          callback={this.props.userStore.getUserPage}
+          tableProps={{ dataSource: data, columns, rowKey: 'account' }}
           paginationProps={{ size, page, totalElements }}
         />
         <CollectionCreateForm
           wrappedComponentRef={this.formRef}
           visible={visible}
-          namespace={namespace}
+          user={user}
           onCancel={this.handleCancel}
           onCreate={this.handleCreate}
         />
