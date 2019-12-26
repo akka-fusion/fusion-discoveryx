@@ -23,7 +23,7 @@ const CollectionCreateForm = Form.create({ name: 'form_in_modal' })(
       const { visible, onCancel, onCreate, form } = this.props;
       const { getFieldDecorator } = form;
       return (
-        <Modal visible={visible} title="创建服务" onCancel={onCancel} onOk={onCreate}>
+        <Modal visible={visible} title="新建服务" onCancel={onCancel} onOk={onCreate}>
           <Form layout="vertical">
             <Form.Item label="服务名称">
               {getFieldDecorator('serviceName', {
@@ -175,7 +175,7 @@ export default class List extends Component {
     ];
 
     return (
-      <div id="service">
+      <div>
         <Tabs onChange={this.handleTabsChange}>
           {namespaceList.map(item => (
             <TabPane tab={item.name} key={item.namespace} />

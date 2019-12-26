@@ -42,7 +42,7 @@ export default class ConfigStore {
   };
 
   getConfig = async data => {
-    const { data: config } = await request({
+    const { config } = await request({
       config: {
         method: 'POST',
         url: '/fusion/discoveryx/v1/config/GetConfig',
