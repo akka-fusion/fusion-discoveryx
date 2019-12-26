@@ -1,8 +1,9 @@
 import React, { Component } from 'react';
 import { Link, Route, Switch } from 'react-router-dom';
-import { observer } from 'mobx-react';
-import { Layout, Menu } from 'antd';
+import { inject, observer } from 'mobx-react';
+import { Layout, Menu, Avatar, Dropdown } from 'antd';
 import './index.less';
+import PropTypes from 'prop-types';
 import { routes } from '../../router';
 import { PrivateRoute } from '../../router/feature';
 import Loadable from '../../components/Loadable';
@@ -11,6 +12,7 @@ import {
   CONFIG_MANAGEMENT_LIST,
   NAMESPACE_MANAGEMENT_LIST,
   SERVICE_MANAGEMENT_LIST,
+  USER_MANAGEMENT_LIST,
 } from '../../router/constants';
 
 const { Header, Content, Sider, Footer } = Layout;
@@ -20,15 +22,44 @@ const LoadableMismatch = Loadable({
   loader: () => import(/* webpackChunkName: "route-mismatch" */ '../../components/Mismatch'),
 });
 
+@inject(({ store: { userStore } }) => ({ userStore }))
 @observer
 export default class App extends Component {
+  static propTypes = {
+    history: PropTypes.object.isRequired,
+    userStore: PropTypes.object.isRequired,
+  };
+
   componentDidMount() {}
 
   renderRoute = ({ path, component }) => (
-    <PrivateRoute key={path} path={path} component={component} exact />
+    <PrivateRoute
+      isAuthenticated={!!this.props.userStore.auth.account}
+      key={path}
+      path={path}
+      component={component}
+      exact
+    />
   );
 
+  logout = () => {
+    this.props.userStore
+      .logout({ account: this.props.userStore.auth.account })
+      .then(() => this.props.history.push('/login'));
+  };
+
   render() {
+    const {
+      userStore: {
+        auth: { account },
+      },
+    } = this.props;
+    const dropdownMenu = (
+      <Menu>
+        <Menu.Item onClick={this.logout}>退出登录</Menu.Item>
+      </Menu>
+    );
+
     return (
       <Layout id="app" style={{ minHeight: '100vh' }}>
         <Sider>
@@ -50,6 +81,9 @@ export default class App extends Component {
             <Menu.Item key={NAMESPACE_MANAGEMENT_LIST}>
               <Link to={NAMESPACE_MANAGEMENT_LIST}>命名空间</Link>
             </Menu.Item>
+            <Menu.Item key={USER_MANAGEMENT_LIST}>
+              <Link to={USER_MANAGEMENT_LIST}>用户管理</Link>
+            </Menu.Item>
             {/* <SubMenu key="cluster" title="集群管理"> */}
             {/*  <Menu.Item key="/clusterManagement"> */}
             {/*    <Link to="/clusterManagement">节点列表</Link> */}
@@ -66,10 +100,25 @@ export default class App extends Component {
               zIndex: '2',
             }}
           >
-            <span>首页</span>
-            <span>文档</span>
-            <span>博客</span>
-            <span>社区</span>
+            <a
+              href="http://helloscala.com/discoveryx/main/intro.html"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              文档
+            </a>
+            <a
+              href="https://github.com/akka-fusion/fusion-discoveryx"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              GitHub
+            </a>
+            <Dropdown overlay={dropdownMenu} placement="bottomRight">
+              <Avatar style={{ backgroundColor: '#f56a00', verticalAlign: 'middle' }} size="large">
+                {account}
+              </Avatar>
+            </Dropdown>
           </Header>
           <Breadcrumb />
           <Content style={{ margin: '0 16px', display: 'flex', flexDirection: 'column' }}>
@@ -83,7 +132,7 @@ export default class App extends Component {
             >
               <Switch>
                 {routes.map(this.renderRoute)}
-                <Route component={LoadableMismatch} />
+                <PrivateRoute isAuthenticated={!!account} component={LoadableMismatch} />
               </Switch>
             </div>
           </Content>

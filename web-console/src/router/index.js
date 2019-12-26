@@ -7,10 +7,12 @@
 import Loadable from '../components/Loadable';
 import {
   CONFIG_MANAGEMENT_CREATE,
+  CONFIG_MANAGEMENT_DETAIL,
   CONFIG_MANAGEMENT_LIST,
   NAMESPACE_MANAGEMENT_LIST,
   SERVICE_MANAGEMENT_DETAIL,
   SERVICE_MANAGEMENT_LIST,
+  USER_MANAGEMENT_LIST,
 } from './constants';
 
 const routes = [
@@ -29,6 +31,15 @@ const routes = [
       loader: () =>
         import(
           /* webpackChunkName: "route-config-management-create" */ '../pages/config/management/Create'
+        ),
+    }),
+  },
+  {
+    path: CONFIG_MANAGEMENT_DETAIL,
+    component: Loadable({
+      loader: () =>
+        import(
+          /* webpackChunkName: "route-config-management-detail" */ '../pages/config/management/Detail'
         ),
     }),
   },
@@ -59,14 +70,25 @@ const routes = [
         ),
     }),
   },
+  {
+    path: USER_MANAGEMENT_LIST,
+    component: Loadable({
+      loader: () =>
+        import(
+          /* webpackChunkName: "route-user-management-list" */ '../pages/user/management/List'
+        ),
+    }),
+  },
 ];
 
 const breadcrumbNameMap = {
   [CONFIG_MANAGEMENT_LIST]: '配置列表',
   [CONFIG_MANAGEMENT_CREATE]: '新建配置',
+  [CONFIG_MANAGEMENT_DETAIL]: '配置详情',
   [NAMESPACE_MANAGEMENT_LIST]: '命名空间',
   [SERVICE_MANAGEMENT_LIST]: '服务列表',
   [SERVICE_MANAGEMENT_DETAIL]: '服务详情',
+  [USER_MANAGEMENT_LIST]: '用户管理',
 };
 
 export { routes, breadcrumbNameMap };
