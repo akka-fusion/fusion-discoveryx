@@ -16,6 +16,8 @@
 
 package fusion.discoveryx.common
 
+import helloscala.common.util.StringUtils
+
 object Constants {
   val DISCOVERYX = "discoveryx"
   val NODE_SERVER = "server"
@@ -34,4 +36,22 @@ object Headers {
   val IP = "x-discoveryx-ip"
   val PORT = "x-discoveryx-port"
   val INSTANCE_ID = "x-discoveryx-instance-id"
+}
+
+object Protocols {
+  val TCP = "tcp"
+  val UDP = "udp"
+  val HTTP = "http"
+  val HTTPS = "https"
+  val DEFAULT_PROTOCOL = TCP
+  val VALID_PROTOCOLS = Set(TCP, UDP, HTTP, HTTPS)
+
+  def formatProtocol(protocol: String): String = {
+    if (StringUtils.isNoneBlank(protocol)) {
+      val v = protocol.trim.toLowerCase
+      if (Protocols.VALID_PROTOCOLS(v)) v else Protocols.DEFAULT_PROTOCOL
+    } else {
+      Protocols.DEFAULT_PROTOCOL
+    }
+  }
 }

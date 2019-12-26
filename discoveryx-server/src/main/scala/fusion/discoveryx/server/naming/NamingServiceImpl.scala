@@ -45,7 +45,7 @@ class NamingServiceImpl(namespaceRef: ActorRef[ExistNamespace])(implicit system:
     with StrictLogging {
   import system.executionContext
   implicit private val timeout: Timeout = 5.seconds
-  private val serviceInstanceRegion = ServiceInstance.init(system)
+  private val serviceInstanceRegion = NamingService.init(system)
 
   /**
    * 查询服务状态
@@ -84,13 +84,13 @@ class NamingServiceImpl(namespaceRef: ActorRef[ExistNamespace])(implicit system:
 
   override def listenerService(in: ServiceListener, metadata: Metadata): Source[ServiceEvent, NotUsed] = {
     try {
-      val entityId = ServiceInstance.entityId(in.namespace, in.serviceName) match {
+      val entityId = NamingService.entityId(in.namespace, in.serviceName) match {
         case Right(value) => value
         case Left(errMsg) => throw HSBadRequestException(errMsg)
       }
 
       val (ref, source) = ActorSource
-        .actorRef[ServiceInstance.Event]({
+        .actorRef[NamingService.Event]({
           case _: ServiceEventStop =>
         }, { changed =>
           throw HSInternalErrorException(s"Throw error: $changed.")
@@ -122,7 +122,7 @@ class NamingServiceImpl(namespaceRef: ActorRef[ExistNamespace])(implicit system:
       val instanceId = metadata
         .getText(Headers.INSTANCE_ID)
         .getOrElse(throw HSBadRequestException(s"Request header missing, need '${Headers.INSTANCE_ID}'."))
-      val entityId = ServiceInstance.entityId(namespace, serviceName) match {
+      val entityId = NamingService.entityId(namespace, serviceName) match {
         case Right(value) => value
         case Left(errMsg) => throw HSBadRequestException(errMsg)
       }
@@ -141,7 +141,7 @@ class NamingServiceImpl(namespaceRef: ActorRef[ExistNamespace])(implicit system:
   private def askNaming(namespace: String, serviceName: String, cmd: NamingReplyCommand.Cmd): Future[NamingReply] = {
     namespaceRef.ask[NamespaceExists](replyTo => ExistNamespace(namespace, replyTo)).flatMap {
       case NamespaceExists(true) =>
-        ServiceInstance.entityId(namespace, serviceName) match {
+        NamingService.entityId(namespace, serviceName) match {
           case Right(entityId) =>
             serviceInstanceRegion
               .ask[NamingReply](replyTo => ShardingEnvelope(entityId, NamingReplyCommand(replyTo, cmd)))

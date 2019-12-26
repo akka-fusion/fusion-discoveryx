@@ -18,13 +18,13 @@ package fusion.discoveryx.server.naming
 
 import akka.actor.typed.ActorRef
 import com.typesafe.scalalogging.StrictLogging
-import fusion.discoveryx.model.{ Instance, InstanceModify, InstanceQuery, ServiceItem }
-import fusion.discoveryx.server.naming.ServiceInstance.InternalHealthyChanged
+import fusion.discoveryx.model.{ HealthyCheckMethod, Instance, InstanceModify, InstanceQuery, ServiceItem }
+import fusion.discoveryx.server.naming.NamingService.InternalHealthyChanged
 
 final private[discoveryx] class InternalInstance(
     private[naming] var inst: Instance,
     settings: NamingSettings,
-    ref: ActorRef[ServiceInstance.Command])
+    ref: ActorRef[NamingService.Command])
     extends Ordered[InternalInstance]
     with Equals
     with StrictLogging {
@@ -77,7 +77,7 @@ final private[discoveryx] class InternalInstance(
 final private[discoveryx] class InternalService(
     ServiceItem: ServiceItem,
     settings: NamingSettings,
-    selfRef: ActorRef[ServiceInstance.Command])
+    selfRef: ActorRef[NamingService.Command])
     extends StrictLogging {
   private var curHealthyIdx = 0
   private var instances = Vector[InternalInstance]()
@@ -105,7 +105,11 @@ final private[discoveryx] class InternalService(
         weight = in.weight.getOrElse(old.weight),
         healthy = in.health.getOrElse(old.healthy),
         enabled = in.enable.getOrElse(old.enabled),
-        metadata = if (in.replaceMetadata) in.metadata else old.metadata ++ in.metadata)
+        metadata = if (in.replaceMetadata) in.metadata else old.metadata ++ in.metadata,
+        healthyCheckMethod =
+          if (in.healthyCheckMethod == HealthyCheckMethod.NOT_SET) old.healthyCheckMethod else in.healthyCheckMethod,
+        healthyCheckInterval = in.healthyCheckInterval.getOrElse(old.healthyCheckInterval),
+        unhealthyCheckCount = in.unhealthyCheckCount.getOrElse(old.unhealthyCheckCount))
       saveInstances(instances.updated(idx, internal.withInstance(inst)))
       inst
     }

@@ -34,7 +34,7 @@ import scala.concurrent.duration._
 import scala.util.{ Failure, Success }
 
 object NamingManager {
-  trait Command extends ServiceInstance.Command
+  trait Command extends NamingService.Command
 
   val TypeKey: EntityTypeKey[Command] = EntityTypeKey("NamingManager")
 
@@ -54,7 +54,7 @@ class NamingManager private (namespace: String, context: ActorContext[Command]) 
   private implicit val timeout: Timeout = 5.seconds
   private implicit val system: ActorSystem[_] = context.system
   private val namingSettings = NamingSettings(context.system)
-  private val serviceInstanceRegion = ServiceInstance.init(context.system)
+  private val serviceInstanceRegion = NamingService.init(context.system)
   private var serviceNames = Vector.empty[String]
 
   def receive(): Behavior[Command] =
@@ -84,7 +84,7 @@ class NamingManager private (namespace: String, context: ActorContext[Command]) 
   private def cleanup(): Unit = {
     for {
       serviceName <- serviceNames
-      entityId <- ServiceInstance.entityId(namespace, serviceName)
+      entityId <- NamingService.entityId(namespace, serviceName)
     } {
       serviceInstanceRegion ! ShardingEnvelope(entityId, StopServiceInstance())
     }
@@ -134,7 +134,7 @@ class NamingManager private (namespace: String, context: ActorContext[Command]) 
           if (StringUtils.isNoneBlank(in.serviceName)) serviceName.contains(in.serviceName)
           else true
         }
-        .mapConcat(serviceName => ServiceInstance.entityId(namespace, serviceName).toSeq)
+        .mapConcat(serviceName => NamingService.entityId(namespace, serviceName).toSeq)
         .mapAsync(math.max(8, size)) { entityId =>
           val cmd = NamingReplyCommand.Cmd.Query(
             InstanceQuery(serviceName = in.serviceName, groupName = in.groupName, allHealthy = in.allHealthy))
@@ -153,18 +153,18 @@ class NamingManager private (namespace: String, context: ActorContext[Command]) 
       Future.successful(
         NamingResponse(
           IntStatus.OK,
-          s"offset: $offset, but ServiceInstance size is ${serviceNames.size}",
+          s"offset: $offset, but NamingService size is ${serviceNames.size}",
           NamingResponse.Data.ListedService(ListedService(Nil, page, size, serviceNames.size))))
     }
   }
 
   private def askNaming(namespace: String, serviceName: String, cmd: NamingReplyCommand.Cmd)(
       onSuccess: NamingReply => NamingResponse.Data): Future[NamingResponse] =
-    ServiceInstance.entityId(namespace, serviceName) match {
+    NamingService.entityId(namespace, serviceName) match {
       case Right(entityId) =>
         serviceInstanceRegion.ask[NamingReply](ref => ShardingEnvelope(entityId, NamingReplyCommand(ref, cmd))).map {
           value =>
-            context.log.info(s"Send to ServiceInstance return: $value")
+            context.log.info(s"Send to NamingService return: $value")
             NamingResponse(
               value.status,
               value.message,

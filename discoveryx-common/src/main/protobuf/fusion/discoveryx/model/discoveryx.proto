@@ -140,6 +140,15 @@ message ServiceItem {
 }
 
 // #Instance
+
+// 健康检查方式
+enum HealthyCheckMethod {
+    NOT_SET = 0;
+    CLIENT_REPORT = 1;
+    TCP_SNIFF = 2;
+    UDP_SNIFF = 3;
+}
+
 message Instance {
     // unique id of this instance.
     string instance_id = 1;
@@ -161,6 +170,13 @@ message Instance {
     bool ephemeral = 10;
     // user extended attributes
     map<string, string> metadata = 11;
+    HealthyCheckMethod healthy_check_method = 12;
+    // Healthy check per N seconds
+    int32 healthy_check_interval = 13;
+    // Unhealthy check count
+    int32 unhealthy_check_count = 14;
+    // 实例协议
+    string protocol = 15;
 }
 // #Instance
 
@@ -181,6 +197,13 @@ message InstanceRegister {
     bool ephemeral = 9;
     // user extended attributes
     map<string, string> metadata = 10;
+    HealthyCheckMethod healthy_check_method = 11;
+    // Healthy check per N seconds
+    int32 healthy_check_interval = 12;
+    // Unhealthy check count
+    int32 unhealthy_check_count = 13;
+    // 实例协议
+    string protocol = 14;
 }
 // #InstanceRegister
 
@@ -202,6 +225,13 @@ message InstanceModify {
     map<string, string> metadata = 10;
     // true：replace old metadata, false: merge old metadata
     bool replace_metadata = 11;
+    HealthyCheckMethod healthy_check_method = 12;
+    // Healthy check per N seconds
+    google.protobuf.Int32Value healthy_check_interval = 13;
+    // Unhealthy check count
+    google.protobuf.Int32Value unhealthy_check_count = 14;
+    // 实例协议
+    google.protobuf.StringValue protocol = 15;
 }
 // #InstanceModify
 

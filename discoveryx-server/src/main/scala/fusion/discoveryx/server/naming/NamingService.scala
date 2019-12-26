@@ -32,7 +32,7 @@ import helloscala.common.util.StringUtils
 import scala.concurrent.duration.Duration
 import scala.util.control.NonFatal
 
-object ServiceInstance {
+object NamingService {
   trait Command
   trait Event
 
@@ -47,7 +47,7 @@ object ServiceInstance {
     }
   }
 
-  val TypeKey: EntityTypeKey[Command] = EntityTypeKey[Command]("ServiceInstance")
+  val TypeKey: EntityTypeKey[Command] = EntityTypeKey[Command]("NamingService")
 
   def entityId(namespace: String, serviceName: String): Either[String, String] = {
     if (StringUtils.isBlank(namespace) || StringUtils.isBlank(serviceName))
@@ -57,7 +57,7 @@ object ServiceInstance {
 
   def init(system: ActorSystem[_]): ActorRef[ShardingEnvelope[Command]] =
     ClusterSharding(system).init(
-      Entity(ServiceInstance.TypeKey)(entityContext => apply(entityContext.entityId))
+      Entity(NamingService.TypeKey)(entityContext => apply(entityContext.entityId))
         .withSettings(ClusterShardingSettings(system).withPassivateIdleEntityAfter(Duration.Zero)))
 
   private def apply(entityId: String): Behavior[Command] = Behaviors.setup[Command] { context =>
@@ -65,22 +65,22 @@ object ServiceInstance {
       .unapply(entityId)
       .getOrElse(throw HSBadRequestException(
         s"${context.self} create child error. entityId invalid, need '[namespace] [serviceName]' format."))
-    Behaviors.withTimers(timers => new ServiceInstance(ServiceItem, timers, context).receive())
+    Behaviors.withTimers(timers => new NamingService(ServiceItem, timers, context).receive())
   }
 }
 
-class ServiceInstance private (
+class NamingService private (
     private var serviceItem: ServiceItem,
-    timers: TimerScheduler[ServiceInstance.Command],
-    context: ActorContext[ServiceInstance.Command]) {
-  import ServiceInstance._
+    timers: TimerScheduler[NamingService.Command],
+    context: ActorContext[NamingService.Command]) {
+  import NamingService._
   private val settings = NamingSettings(context.system)
   private val internalService = new InternalService(serviceItem, settings, context.self)
   private var listeners: Map[ActorRef[Event], ServiceListener] = Map()
 
   NamingManager.init(context.system) ! ShardingEnvelope(serviceItem.namespace, ServiceCreated(serviceItem.serviceName))
   timers.startTimerWithFixedDelay(HealthCheckKey, HealthCheckKey, settings.heartbeatTimeout)
-  context.log.info(s"ServiceInstance started: $serviceItem")
+  context.log.info(s"NamingService started: $serviceItem")
 
   def receive(): Behavior[Command] =
     Behaviors

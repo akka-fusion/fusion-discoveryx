@@ -11,7 +11,7 @@ option (scalapb.options) = {
 };
 
 message NamingReplyCommand {
-    option (scalapb.message).extends = "fusion.discoveryx.server.naming.ServiceInstance.Command";
+    option (scalapb.message).extends = "fusion.discoveryx.server.naming.NamingService.Command";
     option (scalapb.message).companion_extends = "fusion.protobuf.ActorRefCompanion";
 
     string reply_to = 1 [(scalapb.field).type = "akka.actor.typed.ActorRef[fusion.discoveryx.model.NamingReply]"];
@@ -27,23 +27,23 @@ message NamingReplyCommand {
 }
 
 message NamingListenerCommand {
-    option (scalapb.message).extends = "fusion.discoveryx.server.naming.ServiceInstance.Command";
+    option (scalapb.message).extends = "fusion.discoveryx.server.naming.NamingService.Command";
     option (scalapb.message).companion_extends = "fusion.protobuf.ActorRefCompanion";
 
-    string reply_to = 1 [(scalapb.field).type = "akka.actor.typed.ActorRef[fusion.discoveryx.server.naming.ServiceInstance.Event]"];
+    string reply_to = 1 [(scalapb.field).type = "akka.actor.typed.ActorRef[fusion.discoveryx.server.naming.NamingService.Event]"];
     fusion.discoveryx.model.ServiceListener listener = 2 [(scalapb.field).no_box = true];
 }
 
 message NamingServiceEvent {
-    option (scalapb.message).extends = "fusion.discoveryx.server.naming.ServiceInstance.Event";
+    option (scalapb.message).extends = "fusion.discoveryx.server.naming.NamingService.Event";
     fusion.discoveryx.model.ServiceEvent event = 2 [(scalapb.field).no_box = true];
 }
 message ServiceEventStop {
-    option (scalapb.message).extends = "fusion.discoveryx.server.naming.ServiceInstance.Event";
+    option (scalapb.message).extends = "fusion.discoveryx.server.naming.NamingService.Event";
 }
 
 message Heartbeat {
-    option (scalapb.message).extends = "fusion.discoveryx.server.naming.ServiceInstance.Command";
+    option (scalapb.message).extends = "fusion.discoveryx.server.naming.NamingService.Command";
     string namespace = 1;
     string service_name = 2;
     string instance_id = 3;
@@ -155,5 +155,5 @@ message StopNamingManager {
 }
 
 message StopServiceInstance {
-    option (scalapb.message).extends = "fusion.discoveryx.server.naming.ServiceInstance.Command";
+    option (scalapb.message).extends = "fusion.discoveryx.server.naming.NamingService.Command";
 }
