@@ -2,7 +2,7 @@ package akka.remote.testkit
 
 import akka.actor.typed.ActorSystem
 import com.typesafe.config.{Config, ConfigFactory}
-import fusion.discoveryx.DiscoveryX
+import fusion.discoveryx.server.DiscoveryX
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Span}
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}

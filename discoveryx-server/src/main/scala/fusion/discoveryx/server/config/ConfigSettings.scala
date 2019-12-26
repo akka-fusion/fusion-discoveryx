@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 helloscala.com
+ * Copyright 2019 akka-fusion.com
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,17 @@
 
 package fusion.discoveryx.server.config
 
+import akka.actor.typed.ActorSystem
+import com.typesafe.config.Config
 import fusion.discoveryx.common.Constants
+import fusion.discoveryx.server.{ BaseSettings, RetentionCriteriaSettings }
 import helloscala.common.Configuration
 
-final class ConfigSettings(configuration: Configuration) {
-  private val c = configuration.getConfiguration(s"${Constants.DISCOVERYX}.server.config")
-  val enable = c.getBoolean("enable")
+final class ConfigSettings(configuration: Configuration) extends BaseSettings with RetentionCriteriaSettings {
+  val c = configuration.getConfiguration(s"${Constants.DISCOVERYX}.server.config")
+}
+
+object ConfigSettings {
+  def apply(system: ActorSystem[_]): ConfigSettings = apply(system.settings.config)
+  def apply(config: Config): ConfigSettings = new ConfigSettings(Configuration(config))
 }

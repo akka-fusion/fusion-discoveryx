@@ -16,109 +16,130 @@ message ServerStatusBO {
     int32 status = 1;
 }
 
+// #ChangeType
+enum ChangeType {
+    // 保存
+    CHANGE_SAVE = 0;
+    // 添加
+    CHANGE_ADD = 1;
+    // 删除
+    CHANGE_REMOVE = 2;
+}
+// #ChangeType
+
 ////////////////////////////////////////////////////////////////////////////////
 // Config
 ////////////////////////////////////////////////////////////////////////////////
 
+// #ConfigQuery
 message ConfigQuery {
-    string namespace = 1;
-    repeated string data_ids = 2;
-    string group_name = 3;
+    google.protobuf.StringValue group_name = 1;
+    repeated string tags = 2;
 }
+// #ConfigQuery
+
+// #ConfigGet
+message ConfigGet {
+    string namespace = 1;
+    string data_id = 2;
+    google.protobuf.StringValue group_name = 3;
+}
+// #ConfigGet
+
+// #ConfigItem
 message ConfigItem {
     string namespace = 1;
     string data_id = 2;
     string group_name = 3;
     string content = 4;
+    ConfigType type = 5;
+    repeated string tags = 6;
+}
+// #ConfigItem
+
+// #ConfigQueried
+// #ConfigType
+enum ConfigType {
+    TEXT = 0;
+    HOCON = 1;
+    JSON = 2;
+    YAML = 3;
+    PROPERTIES = 4;
+    INI = 5;
+}
+// #ConfigType
+
+message ConfigBasic {
+    string data_id = 1;
+    string group_name = 2;
+    ConfigType type = 3;
 }
 message ConfigQueried {
-    repeated ConfigItem configs = 1;
+    repeated ConfigBasic configs = 1;
+    string namespace = 2;
+    int32 page = 3;
+    int32 size = 4;
+    int32 total_elements = 5;
 }
+// #ConfigQueried
 
-message ConfigPublish {
-    string namespace = 1;
-    string data_id = 2;
-    string group_name = 3;
-    string content = 4;
-}
-message ConfigPublished {
-    string version = 1;
-    google.protobuf.StringValue old_content = 2;
-}
-
+// #ConfigRemove
 message ConfigRemove {
     string namespace = 1;
     string data_id = 2;
-    string group_name = 3;
 }
+// #ConfigRemove
 
+// #ConfigChangeListen
 message ConfigChangeListen {
     string namespace = 1;
     string data_id = 2;
-    string group_name = 3;
 }
-message ConfigChanged {
-    string namespace = 1;
-    string data_id = 2;
-    string group_name = 3;
-    string content = 4;
-    int32 version = 5;
-    google.protobuf.StringValue old_content = 6;
-    int32 change_type = 7; // 1: add, 2: update, 3: delete
-}
+// #ConfigChangeListen
 
+// #ConfigChanged
+message ConfigChanged {
+    fusion.discoveryx.model.ConfigItem config = 1;
+    int32 version = 2;
+    ChangeType change_type = 3;
+}
+// #ConfigChanged
+
+// #ConfigReply
 message ConfigReply {
     int32 status = 1;
+    string message = 2;
     oneof data {
-        ConfigQueried queried = 2;
-        ConfigPublished published = 3;
+        ConfigItem config = 3;
+        ConfigQueried queried = 4;
     }
 }
+// #ConfigReply
 
 ////////////////////////////////////////////////////////////////////////////////
 // Instance
 ////////////////////////////////////////////////////////////////////////////////
 
-message InstanceRegister {
-    string namespace = 1;
-    string service_name = 2;
-    string group_name = 3;
-    string ip = 4;
-    int32 port = 5;
-    // instance weight
-    double weight = 6;
-    // instance health status
-    bool healthy = 7;
-    // If instance is enabled to accept request
-    bool enabled = 8;
-    // user extended attributes
-    map<string, string> metadata = 9;
+enum NamingChangeType {
+    SERVICE_CREATE = 0;
+    SERVICE_MODIFY = 1;
+    SERVICE_REMOVE = 2;
+    INSTANCE_REGISTER = 3;
+    INSTANCE_MODIFY = 4;
+    INSTANCE_REMOVE = 5;
+    INSTANCE_UNHEALTHY = 6;
+    INSTANCE_HEALTHY = 7;
 }
 
-message InstanceModify {
+message ServiceItem {
     string namespace = 1;
-    string service_name = 2;
+    string serviceName = 2;
     string group_name = 3;
-    string ip = 4;
-    int32 port = 5;
-    // instance weight
-    double weight = 6;
-    // instance health status
-    bool healthy = 7;
-    // If instance is enabled to accept request
-    bool enabled = 8;
-    // user extended attributes
-    map<string, string> metadata = 10;
+    double protect_threshold = 4;
+    map<string, string> metadata = 5;
 }
 
-message InstanceRemove {
-    string namespace = 1;
-    string service_name = 2;
-    string group_name = 3;
-    string ip = 4;
-    int32 port = 5;
-}
-
+// #Instance
 message Instance {
     // unique id of this instance.
     string instance_id = 1;
@@ -136,10 +157,63 @@ message Instance {
     bool healthy = 8;
     // If instance is enabled to accept request
     bool enabled = 9;
+    // If instance is ephemeral
+    bool ephemeral = 10;
+    // user extended attributes
+    map<string, string> metadata = 11;
+}
+// #Instance
+
+// #InstanceRegister
+message InstanceRegister {
+    string namespace = 1;
+    string service_name = 2;
+    string group_name = 3;
+    string ip = 4;
+    int32 port = 5;
+    // instance weight
+    double weight = 6;
+    // instance health status
+    bool health = 7;
+    // If instance is enabled to accept request
+    bool enable = 8;
+    // If instance is ephemeral
+    bool ephemeral = 9;
     // user extended attributes
     map<string, string> metadata = 10;
 }
+// #InstanceRegister
 
+// #InstanceModify
+message InstanceModify {
+    string namespace = 1;
+    string service_name = 2;
+    string instance_id = 3;
+    google.protobuf.StringValue group_name = 4;
+    google.protobuf.StringValue ip = 5;
+    google.protobuf.Int32Value port = 6;
+    // instance weight
+    google.protobuf.DoubleValue weight = 7;
+    // instance health status
+    google.protobuf.BoolValue health = 8;
+    // If instance is enabled to accept request
+    google.protobuf.BoolValue enable = 9;
+    // user extended attributes
+    map<string, string> metadata = 10;
+    // true：replace old metadata, false: merge old metadata
+    bool replace_metadata = 11;
+}
+// #InstanceModify
+
+// #InstanceRemove
+message InstanceRemove {
+    string namespace = 1;
+    string service_name = 2;
+    string instance_id = 3;
+}
+// #InstanceRemove
+
+// #InstanceQuery
 message InstanceQuery {
     string namespace = 1;
     string service_name = 2;
@@ -149,19 +223,52 @@ message InstanceQuery {
     // only return one healthy instance
     bool one_healthy = 5;
 }
-message InstanceQueryResult {
-    repeated Instance instances = 2;
-}
+// #InstanceQuery
 
+// #ServiceListener
+message ServiceListener {
+    string namespace = 1;
+    string service_name = 2;
+}
+// #ServiceListener
+
+// #InstanceHeartbeat
 message InstanceHeartbeat {
-    string instance_id = 1;
 }
+// #InstanceHeartbeat
 
-message InstanceReply {
+// #ServiceInfo
+message ServiceInfo {
+    string namespace = 1;
+    string service_name = 2;
+    string group_name = 3;
+    double protect_threshold = 4;
+    map<string, string> metadata = 5;
+    // 实例数
+    int32 instance_total = 6;
+    // 健康实例数
+    int32 instance_healthy_count = 7;
+    repeated Instance instances = 8;
+}
+// #ServiceInfo
 
+// #ServiceEvent
+message ServiceEvent {
+    NamingChangeType changeType = 1;
+    string namespace = 2;
+    string service_name = 3;
+    ServiceItem service = 4;
+    Instance instance = 5;
+}
+// #ServiceEvent
+
+// #NamingReply
+message NamingReply {
     int32 status = 1;
+    string message = 2;
     oneof data {
-        InstanceQueryResult queried = 2;
-        Instance registered = 3;
+        Instance instance = 3;
+        ServiceInfo service_info = 4;
     }
 }
+// #NamingReply

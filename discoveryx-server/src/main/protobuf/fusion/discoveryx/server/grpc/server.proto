@@ -1,0 +1,111 @@
+syntax = "proto3";
+package fusion.discoveryx.server.grpc;
+
+import "scalapb/scalapb.proto";
+import "fusion/discoveryx/model/discoveryx.proto";
+import "fusion/discoveryx/server/protocol/config.proto";
+import "fusion/discoveryx/server/protocol/naming.proto";
+import "fusion/discoveryx/server/protocol/management.proto";
+import "fusion/discoveryx/server/protocol/user.proto";
+
+option (scalapb.options) = {
+  collection_type: "scala.collection.immutable.Seq"
+};
+
+service ConfigManagerService {
+    // #ListConfig
+    // 查询配置列表（不返回配置内容）
+    rpc ListConfig (fusion.discoveryx.server.protocol.ListConfig) returns (fusion.discoveryx.server.protocol.ConfigResponse) {
+    }
+    // #ListConfig
+}
+
+service NamingManagerService {
+    // #ListService
+    // 查询服务列表
+    rpc ListService (fusion.discoveryx.server.protocol.ListService) returns (fusion.discoveryx.server.protocol.NamingResponse) {
+    }
+    // #ListService
+
+    // #GetService
+    // 查询单个服务
+    rpc GetService (fusion.discoveryx.server.protocol.GetService) returns (fusion.discoveryx.server.protocol.NamingResponse) {
+    }
+    // #GetService
+
+    // #CreateService
+    // 创建服务
+    rpc CreateService (fusion.discoveryx.server.protocol.CreateService) returns (fusion.discoveryx.server.protocol.NamingResponse) {
+    }
+    // #CreateService
+
+    // #ModifyService
+    // 创建服务
+    rpc ModifyService (fusion.discoveryx.server.protocol.ModifyService) returns (fusion.discoveryx.server.protocol.NamingResponse) {
+    }
+    // #ModifyService
+
+    // #RemoveService
+    // 删除服务
+    rpc RemoveService (fusion.discoveryx.server.protocol.RemoveService) returns (fusion.discoveryx.server.protocol.NamingResponse) {
+    }
+    // #RemoveService
+}
+
+service ManagementService {
+    // #ListNamespace
+    // 创建命名空间
+    rpc ListNamespace (fusion.discoveryx.server.protocol.ListNamespace) returns (fusion.discoveryx.server.protocol.ManagementResponse) {
+    }
+    // #ListNamespace
+
+    // #CreateNamespace
+    // 创建命名空间
+    rpc CreateNamespace (fusion.discoveryx.server.protocol.CreateNamespace) returns (fusion.discoveryx.server.protocol.ManagementResponse) {
+    }
+    // #CreateNamespace
+
+    // #ModifyNamespace
+    // 修改命名空间
+    rpc ModifyNamespace (fusion.discoveryx.server.protocol.ModifyNamespace) returns (fusion.discoveryx.server.protocol.ManagementResponse) {
+    }
+    // #ModifyNamespace
+
+    // #RemoveNamespace
+    // 删除命名空间
+    rpc RemoveNamespace (fusion.discoveryx.server.protocol.RemoveNamespace) returns (fusion.discoveryx.server.protocol.ManagementResponse) {
+    }
+    // #RemoveNamespace
+}
+
+service UserService {
+    // #Login
+    rpc Login (fusion.discoveryx.server.protocol.Login) returns (fusion.discoveryx.server.protocol.UserResponse) {
+    }
+    // #Login
+
+    // #Logout
+    rpc Logout (fusion.discoveryx.server.protocol.Logout) returns (fusion.discoveryx.server.protocol.UserResponse) {
+    }
+    // #Logout
+
+    // #CreateUser
+    rpc CreateUser (fusion.discoveryx.server.protocol.CreateUser) returns (fusion.discoveryx.server.protocol.UserResponse) {
+    }
+    // #CreateUser
+
+    // #ModifyUser
+    rpc ModifyUser (fusion.discoveryx.server.protocol.ModifyUser) returns (fusion.discoveryx.server.protocol.UserResponse) {
+    }
+    // #ModifyUser
+
+    // #RemoveUser
+    rpc RemoveUser (fusion.discoveryx.server.protocol.RemoveUser) returns (fusion.discoveryx.server.protocol.UserResponse) {
+    }
+    // #RemoveUser
+
+    // #ListUser
+    rpc ListUser (fusion.discoveryx.server.protocol.ListUser) returns (fusion.discoveryx.server.protocol.UserResponse) {
+    }
+    // #ListUser
+}

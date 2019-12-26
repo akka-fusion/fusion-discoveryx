@@ -2,7 +2,7 @@
 <configuration scan="false">
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>INFO</level>
+            <level>DEBUG</level>
         </filter>
         <encoder>
             <pattern>[%date{ISO8601}] [%level] [%logger] [%thread] [%X{akkaSource}] - %msg%n</pattern>
@@ -13,8 +13,9 @@
     <logger name="com.zaxxer" level="WARN"/>
     <logger name="fusion" level="DEBUG"/>
     <logger name="akka" level="WARN"/>
+    <logger name="io.grpc" level="WARN"/>
 
-    <root level="INFO">
+    <root level="DEBUG">
         <appender-ref ref="STDOUT"/>
     </root>
 </configuration>

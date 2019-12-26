@@ -3,11 +3,10 @@ package fusion.discoveryx.functest
 import akka.remote.testconductor.RoleName
 import akka.remote.testkit.{MultiNodeConfig, STMultiNodeSpec, SchudulerXMultiNodeSpec}
 import com.typesafe.config.ConfigFactory
-import fusion.discoveryx.DiscoveryX
-import fusion.discoveryx.client.DiscoveryXNamingClient
+import fusion.discoveryx.client.NamingClient
 import fusion.discoveryx.common.Constants
 import fusion.discoveryx.model.{InstanceQuery, InstanceRegister, ServerStatusQuery}
-import fusion.discoveryx.server.DiscoveryXServer
+import fusion.discoveryx.server.{DiscoveryX, DiscoveryXServer}
 import helloscala.common.IntStatus
 
 object DiscoveryXMultiTestConfig extends MultiNodeConfig {
@@ -77,7 +76,7 @@ abstract class DiscoveryXMultiTest
       for ((role, idx) <- clients.zipWithIndex) {
         runOn(role) {
           enterBarrier("server-startup")
-          val namingClient = DiscoveryXNamingClient(discoveryX.system)
+          val namingClient = NamingClient(discoveryX.system)
           val in =
             InstanceRegister(namespace, serviceName, groupName, s"127.0.0.${200 + idx}", 50000 + idx, healthy = true)
           namingClient.registerInstance(in)
@@ -89,7 +88,7 @@ abstract class DiscoveryXMultiTest
 
     "naming-client" in {
       runOn(clients: _*) {
-        val namingClient = DiscoveryXNamingClient(discoveryX.system)
+        val namingClient = NamingClient(discoveryX.system)
         namingClient.serverStatus(ServerStatusQuery()).futureValue.status should be(IntStatus.OK)
 
         val result = namingClient.queryInstance(InstanceQuery(namespace, serviceName, groupName, allHealthy = true)).futureValue

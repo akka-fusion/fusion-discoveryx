@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 helloscala.com
+ * Copyright 2019 akka-fusion.com
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,55 +16,69 @@
 
 package fusion.discoveryx.server.config
 
-import java.util.UUID
-
 import akka.NotUsed
-import akka.actor.typed.{ ActorRef, ActorSystem }
 import akka.actor.typed.scaladsl.AskPattern._
+import akka.actor.typed.{ ActorRef, ActorSystem }
+import akka.cluster.sharding.typed.ShardingEnvelope
+import akka.stream.OverflowStrategy
 import akka.stream.scaladsl.Source
-import akka.stream.{ Materializer, OverflowStrategy }
+import akka.stream.typed.scaladsl.ActorSource
 import akka.util.Timeout
 import fusion.discoveryx.grpc.ConfigService
 import fusion.discoveryx.model._
-import fusion.discoveryx.server.config.data.ConfigContent
+import fusion.discoveryx.server.management.NamespaceRef
+import fusion.discoveryx.server.management.NamespaceRef.{ ExistNamespace, NamespaceExists }
+import fusion.discoveryx.server.protocol._
 import helloscala.common.IntStatus
+import helloscala.common.exception.HSInternalErrorException
+import helloscala.common.util.Utils
 
-import scala.collection.immutable
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-class ConfigServiceImpl(configManager: ActorRef[ConfigManager.Command])(implicit system: ActorSystem[_])
+class ConfigServiceImpl(namespaceRef: ActorRef[NamespaceRef.ExistNamespace])(implicit system: ActorSystem[_])
     extends ConfigService {
-  import system.executionContext
   implicit private val timeout: Timeout = 5.seconds
+  private val configEntity = ConfigEntity.init(system)
 
   override def serverStatus(in: ServerStatusQuery): Future[ServerStatusBO] =
     Future.successful(ServerStatusBO(IntStatus.OK))
 
-  override def queryConfig(in: ConfigQuery): Future[ConfigReply] = {
-    configManager
-      .ask[immutable.Seq[ConfigContent]](replyTo => ConfigManager.GetContent(in.namespace, in.dataIds, replyTo))
-      .map { contents =>
-        val queried = ConfigQueried(contents.map(c => ConfigItem(c.namespace, "DEFAULT", c.dataId, c.content)))
-        ConfigReply(IntStatus.OK, ConfigReply.Data.Queried(queried))
-      }
-  }
+  override def getConfig(in: ConfigGet): Future[ConfigReply] =
+    askConfig(in.namespace, in.dataId, ConfigEntityCommand.Cmd.Get(in))
 
-  override def publishConfig(in: ConfigPublish): Future[ConfigReply] = {
-    configManager
-      .ask[Configs.ModifyReply](replyTo => ConfigManager.UpdateContent(in.namespace, in.dataId, in.content, replyTo))
-      .map(reply => ConfigReply(reply.status))
-  }
+  override def publishConfig(in: ConfigItem): Future[ConfigReply] =
+    askConfig(in.namespace, in.dataId, ConfigEntityCommand.Cmd.Publish(in))
 
-  override def removeConfig(in: ConfigRemove): Future[ConfigReply] = {
-    configManager
-      .ask[Configs.ModifyReply](replyTo => ConfigManager.RemoveContent(in.namespace, in.dataId, replyTo))
-      .map(reply => ConfigReply(reply.status))
-  }
+  override def removeConfig(in: ConfigRemove): Future[ConfigReply] =
+    askConfig(in.namespace, in.dataId, ConfigEntityCommand.Cmd.Remove(in))
 
   override def listenerConfig(in: ConfigChangeListen): Source[ConfigChanged, NotUsed] = {
-    val (queue, source) = Source.queue[ConfigChanged](8, OverflowStrategy.dropHead).preMaterialize()
-    configManager ! ConfigManager.RegisterChangeListener(UUID.randomUUID(), in, queue)
+    val entityId = ConfigEntity.makeEntityId(in.namespace, in.dataId)
+    val (ref, source) = ActorSource
+      .actorRef[ConfigEntity.Event](
+        { case _: RemovedConfigEvent => },
+        changed => throw HSInternalErrorException(s"Throw error: $changed."),
+        2,
+        OverflowStrategy.dropHead)
+      .preMaterialize()
+    configEntity ! ShardingEnvelope(entityId, RegisterChangeListener(ref, Utils.timeBasedUuid().toString))
     source
+      .mapConcat {
+        case event: ChangedConfigEvent => event :: Nil
+        case _                         => Nil
+      }
+      .map(event => ConfigChanged(event.config, changeType = event.`type`))
   }
+
+  @inline private def askConfig(namespace: String, dataId: String, cmd: ConfigEntityCommand.Cmd): Future[ConfigReply] =
+    namespaceRef
+      .ask[NamespaceExists](replyTo => ExistNamespace(namespace, replyTo))
+      .flatMap {
+        case NamespaceExists(true) =>
+          configEntity.ask[ConfigReply](replyTo =>
+            ShardingEnvelope(ConfigEntity.makeEntityId(namespace, dataId), ConfigEntityCommand(replyTo, cmd)))
+        case _ =>
+          Future.successful(ConfigReply(IntStatus.BAD_REQUEST, s"Namespace '$namespace' not exists."))
+      }(system.executionContext)
 }

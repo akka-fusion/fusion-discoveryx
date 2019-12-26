@@ -8,86 +8,152 @@ import "fusion/discoveryx/model/discoveryx.proto";
 
 option (scalapb.options) = {
   collection_type: "scala.collection.immutable.Seq"
-  import: "akka.actor.typed.ActorRef"
-  import: "fusion.discoveryx.server.naming.Namings"
-  import: "fusion.protobuf.ActorRefCompanion._"
 };
 
-message NamingServiceKey {
-    string namespace = 1;
-    string serviceName = 2;
+message NamingReplyCommand {
+    option (scalapb.message).extends = "fusion.discoveryx.server.naming.ServiceInstance.Command";
+    option (scalapb.message).companion_extends = "fusion.protobuf.ActorRefCompanion";
+
+    string reply_to = 1 [(scalapb.field).type = "akka.actor.typed.ActorRef[fusion.discoveryx.model.NamingReply]"];
+    oneof cmd {
+        fusion.discoveryx.model.InstanceRegister register = 2;
+        fusion.discoveryx.model.InstanceQuery query = 3;
+        fusion.discoveryx.model.InstanceRemove remove = 4;
+        fusion.discoveryx.model.InstanceModify modify = 5;
+        CreateService create_service = 6;
+        ModifyService modify_service = 7;
+        RemoveService remove_service = 8;
+    }
 }
 
-message RegisterInstance {
-    option (scalapb.message).extends = "Namings.ReplyCommand";
-    fusion.discoveryx.model.InstanceRegister in = 1 [(scalapb.field).no_box = true];
-    string reply_to = 2 [(scalapb.field).type = "ActorRef[fusion.discoveryx.model.InstanceReply]"];
+message NamingListenerCommand {
+    option (scalapb.message).extends = "fusion.discoveryx.server.naming.ServiceInstance.Command";
+    option (scalapb.message).companion_extends = "fusion.protobuf.ActorRefCompanion";
+
+    string reply_to = 1 [(scalapb.field).type = "akka.actor.typed.ActorRef[fusion.discoveryx.server.naming.ServiceInstance.Event]"];
+    fusion.discoveryx.model.ServiceListener listener = 2 [(scalapb.field).no_box = true];
 }
 
-message RemoveInstance {
-    option (scalapb.message).extends = "Namings.ReplyCommand";
-    fusion.discoveryx.model.InstanceRemove in = 1 [(scalapb.field).no_box = true];
-    string reply_to = 2 [(scalapb.field).type = "ActorRef[fusion.discoveryx.model.InstanceReply]"];
+message NamingServiceEvent {
+    option (scalapb.message).extends = "fusion.discoveryx.server.naming.ServiceInstance.Event";
+    fusion.discoveryx.model.ServiceEvent event = 2 [(scalapb.field).no_box = true];
 }
-
-message ModifyInstance {
-    option (scalapb.message).extends = "Namings.ReplyCommand";
-    fusion.discoveryx.model.InstanceModify in = 1 [(scalapb.field).no_box = true];
-    string reply_to = 2 [(scalapb.field).type = "ActorRef[fusion.discoveryx.model.InstanceReply]"];
-}
-
-message QueryInstance {
-    option (scalapb.message).extends = "Namings.ReplyCommand";
-    fusion.discoveryx.model.InstanceQuery in = 1 [(scalapb.field).no_box = true];
-    string reply_to = 2 [(scalapb.field).type = "ActorRef[fusion.discoveryx.model.InstanceReply]"];
+message ServiceEventStop {
+    option (scalapb.message).extends = "fusion.discoveryx.server.naming.ServiceInstance.Event";
 }
 
 message Heartbeat {
-    option (scalapb.message).extends = "Namings.Command";
-    fusion.discoveryx.model.InstanceHeartbeat in = 1 [(scalapb.field).no_box = true];
-    string namespace = 2;
-    string service_name = 3;
-}
-
-message ServiceInfo {
+    option (scalapb.message).extends = "fusion.discoveryx.server.naming.ServiceInstance.Command";
     string namespace = 1;
     string service_name = 2;
-    repeated fusion.discoveryx.model.Instance instances = 3;
-}
-message QueryServiceInfo {
-    option (scalapb.message).extends = "Namings.Command";
-    string reply_to = 1 [(scalapb.field).type = "ActorRef[ServiceInfo]"];
+    string instance_id = 3;
 }
 
-// NamingsManager 使用
+////////////////////////////////////////////////////////////////////////////////
+// NamingManager 使用
+////////////////////////////////////////////////////////////////////////////////
 
-// 通过 PubSub 发布 Namings 自身的 ActorRef，并注册到 NamingManager
-message NamingRegisterToManager {
+message ServiceCreated {
     option (scalapb.message).extends = "fusion.discoveryx.server.naming.NamingManager.Command";
-    string naming_ref = 1 [(scalapb.field).type = "ActorRef[Namings.Command]"];
+    option (scalapb.message).companion_extends = "fusion.protobuf.ActorRefCompanion";
+    string service_name = 1;
 }
 
+message ServiceRemoved {
+    option (scalapb.message).extends = "fusion.discoveryx.server.naming.NamingManager.Command";
+    option (scalapb.message).companion_extends = "fusion.protobuf.ActorRefCompanion";
+    string service_name = 1;
+}
+
+// #ListService
 message ListService {
     string namespace = 1;
     int32 page = 2;
     int32 size = 3;
     string service_name = 4;
+    string group_name = 5;
+    // only return all healthy instances
+    bool all_healthy = 6;
 }
+// #ListService
+
+// #ListedService
+message ListedService {
+    repeated fusion.discoveryx.model.ServiceInfo service_infos = 1;
+    int32 page = 2;
+    int32 size = 3;
+    int32 total_elements = 4;
+}
+// #ListedService
+
+// #GetService
+message GetService {
+    string namespace = 1;
+    string service_name = 2;
+    google.protobuf.StringValue group_name = 3;
+}
+// #GetService
+
+// #CreateService
+message CreateService {
+    string namespace = 1;
+    string service_name = 2;
+    string group_name = 3;
+    double protect_threshold = 4;
+    map<string, string> metadata = 5;
+}
+// #CreateService
+
+// #RemoveService
+message RemoveService {
+    string namespace = 1;
+    string service_name = 2;
+}
+// #RemoveService
+
+// #ModifyService
+message ModifyService {
+    string namespace = 1;
+    string service_name = 2;
+    google.protobuf.StringValue group_name = 3;
+    google.protobuf.DoubleValue protect_threshold = 4;
+    map<string, string> metadata = 5;
+    bool replace_metadata = 6;
+}
+// #ModifyService
+
+// #NamingManagerCommand
 message NamingManagerCommand {
     option (scalapb.message).extends = "fusion.discoveryx.server.naming.NamingManager.Command";
-    string reply_to = 1 [(scalapb.field).type = "ActorRef[fusion.discoveryx.server.naming.NamingManager.Reply]"];
+    option (scalapb.message).companion_extends = "fusion.protobuf.ActorRefCompanion";
+
+    string reply_to = 1 [(scalapb.field).type = "akka.actor.typed.ActorRef[NamingResponse]"];
     oneof cmd {
         ListService list_service = 2;
+        GetService get_service = 3;
+        CreateService create_service = 4;
+        RemoveService remove_service = 5;
+        ModifyService modify_service = 6;
     }
+}
+// #NamingManagerCommand
+
+// #NamingResponse
+message NamingResponse {
+    int32 status = 1;
+    string message = 2;
+    oneof data {
+        ListedService listed_service = 3;
+        fusion.discoveryx.model.ServiceInfo service_info = 4;
+        fusion.discoveryx.model.Instance instance = 5;
+    }
+}
+// #NamingResponse
+
+message StopNamingManager {
+    option (scalapb.message).extends = "fusion.discoveryx.server.naming.NamingManager.Command";
 }
 
-message ListedService {
-    repeated ServiceInfo service_infos = 1;
-}
-message NamingResponse {
-    option (scalapb.message).extends = "fusion.discoveryx.server.naming.NamingManager.Reply";
-    int32 status = 1;
-    oneof data {
-        ListedService service_infos = 2;
-    }
+message StopServiceInstance {
+    option (scalapb.message).extends = "fusion.discoveryx.server.naming.ServiceInstance.Command";
 }

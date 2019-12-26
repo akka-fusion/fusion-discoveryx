@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 helloscala.com
+ * Copyright 2019 akka-fusion.com
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,8 +37,11 @@ object DiscoveryXUtils {
       in.ip,
       in.port,
       in.weight,
-      in.healthy,
-      in.enabled,
+      in.health,
+      in.enable,
+      in.ephemeral,
       in.metadata)
   }
+
+  def userHome: Option[String] = sys.env.get("HOME") orElse sys.props.get("user.home")
 }

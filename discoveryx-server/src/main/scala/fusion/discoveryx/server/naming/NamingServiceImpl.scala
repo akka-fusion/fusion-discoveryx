@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 helloscala.com
+ * Copyright 2019 akka-fusion.com
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,24 +23,29 @@ import akka.actor.typed.scaladsl.AskPattern._
 import akka.actor.typed.{ ActorRef, ActorSystem }
 import akka.cluster.sharding.typed.ShardingEnvelope
 import akka.grpc.scaladsl.Metadata
+import akka.stream.OverflowStrategy
 import akka.stream.scaladsl.Source
+import akka.stream.typed.scaladsl.ActorSource
 import akka.util.Timeout
 import com.typesafe.scalalogging.StrictLogging
 import fusion.discoveryx.common.Headers
 import fusion.discoveryx.grpc.NamingServicePowerApi
 import fusion.discoveryx.model._
+import fusion.discoveryx.server.management.NamespaceRef.{ ExistNamespace, NamespaceExists }
 import fusion.discoveryx.server.protocol._
 import helloscala.common.IntStatus
-import helloscala.common.exception.HSBadRequestException
+import helloscala.common.exception.{ HSBadRequestException, HSInternalErrorException }
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
+import scala.util.control.NonFatal
 
-class NamingServiceImpl(namingProxy: ActorRef[ShardingEnvelope[Namings.Command]])(implicit system: ActorSystem[_])
+class NamingServiceImpl(namespaceRef: ActorRef[ExistNamespace])(implicit system: ActorSystem[_])
     extends NamingServicePowerApi
     with StrictLogging {
   import system.executionContext
   implicit private val timeout: Timeout = 5.seconds
+  private val serviceInstanceRegion = ServiceInstance.init(system)
 
   /**
    * 查询服务状态
@@ -52,39 +57,58 @@ class NamingServiceImpl(namingProxy: ActorRef[ShardingEnvelope[Namings.Command]]
   /**
    * 添加实例
    */
-  override def registerInstance(in: InstanceRegister, metadata: Metadata): Future[InstanceReply] = {
-    namingProxy.ask[InstanceReply](replyTo => ShardingEnvelope(in.namespace, RegisterInstance(in, replyTo))).recover {
-      case _: TimeoutException => InstanceReply(IntStatus.GATEWAY_TIMEOUT)
-    }
+  override def registerInstance(in: InstanceRegister, metadata: Metadata): Future[NamingReply] = {
+    askNaming(in.namespace, in.serviceName, NamingReplyCommand.Cmd.Register(in))
   }
 
   /**
    * 修改实例
    */
-  override def modifyInstance(in: InstanceModify, metadata: Metadata): Future[InstanceReply] = {
-    namingProxy.ask[InstanceReply](replyTo => ShardingEnvelope(in.namespace, ModifyInstance(in, replyTo))).recover {
-      case _: TimeoutException => InstanceReply(IntStatus.GATEWAY_TIMEOUT)
-    }
+  override def modifyInstance(in: InstanceModify, metadata: Metadata): Future[NamingReply] = {
+    askNaming(in.namespace, in.serviceName, NamingReplyCommand.Cmd.Modify(in))
   }
 
   /**
    * 删除实例
    */
-  override def removeInstance(in: InstanceRemove, metadata: Metadata): Future[InstanceReply] = {
-    namingProxy.ask[InstanceReply](replyTo => ShardingEnvelope(in.namespace, RemoveInstance(in, replyTo))).recover {
-      case _: TimeoutException => InstanceReply(IntStatus.GATEWAY_TIMEOUT)
-    }
+  override def removeInstance(in: InstanceRemove, metadata: Metadata): Future[NamingReply] = {
+    askNaming(in.namespace, in.serviceName, NamingReplyCommand.Cmd.Remove(in))
   }
 
   /**
    * 查询实例
    */
-  override def queryInstance(in: InstanceQuery, metadata: Metadata): Future[InstanceReply] = {
-    namingProxy.ask[InstanceReply](replyTo => ShardingEnvelope(in.namespace, QueryInstance(in, replyTo))).recover {
-      case _: TimeoutException => InstanceReply(IntStatus.GATEWAY_TIMEOUT)
+  override def queryInstance(in: InstanceQuery, metadata: Metadata): Future[NamingReply] = {
+    askNaming(in.namespace, in.serviceName, NamingReplyCommand.Cmd.Query(in))
+  }
+
+  override def listenerService(in: ServiceListener, metadata: Metadata): Source[ServiceEvent, NotUsed] = {
+    try {
+      val entityId = ServiceInstance.entityId(in.namespace, in.serviceName) match {
+        case Right(value) => value
+        case Left(errMsg) => throw HSBadRequestException(errMsg)
+      }
+
+      val (ref, source) = ActorSource
+        .actorRef[ServiceInstance.Event]({
+          case _: ServiceEventStop =>
+        }, { changed =>
+          throw HSInternalErrorException(s"Throw error: $changed.")
+        }, 2, OverflowStrategy.dropHead)
+        .preMaterialize()
+      serviceInstanceRegion ! ShardingEnvelope(entityId, NamingListenerCommand(ref, in))
+      source.mapConcat {
+        case evt: NamingServiceEvent => evt.event :: Nil
+        case _                       => Nil
+      }
+    } catch {
+      case NonFatal(e) =>
+        logger.error(s"listenerService($in, $metadata) error: ${e.getLocalizedMessage}")
+        Source.empty
     }
   }
 
+  // #heartbeat
   override def heartbeat(
       in: Source[InstanceHeartbeat, NotUsed],
       metadata: Metadata): Source[ServerStatusBO, NotUsed] = {
@@ -95,14 +119,39 @@ class NamingServiceImpl(namingProxy: ActorRef[ShardingEnvelope[Namings.Command]]
       val serviceName = metadata
         .getText(Headers.SERVICE_NAME)
         .getOrElse(throw HSBadRequestException(s"Request header missing, need '${Headers.SERVICE_NAME}'."))
-      in.map { cmd =>
-        namingProxy ! ShardingEnvelope(namespace, Heartbeat(cmd, namespace, serviceName))
+      val instanceId = metadata
+        .getText(Headers.INSTANCE_ID)
+        .getOrElse(throw HSBadRequestException(s"Request header missing, need '${Headers.INSTANCE_ID}'."))
+      val entityId = ServiceInstance.entityId(namespace, serviceName) match {
+        case Right(value) => value
+        case Left(errMsg) => throw HSBadRequestException(errMsg)
+      }
+      in.map { _ =>
+        serviceInstanceRegion ! ShardingEnvelope(entityId, Heartbeat(namespace, serviceName, instanceId))
         ServerStatusBO(IntStatus.OK)
       }
     } catch {
       case e: Exception =>
         logger.warn(s"Receive heartbeat message error: $e")
         Source.single(ServerStatusBO(IntStatus.BAD_REQUEST))
+    }
+  }
+  // #heartbeat
+
+  private def askNaming(namespace: String, serviceName: String, cmd: NamingReplyCommand.Cmd): Future[NamingReply] = {
+    namespaceRef.ask[NamespaceExists](replyTo => ExistNamespace(namespace, replyTo)).flatMap {
+      case NamespaceExists(true) =>
+        ServiceInstance.entityId(namespace, serviceName) match {
+          case Right(entityId) =>
+            serviceInstanceRegion
+              .ask[NamingReply](replyTo => ShardingEnvelope(entityId, NamingReplyCommand(replyTo, cmd)))
+              .recover {
+                case _: TimeoutException => NamingReply(IntStatus.GATEWAY_TIMEOUT)
+              }
+          case Left(errMsg) => Future.successful(NamingReply(IntStatus.INTERNAL_ERROR, errMsg))
+        }
+      case _ =>
+        Future.successful(NamingReply(IntStatus.NOT_FOUND, s"Namespace '$namespace' not exists."))
     }
   }
 }

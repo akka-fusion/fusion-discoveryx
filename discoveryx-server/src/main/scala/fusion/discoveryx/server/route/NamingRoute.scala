@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 helloscala.com
+ * Copyright 2019 akka-fusion.com
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,22 +16,83 @@
 
 package fusion.discoveryx.server.route
 
+import akka.actor
+import akka.actor.typed.{ ActorRef, ActorSystem }
+import akka.grpc.scaladsl.MetadataImpl
+import akka.http.scaladsl.model.{ HttpRequest, HttpResponse }
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
-import fusion.discoveryx.DiscoveryX
-import fusion.discoveryx.server.naming.{ NamingManager, NamingManagerService, NamingSettings }
-import fusion.discoveryx.server.protocol.ListService
+import akka.stream.{ Materializer, SystemMaterializer }
+import fusion.core.extension.FusionCore
+import fusion.discoveryx.grpc.NamingServicePowerApiHandler
+import fusion.discoveryx.model.{ InstanceModify, InstanceQuery, InstanceRegister, InstanceRemove }
+import fusion.discoveryx.server.grpc.NamingManagerServiceHandler
+import fusion.discoveryx.server.management.NamespaceRef.ExistNamespace
+import fusion.discoveryx.server.naming.{ NamingManagerServiceImpl, NamingServiceImpl }
+import fusion.discoveryx.server.protocol._
 
-class NamingRoute(discoveryX: DiscoveryX, namingSettings: NamingSettings) {
-  private val namingManagerService = new NamingManagerService(NamingManager.init(discoveryX.system))
-  def route: Route = pathPrefix("naming") {
-    listServiceRoute
+import scala.concurrent.Future
+
+class NamingRoute(namespaceRef: ActorRef[ExistNamespace])(implicit system: ActorSystem[_]) {
+  private val namingManagerService = new NamingManagerServiceImpl(namespaceRef)
+  private val namingService = new NamingServiceImpl(namespaceRef)
+
+  val grpcHandler: List[PartialFunction[HttpRequest, Future[HttpResponse]]] = {
+    implicit val mat: Materializer = SystemMaterializer(system).materializer
+    implicit val classicSystem: actor.ActorSystem = FusionCore(system).classicSystem
+    NamingServicePowerApiHandler.partial(namingService) :: NamingManagerServiceHandler.partial(namingManagerService) :: Nil
   }
 
-  def listServiceRoute: Route = pathPost("list_service") {
-    import fusion.discoveryx.server.util.ProtobufJsonSupport._
-    entity(as[ListService]) { cmd =>
-      complete(namingManagerService.listService(cmd))
+  import fusion.discoveryx.server.util.ProtobufJsonSupport._
+
+  def consoleRoute: Route = pathPrefix("naming") {
+    pathPost("ListService") {
+      entity(as[ListService]) { in =>
+        complete(namingManagerService.listService(in))
+      }
+    } ~
+    pathPost("GetService") {
+      entity(as[GetService]) { in =>
+        complete(namingManagerService.getService(in))
+      }
+    } ~
+    pathPost("CreateService") {
+      entity(as[CreateService]) { in =>
+        complete(namingManagerService.createService(in))
+      }
+    } ~
+    pathPost("RemoveService") {
+      entity(as[RemoveService]) { in =>
+        complete(namingManagerService.removeService(in))
+      }
+    } ~
+    pathPost("ModifyService") {
+      entity(as[ModifyService]) { in =>
+        complete(namingManagerService.modifyService(in))
+      }
+    }
+  }
+
+  def openRoute: Route = pathPrefix("naming") {
+    pathPost("QueryInstance") {
+      entity(as[InstanceQuery]) { in =>
+        complete(namingService.queryInstance(in, new MetadataImpl()))
+      }
+    } ~
+    pathPost("RegisterInstance") {
+      entity(as[InstanceRegister]) { in =>
+        complete(namingService.registerInstance(in, new MetadataImpl()))
+      }
+    } ~
+    pathPost("ModifyInstance") {
+      entity(as[InstanceModify]) { in =>
+        complete(namingService.modifyInstance(in, new MetadataImpl()))
+      }
+    } ~
+    pathPost("RemoveInstance") {
+      entity(as[InstanceRemove]) { in =>
+        complete(namingService.removeInstance(in, new MetadataImpl()))
+      }
     }
   }
 }
