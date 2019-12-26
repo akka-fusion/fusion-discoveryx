@@ -33,6 +33,7 @@ import fusion.discoveryx.server.management.service.{ ManagementServiceImpl, User
 import fusion.discoveryx.server.management.{ Management, UserEntity }
 import fusion.discoveryx.server.protocol._
 import fusion.discoveryx.server.route.{ SessionRoute, pathPost }
+import helloscala.common.IntStatus
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -40,9 +41,11 @@ import scala.concurrent.duration._
 class ManagementRoute()(implicit system: ActorSystem[_]) extends SessionRoute {
   private implicit val timeout: Timeout = 5.seconds
   private val managementRef = Management.init(system)
+  private val userEntity = UserEntity.init(system)
   private val managementService = new ManagementServiceImpl(managementRef)
   private val userService = new UserServiceImpl()
-  private val sessionValidation: Directive0 = validationSession(UserEntity.init(system))
+  private val validationSession: Directive0 = createValidationSession(userEntity)
+  private val getSessionUser = createGetSessionUser(userEntity)
 
   val grpcHandler: List[PartialFunction[HttpRequest, Future[HttpResponse]]] = {
     implicit val mat = SystemMaterializer(system).materializer
@@ -53,7 +56,7 @@ class ManagementRoute()(implicit system: ActorSystem[_]) extends SessionRoute {
   import fusion.discoveryx.server.util.ProtobufJsonSupport._
 
   def consoleRoute: Route = pathPrefix("management") {
-    sessionValidation {
+    validationSession {
       pathPost("ListNamespace") {
         entity(as[ListNamespace]) { in =>
           complete(managementService.listNamespace(in))
@@ -78,7 +81,7 @@ class ManagementRoute()(implicit system: ActorSystem[_]) extends SessionRoute {
   }
 
   def userRoute: Route = pathPrefix("user") {
-    sessionValidation {
+    validationSession {
       pathPost("ListUser") {
         entity(as[ListUser]) { in =>
           complete(userService.listUser(in))
@@ -103,6 +106,16 @@ class ManagementRoute()(implicit system: ActorSystem[_]) extends SessionRoute {
   }
 
   def signRoute: Route = pathPrefix("sign") {
+    (pathEndOrSingleSlash | path("CurrentSessionUser")) {
+      (get | post) {
+        optionalSessionToken {
+          case Some(token) =>
+            complete(userService.currentSessionUser(CurrentSessionUser(token)))
+          case _ =>
+            complete(UserResponse(IntStatus.UNAUTHORIZED, "Token not found."))
+        }
+      }
+    } ~
     pathPost("Login") {
       entity(as[Login]) { in =>
         onSuccess(userService.login(in)) { resp =>
@@ -122,7 +135,7 @@ class ManagementRoute()(implicit system: ActorSystem[_]) extends SessionRoute {
       }
     } ~
     pathPost("Logout") {
-      sessionValidation {
+      validationSession {
         entity(as[Logout]) { in =>
           setCookie(HttpCookie(Constants.SESSION_TOKEN_NAME, "", Some(DateTime.MinValue), path = Some("/"))) {
             complete(userService.logout(in))

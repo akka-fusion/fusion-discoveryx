@@ -26,33 +26,29 @@ import com.typesafe.scalalogging.StrictLogging
 import fusion.discoveryx.common.Constants
 import fusion.discoveryx.server.management.UserEntity
 import fusion.discoveryx.server.protocol.UserCommand.Cmd
-import fusion.discoveryx.server.protocol.{ CheckSession, UserCommand, UserResponse }
+import fusion.discoveryx.server.protocol.{ CheckSession, TokenAccount, UserCommand, UserResponse }
 import helloscala.common.IntStatus
 
 import scala.concurrent.Future
 import scala.util.control.NonFatal
 
-final class TokenAccount(val token: String, val account: String)
-
 class CheckUserSessionHelper(userEntity: ActorRef[ShardingEnvelope[UserEntity.Command]])(
     implicit system: ActorSystem[_],
     timeout: Timeout)
     extends StrictLogging {
-  def checkUserSession[RESP](token: String, failureResult: => RESP)(
+  private def checkUserSession[RESP](token: String, failureResult: => RESP)(
       func: TokenAccount => Future[RESP]): Future[RESP] = {
     import system.executionContext
-    val account = SessionUtils.decodeToken(token).split("\\|") match {
-      case Array(value, _) => value
-      case other =>
-        logger.error(s"Parse account from token failure. parsed value is $other")
-        throw new IllegalArgumentException("Session token invalid.")
+    val ta = SessionUtils.parseAccount(token) match {
+      case Right(value)  => value
+      case Left(message) => throw new IllegalArgumentException(message)
     }
 
     userEntity
       .ask[UserResponse](replyTo =>
-        ShardingEnvelope(account, UserCommand(replyTo, Cmd.CheckSession(CheckSession(token)))))
+        ShardingEnvelope(ta.account, UserCommand(replyTo, Cmd.CheckSession(CheckSession(token)))))
       .flatMap {
-        case resp if resp.status == IntStatus.OK => func(new TokenAccount(token, account))
+        case resp if resp.status == IntStatus.OK => func(ta)
         case resp =>
           logger.debug(s"Check session error: $resp")
           Future.successful(failureResult)

@@ -19,6 +19,7 @@ package fusion.discoveryx.client.impl
 import akka.NotUsed
 import akka.actor.Cancellable
 import akka.actor.typed.ActorSystem
+import akka.http.scaladsl.model.Uri
 import akka.stream.scaladsl.Source
 import com.typesafe.scalalogging.StrictLogging
 import fusion.common.extension.FusionCoordinatedShutdown
@@ -33,7 +34,7 @@ import scala.concurrent.duration._
 import scala.util.control.NonFatal
 import scala.util.{ Failure, Success }
 
-private[client] class NamingClientImpl(val settings: NamingClientSettings, val serviceClient: NamingServiceClient)(
+private[client] class NamingClientImpl(val settings: NamingClientSettings, val client: NamingServiceClient)(
     implicit system: ActorSystem[_])
     extends NamingClient
     with StrictLogging {
@@ -45,10 +46,10 @@ private[client] class NamingClientImpl(val settings: NamingClientSettings, val s
     for ((_, cancellable) <- heartbeatInstances if !cancellable.isCancelled) {
       cancellable.cancel
     }
-    serviceClient.close()
+    client.close()
   }
 
-  override def serverStatus(in: ServerStatusQuery): Future[ServerStatusBO] = serviceClient.serverStatus(in)
+  override def serverStatus(in: ServerStatusQuery): Future[ServerStatusBO] = client.serverStatus(in)
 
   override def registerOnSettings(): Future[NamingReply] =
     try {
@@ -79,9 +80,9 @@ private[client] class NamingClientImpl(val settings: NamingClientSettings, val s
 
   override def registerInstance(in: InstanceRegister): Future[NamingReply] = registerInstance(in, 30.seconds)
 
-  def registerInstance(in: InstanceRegister, delay: FiniteDuration): Future[NamingReply] = {
+  override def registerInstance(in: InstanceRegister, delay: FiniteDuration): Future[NamingReply] = {
     import system.executionContext
-    serviceClient.registerInstance(in).andThen {
+    client.registerInstance(in).andThen {
       case Success(reply) if reply.status == IntStatus.OK && reply.data.isInstance =>
         val inst = reply.data.instance.get
         val (cancellable, source) =
@@ -92,10 +93,15 @@ private[client] class NamingClientImpl(val settings: NamingClientSettings, val s
         logger.info(s"注册实例成功，开始心跳调度。${settings.heartbeatInterval} | $inst")
         heartbeat(source, inst).runForeach(bo => logger.debug(s"Received heartbeat response: $bo")).failed.foreach {
           e =>
-            heartbeatInstancesOnRemoves(key)
-            retryRegisterInstance(in, delay)
-            logger.error(
-              s"Heartbeat connection is abnormally disconnect, try again in $delay. exception throw: ${e.getLocalizedMessage}")
+            if (heartbeatInstances.contains(key)) {
+              heartbeatInstancesOnRemoves(key)
+              logger.error(
+                s"Heartbeat connection is abnormally disconnect, try again in $delay. exception throw: ${e.getLocalizedMessage}")
+              retryRegisterInstance(in, delay)
+            } else {
+              logger.error(
+                s"Heartbeat connection is abnormally disconnect, exited. exception throw: ${e.getLocalizedMessage}")
+            }
         }
       case Success(reply) =>
         logger.warn(s"注册实例错误，返回：$reply")
@@ -109,17 +115,45 @@ private[client] class NamingClientImpl(val settings: NamingClientSettings, val s
     heartbeatInstances -= key
   }
 
-  override def modifyInstance(in: InstanceModify): Future[NamingReply] = serviceClient.modifyInstance(in)
+  override def modifyInstance(in: InstanceModify): Future[NamingReply] = client.modifyInstance(in)
 
   override def removeInstance(in: InstanceRemove): Future[NamingReply] = {
     heartbeatInstancesOnRemoves(InstanceKey(in))
-    serviceClient.removeInstance(in)
+    client.removeInstance(in)
   }
 
-  override def queryInstance(in: InstanceQuery): Future[NamingReply] = serviceClient.queryInstance(in)
+  override def queryInstance(in: InstanceQuery): Future[NamingReply] = client.queryInstance(in)
+
+  override def oneHealthyInstance(serviceName: String): Future[Option[Instance]] = {
+    import system.executionContext
+    val in = InstanceQuery(namespace, serviceName, oneHealthy = true)
+    queryInstance(in).map(_.data.serviceInfo.flatMap(_.instances.headOption))
+  }
+
+  override def generateUri(uri: Uri): Future[Uri] = {
+    import system.executionContext
+    val host = uri.authority.host
+    if (host.isNamedHost() && uri.authority.port <= 0) {
+      oneHealthyInstance(host.address()).collect {
+        case Some(inst) =>
+          val authority = uri.authority.copy(host = Uri.Host(inst.ip), port = inst.port)
+          uri.copy(authority = authority)
+      }
+    } else {
+      Future.successful(uri)
+    }
+  }
+
+  override def generateUri(uri: akka.http.javadsl.model.Uri): Future[akka.http.javadsl.model.Uri] = {
+    import system.executionContext
+    generateUri(uri.asScala()).map(akka.http.javadsl.model.Uri.create)
+  }
+
+  @inline private def namespace: String =
+    settings.namespace.getOrElse(throw new IllegalArgumentException("Configuration parameter 'namespace' not set."))
 
   private def heartbeat(in: Source[InstanceHeartbeat, NotUsed], inst: Instance): Source[ServerStatusBO, NotUsed] = {
-    serviceClient
+    client
       .heartbeat()
       .addHeader(Headers.NAMESPACE, inst.namespace)
       .addHeader(Headers.SERVICE_NAME, inst.serviceName)

@@ -41,6 +41,30 @@ REST URL路径由 **REST URL前缀** + 服务名组织，均使用 **POST** 方�
 
 @@snip [model](../../../../../../discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/user.proto) { #UserResponse }
 
+## Current Session User
+
+通过Session获取当前登录用户，REST API用户不需要传body（将从cookie及http header头中获取）。
+
+- **REST URI**：`POST|GET /fusion/discoveryx/console/sign/` or `POST|GET /fusion/discoveryx/console/sign/CurrentSessionUser`
+
+**gRPC**
+
+@@snip [gRPC](../../../../../../discoveryx-server/src/main/protobuf/fusion/discoveryx/server/grpc/server.proto) { #CurrentSessionUser }
+
+**请求**
+
+@@snip [model](../../../../../../discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/user.proto) { #CurrentSessionUser }
+
+**响应**
+
+@@snip [model](../../../../../../discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/user.proto) { #UserResponse }
+
+`oneof`字段`user`将返回已当前登录Session的用户
+
+#### User
+
+@@snip [model](../../../../../../discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/user.proto) { #User }
+
 ## ListUser
 
 **gRPC**
@@ -74,10 +98,6 @@ REST URL路径由 **REST URL前缀** + 服务名组织，均使用 **POST** 方�
 @@snip [model](../../../../../../discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/user.proto) { #UserResponse }
 
 `oneof`字段`user`将返回已创建的用户
-
-#### User
-
-@@snip [model](../../../../../../discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/user.proto) { #User }
 
 ## ModifyUser
 

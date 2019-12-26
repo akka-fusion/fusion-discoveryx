@@ -19,6 +19,7 @@ package fusion.discoveryx.client
 import akka.actor.typed.ActorSystem
 import akka.actor.typed.scaladsl.adapter._
 import akka.grpc.GrpcClientSettings
+import akka.http.scaladsl.model.Uri
 import fusion.discoveryx.client.impl.NamingClientImpl
 import fusion.discoveryx.grpc.{ NamingService, NamingServiceClient }
 import fusion.discoveryx.model._
@@ -28,7 +29,7 @@ import scala.concurrent.duration.FiniteDuration
 
 trait NamingClient {
   val settings: NamingClientSettings
-  val serviceClient: NamingServiceClient
+  val client: NamingServiceClient
 
   /**
    * 查询服务状态
@@ -65,6 +66,11 @@ trait NamingClient {
    * 查询实例
    */
   def queryInstance(in: InstanceQuery): Future[NamingReply]
+
+  def oneHealthyInstance(serviceName: String): Future[Option[Instance]]
+
+  def generateUri(uri: Uri): Future[Uri]
+  def generateUri(uri: akka.http.javadsl.model.Uri): Future[akka.http.javadsl.model.Uri]
 }
 
 object NamingClient {

@@ -74,4 +74,6 @@ object Dependencies {
   val _hikariCP = "com.zaxxer" % "HikariCP" % versionHikariCP
 
   val _alpnAgent = "org.mortbay.jetty.alpn" % "jetty-alpn-agent" % versionAlpnAgent
+
+  val _playWS = "com.typesafe.play" %% "play-ahc-ws-standalone" % "2.1.2"
 }

@@ -73,6 +73,11 @@ message Logouted {
     string account = 2;
 }
 
+// #GetUser
+message GetUser {
+    string account = 1;
+}
+
 // #CreateUser
 message CreateUser {
     option (scalapb.message).extends = "fusion.discoveryx.server.management.UserEntity.Event";
@@ -119,6 +124,17 @@ message CheckSession {
     string token = 1;
 }
 
+// #CurrentSessionUser
+message CurrentSessionUser {
+    string token = 1;
+}
+// #CurrentSessionUser
+
+message TokenAccount {
+    string token = 1;
+    string account = 2;
+}
+
 message RefreshSession {
     option (scalapb.message).extends = "fusion.discoveryx.server.management.UserEntity.Event";
 }
@@ -136,6 +152,8 @@ message UserCommand {
         RemoveUser remove = 6;
         QueryUser query = 7;
         CheckSession check_session = 8;
+        GetUser get = 9;
+        TokenAccount token_account = 10;
     }
 }
 

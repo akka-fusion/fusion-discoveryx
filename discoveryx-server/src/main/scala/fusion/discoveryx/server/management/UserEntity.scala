@@ -27,6 +27,7 @@ import fusion.discoveryx.server.protocol.UserResponse.Data
 import fusion.discoveryx.server.protocol._
 import fusion.discoveryx.server.util.SessionUtils
 import helloscala.common.IntStatus
+import helloscala.common.util.StringUtils
 
 object UserEntity {
   trait Command
@@ -34,6 +35,12 @@ object UserEntity {
 
   val NAME = "UserEntity"
   val TypeKey: EntityTypeKey[Command] = EntityTypeKey(NAME)
+
+  private val VALID_CHARS = Set('-', '_', '.') ++ ('a' to 'z') ++ ('A' to 'Z') ++ ('0' to '9')
+  def validationAccount(account: String): Either[String, Unit] = {
+    if (StringUtils.isNoneEmpty(account) && account.forall(VALID_CHARS.contains)) Right(())
+    else Left("Field 'account' is error, only English letters, numbers, dots, underscores and dashes.")
+  }
 
   def init(system: ActorSystem[_]): ActorRef[ShardingEnvelope[Command]] =
     ClusterSharding(system).init(Entity(TypeKey)(context => apply(context)))
@@ -62,6 +69,8 @@ class UserEntity private (persistenceId: PersistenceId, context: ActorContext[Co
       case UserCommand(replyTo, cmd) =>
         cmd match {
           case Cmd.CheckSession(value) => processCheckSession(oldState, replyTo, value.token)
+          case Cmd.TokenAccount(value) => processCurrentSessionUser(oldState, replyTo, value)
+          case Cmd.Get(value)          => processGet(oldState, replyTo, value)
           case Cmd.Query(value)        => processQuery(oldState, replyTo, value)
           case Cmd.Create(value)       => processCreate(oldState, replyTo, value)
           case Cmd.Modify(value)       => processModify(oldState, replyTo, value)
@@ -148,6 +157,33 @@ class UserEntity private (persistenceId: PersistenceId, context: ActorContext[Co
       }
   }
 
+  private def processCurrentSessionUser(
+      oldState: UserState,
+      replyTo: ActorRef[UserResponse],
+      value: TokenAccount): Effect[Event, UserState] = {
+    val status = checkSession(oldState, value.token)
+    if (status == IntStatus.OK) {
+      Effect
+        .persist(RefreshSession())
+        .thenReply(replyTo)(state => UserResponse(status, data = Data.User(state.user.get)))
+    } else {
+      Effect.reply(replyTo)(UserResponse(status))
+    }
+  }
+
+  private def processGet(
+      oldState: UserState,
+      replyTo: ActorRef[UserResponse],
+      value: GetUser): Effect[Event, UserState] = {
+    oldState match {
+      case UserState(Some(user), _, _) if value.account == user.account =>
+        replyTo ! UserResponse(IntStatus.OK, data = Data.User(user))
+      case _ =>
+        replyTo ! UserResponse(IntStatus.NOT_FOUND)
+    }
+    Effect.none
+  }
+
   private def processQuery(
       oldState: UserState,
       replyTo: ActorRef[UserResponse],
@@ -165,12 +201,18 @@ class UserEntity private (persistenceId: PersistenceId, context: ActorContext[Co
       oldState: UserState,
       replyTo: ActorRef[UserResponse],
       token: String): Effect[Event, UserState] = {
-    val status =
-      if (oldState.session.exists(session =>
-            session.token == token && (System.currentTimeMillis() - session.activeTime) < settings.sessionTimeout))
-        IntStatus.OK
-      else IntStatus.UNAUTHORIZED
-    Effect.persist(RefreshSession()).thenReply(replyTo)(_ => UserResponse(status))
+    val status = checkSession(oldState, token)
+    if (status == IntStatus.OK)
+      Effect.persist(RefreshSession()).thenReply(replyTo)(_ => UserResponse(status))
+    else
+      Effect.reply(replyTo)(UserResponse(status))
+  }
+
+  private def checkSession(oldState: UserState, token: String): Int = {
+    if (oldState.user.isDefined && oldState.session.exists(session =>
+          session.token == token && (System.currentTimeMillis() - session.activeTime) < settings.sessionTimeout))
+      IntStatus.OK
+    else IntStatus.UNAUTHORIZED
   }
 
   private def eventHandler(state: UserState, event: Event): UserState = {

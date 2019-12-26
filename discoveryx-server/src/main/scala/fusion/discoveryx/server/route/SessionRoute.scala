@@ -19,30 +19,39 @@ package fusion.discoveryx.server.route
 import akka.actor.typed.{ ActorRef, ActorSystem }
 import akka.cluster.sharding.typed.ShardingEnvelope
 import akka.grpc.scaladsl.MetadataImpl
-import akka.http.scaladsl.server.{ AuthorizationFailedRejection, Directive0 }
 import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.server.{ AuthorizationFailedRejection, Directive, Directive0, Directive1 }
 import akka.util.Timeout
 import fusion.discoveryx.server.management.UserEntity
-import fusion.discoveryx.server.protocol.UserResponse
-import fusion.discoveryx.server.util.CheckUserSessionHelper
+import fusion.discoveryx.server.protocol.TokenAccount
+import fusion.discoveryx.server.util.{ CheckUserSessionHelper, SessionUtils }
 import helloscala.common.IntStatus
 
 import scala.concurrent.Future
 
 trait SessionRoute {
-  def validationSession(userEntity: ActorRef[ShardingEnvelope[UserEntity.Command]])(
+  def createValidationSession(userEntity: ActorRef[ShardingEnvelope[UserEntity.Command]])(
       implicit system: ActorSystem[_],
       timeout: Timeout): Directive0 =
+    createGetSessionUser(userEntity).flatMap { either =>
+      if (either.isRight) pass else reject(AuthorizationFailedRejection)
+    }
+
+  def createGetSessionUser(userEntity: ActorRef[ShardingEnvelope[UserEntity.Command]])(
+      implicit system: ActorSystem[_],
+      timeout: Timeout): Directive1[Either[Int, TokenAccount]] =
     extractRequestContext.flatMap { ctx =>
       val metadata = new MetadataImpl(ctx.request.headers)
       val future =
-        new CheckUserSessionHelper(userEntity).checkUserSession(metadata, UserResponse(IntStatus.UNAUTHORIZED))(_ =>
-          Future.successful(UserResponse(IntStatus.OK)))
-      onSuccess(future).flatMap {
-        case UserResponse(IntStatus.OK, _, _) => pass
-        case resp =>
-          ctx.log.warning(s"Validation session error: $resp")
-          reject(AuthorizationFailedRejection)
+        new CheckUserSessionHelper(userEntity)
+          .checkUserSession[Either[Int, TokenAccount]](metadata, Left(IntStatus.UNAUTHORIZED))(tokenAccount =>
+            Future.successful(Right(tokenAccount)))
+      onSuccess(future).flatMap { either =>
+        provide(either)
       }
     }
+
+  def optionalSessionToken: Directive1[Option[String]] = extractRequest.flatMap { request =>
+    provide(SessionUtils.getTokenFromRequest(request))
+  }
 }

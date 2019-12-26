@@ -89,6 +89,16 @@ service UserService {
     }
     // #Logout
 
+    // #CurrentSessionUser
+    rpc CurrentSessionUser (fusion.discoveryx.server.protocol.CurrentSessionUser) returns (fusion.discoveryx.server.protocol.UserResponse) {
+    }
+    // #CurrentSessionUser
+
+    // #GetUser
+    rpc GetUser (fusion.discoveryx.server.protocol.GetUser) returns (fusion.discoveryx.server.protocol.UserResponse) {
+    }
+    // #GetUser
+
     // #CreateUser
     rpc CreateUser (fusion.discoveryx.server.protocol.CreateUser) returns (fusion.discoveryx.server.protocol.UserResponse) {
     }

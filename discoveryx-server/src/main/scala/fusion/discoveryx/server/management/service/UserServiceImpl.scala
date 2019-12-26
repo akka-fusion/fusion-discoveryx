@@ -24,6 +24,8 @@ import fusion.discoveryx.server.grpc.UserService
 import fusion.discoveryx.server.management.{ UserEntity, UserManager }
 import fusion.discoveryx.server.protocol.UserCommand.Cmd
 import fusion.discoveryx.server.protocol._
+import fusion.discoveryx.server.util.SessionUtils
+import helloscala.common.IntStatus
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -33,24 +35,31 @@ class UserServiceImpl()(implicit system: ActorSystem[_]) extends UserService {
   private val userEntity = UserEntity.init(system)
   private val userManager = UserManager.init(system)
 
-  override def login(in: Login): Future[UserResponse] =
-    userEntity.ask[UserResponse](replyTo => ShardingEnvelope(in.account, UserCommand(replyTo, Cmd.Login(in))))
+  override def login(in: Login): Future[UserResponse] = askUserEntity(in.account, Cmd.Login(in))
 
-  override def logout(in: Logout): Future[UserResponse] =
-    askUserEntity(in.account, Cmd.Logout(in))
+  override def logout(in: Logout): Future[UserResponse] = askUserEntity(in.account, Cmd.Logout(in))
 
-  override def createUser(in: CreateUser): Future[UserResponse] =
-    askUserEntity(in.account, Cmd.Create(in))
+  override def createUser(in: CreateUser): Future[UserResponse] = askUserEntity(in.account, Cmd.Create(in))
 
-  override def modifyUser(in: ModifyUser): Future[UserResponse] =
-    askUserEntity(in.account, Cmd.Modify(in))
+  override def modifyUser(in: ModifyUser): Future[UserResponse] = askUserEntity(in.account, Cmd.Modify(in))
 
-  override def removeUser(in: RemoveUser): Future[UserResponse] =
-    askUserEntity(in.account, Cmd.Remove(in))
+  override def removeUser(in: RemoveUser): Future[UserResponse] = askUserEntity(in.account, Cmd.Remove(in))
 
   override def listUser(in: ListUser): Future[UserResponse] =
     userManager.ask[UserResponse](replyTo => UserManagerCommand(replyTo, UserManagerCommand.Cmd.List(in)))
 
+  override def getUser(in: GetUser): Future[UserResponse] = askUserEntity(in.account, Cmd.Get(in))
+
+  override def currentSessionUser(in: CurrentSessionUser): Future[UserResponse] = {
+    SessionUtils.parseAccount(in.token) match {
+      case Right(value)  => askUserEntity(value.account, Cmd.TokenAccount(value))
+      case Left(message) => Future.successful(UserResponse(IntStatus.UNAUTHORIZED, message))
+    }
+  }
+
   @inline private def askUserEntity(account: String, cmd: Cmd): Future[UserResponse] =
-    userEntity.ask[UserResponse](replyTo => ShardingEnvelope(account, UserCommand(replyTo, cmd)))
+    UserEntity.validationAccount(account) match {
+      case Right(_)  => userEntity.ask[UserResponse](replyTo => ShardingEnvelope(account, UserCommand(replyTo, cmd)))
+      case Left(msg) => Future.successful(UserResponse(IntStatus.BAD_REQUEST, msg))
+    }
 }
