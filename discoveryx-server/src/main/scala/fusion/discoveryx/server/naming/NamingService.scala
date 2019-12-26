@@ -78,6 +78,8 @@ class NamingService private (
   private val internalService = new InternalService(serviceItem, settings, context.self)
   private var listeners: Map[ActorRef[Event], ServiceListener] = Map()
 
+  private var serviceRefs = Vector.empty[ActorRef[NamingInstance.Command]]
+
   NamingManager.init(context.system) ! ShardingEnvelope(serviceItem.namespace, ServiceCreated(serviceItem.serviceName))
   timers.startTimerWithFixedDelay(HealthCheckKey, HealthCheckKey, settings.heartbeatTimeout)
   context.log.info(s"NamingService started: $serviceItem")
@@ -116,6 +118,7 @@ class NamingService private (
           } catch {
             case NonFatal(_) => // do nothing
           }
+          serviceRefs = serviceRefs.filterNot(_ == ref)
           Behaviors.same
       }
 
@@ -242,6 +245,17 @@ class NamingService private (
 
   private def registerInstance(in: InstanceRegister): NamingReply = {
     val inst = internalService.addInstance(DiscoveryXUtils.toInstance(in))
+
+    serviceRefs.find(_.path.name == inst.instanceId) match {
+      case Some(value) => value ! NamingInstance.Remove
+      case _ =>
+        val ref = context.spawn(
+          Behaviors.supervise(NamingInstance(inst, context.self, settings)).onFailure(SupervisorStrategy.resume),
+          inst.instanceId)
+        serviceRefs = ref +: serviceRefs
+        context.watch(ref)
+    }
+
     NamingReply(IntStatus.OK, data = NamingReply.Data.Instance(inst))
   }
 
