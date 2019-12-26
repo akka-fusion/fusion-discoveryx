@@ -34,6 +34,14 @@ docker-compose -f docker-compose.yml up -d // --build
 > discoveryx-server/testOnly fusion.discoveryx.server.route.ConfigManagementRouteTest
 ```
 
+## Package, Deployment
+
+```
+./release.sh
+```
+
+生成的zip软件包在目录：`discoveryx-server/target/universal`。
+
 ## 技术
 
 | 功能       | 使用技术              |
