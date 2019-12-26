@@ -45,7 +45,6 @@ class ManagementRoute()(implicit system: ActorSystem[_]) extends SessionRoute {
   private val managementService = new ManagementServiceImpl(managementRef)
   private val userService = new UserServiceImpl()
   private val validationSession: Directive0 = createValidationSession(userEntity)
-  private val getSessionUser = createGetSessionUser(userEntity)
 
   val grpcHandler: List[PartialFunction[HttpRequest, Future[HttpResponse]]] = {
     implicit val mat = SystemMaterializer(system).materializer

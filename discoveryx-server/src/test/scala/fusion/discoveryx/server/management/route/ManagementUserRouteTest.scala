@@ -16,13 +16,11 @@
 
 package fusion.discoveryx.server.management.route
 
-import akka.cluster.sharding.typed.internal.protobuf.ShardingMessages.ShardingEnvelope
 import akka.http.scaladsl.marshalling.ToEntityMarshaller
-import akka.http.scaladsl.model.{ HttpRequest, StatusCodes }
 import akka.http.scaladsl.model.headers.Cookie
+import akka.http.scaladsl.model.{ HttpRequest, StatusCodes }
 import fusion.discoveryx.common.Constants
-import fusion.discoveryx.server.management.UserManager
-import fusion.discoveryx.server.protocol.{ CreatedUserAccount, ListUser, Login, UserResponse }
+import fusion.discoveryx.server.protocol.{ ListUser, Login, UserResponse }
 import fusion.discoveryx.server.route.FusionRouteTest
 import fusion.discoveryx.server.util.ProtobufJson4s
 import org.scalatest.WordSpec

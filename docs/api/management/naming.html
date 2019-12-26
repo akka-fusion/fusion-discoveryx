@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+
+<head>
+<title>Naming服务管理 &bull; Fusion DiscoveryX</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="description" content="discoveryx-docs"/>
+<link rel="canonical" href="https://akka-fusion.github.io/fusion-discoveryx/api/management/naming.html"/>
+<script type="text/javascript" src="../../lib/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../../lib/foundation/dist/js/foundation.min.js"></script>
+<link rel="stylesheet" type="text/css" href="../../lib/normalize.css/normalize.css"/>
+<link rel="stylesheet" type="text/css" href="../../lib/foundation/dist/css/foundation.min.css"/>
+<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/docsearch.js/2/docsearch.min.css" />
+<link rel="stylesheet" type="text/css" href="../../css/icons.css"/>
+<link rel="stylesheet" type="text/css" href="../../css/page-6.css"/>
+<link rel="stylesheet" type="text/css" href="../../css/banner.css"/>
+<link rel="shortcut icon" href="../../images/favicon.ico" />
+<link rel="apple-touch-icon" sizes="180x180" href="../../images/apple-touch-icon.png"/>
+<link rel="icon" type="image/png" sizes="32x32" href="../../images/favicon-32x32.png"/>
+<link rel="icon" type="image/png" sizes="16x16" href="../../images/favicon-16x16.png"/>
+<link rel="manifest" href="../../images/manifest.json"/>
+<meta name="msapplication-TileImage" content="../../images/mstile-150x150.png"/>
+<meta name="msapplication-TileColor" content="#15a9ce"/>
+<meta name="theme-color" content="#15a9ce"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+
+
+<body id="underlay" data-toggler="nav-open">
+<header class="site-header hide-for-large">
+<div class="sticky-header clearfix">
+<a href="https://akka.io"><img class="logo" src="../../images/akka-logo-reverse.svg"/></a>
+
+<button class="menu-icon float-right" type="button" data-toggle="underlay overlay"></button>
+</div>
+<div id="overlay" class="overlay-nav" data-toggler="nav-open">
+<header class="nav-header">
+<div class="nav-header-title">
+<h1><a href="../../index.html">Fusion DiscoveryX</a></h1>
+</div>
+<div class="nav-header-version">
+Version 0.1.0
+</div>
+<div class="nav-header-groups">
+<select class="supergroup" name="Language"><option class="group" value="group-scala">Scala</option></select>
+</div>
+</header>
+<nav class="nav-toc">
+<ul>
+  <li><a href="../../intro.html" class="page">介绍</a></li>
+  <li><a href="../../use/index.html" class="page">使用</a></li>
+  <li><a href="../../design/index.html" class="page">设计</a></li>
+  <li><a href="../../api/index.html" class="page">API</a>
+  <ul>
+    <li><a href="../../api/index.html#目录" class="header">目录</a></li>
+    <li><a href="../../api/open/index.html" class="page">开放API</a></li>
+    <li><a href="../../api/management/index.html" class="page">管理API</a>
+    <ul>
+      <li><a href="../../api/management/index.html#目录" class="header">目录</a></li>
+      <li><a href="../../api/management/config.html" class="page">Config配置管理</a></li>
+      <li><a href="../../api/management/naming.html#naming服务管理" class="active page">Naming服务管理</a>
+      <ul>
+        <li><a href="../../api/management/naming.html#listservice" class="header">ListService</a></li>
+        <li><a href="../../api/management/naming.html#getservice" class="header">GetService</a></li>
+        <li><a href="../../api/management/naming.html#createservice" class="header">CreateService</a></li>
+        <li><a href="../../api/management/naming.html#modifyservice" class="header">ModifyService</a></li>
+        <li><a href="../../api/management/naming.html#removeservice" class="header">RemoveService</a></li>
+        <li><a href="../../api/management/naming.html#removeinstance" class="header">RemoveInstance</a></li>
+        <li><a href="../../api/management/naming.html#modifyinstance" class="header">ModifyInstance</a></li>
+      </ul></li>
+      <li><a href="../../api/management/manage.html" class="page">系统管理</a></li>
+      <li><a href="../../api/management/user.html" class="page">用户管理</a></li>
+      <li><a href="../../api/management/grpc.html" class="page">gRPC服务描述定义文件</a></li>
+    </ul></li>
+    <li><a href="../../api/json.html" class="page">JSON 说明</a></li>
+  </ul></li>
+  <li><a href="../../deploy/index.html" class="page">部署</a></li>
+  <li><a href="../../releases.html" class="page">发布</a></li>
+</ul>
+</nav>
+</div>
+</header>
+<div class="site-content-wrapper">
+<aside class="sticky-sidebar show-for-large">
+<header class="nav-header sticky-sidebar-header">
+<div class="nav-header-title">
+<h1><a href="../../index.html">Fusion DiscoveryX</a></h1>
+</div>
+<div class="nav-header-version">
+Version 0.1.0
+</div>
+<div class="nav-header-groups">
+<select class="supergroup" name="Language"><option class="group" value="group-scala">Scala</option></select>
+</div>
+</header>
+<nav class="site-nav sticky-sidebar-contents">
+<div class="nav-toc">
+<ul>
+  <li><a href="../../intro.html" class="page">介绍</a></li>
+  <li><a href="../../use/index.html" class="page">使用</a></li>
+  <li><a href="../../design/index.html" class="page">设计</a></li>
+  <li><a href="../../api/index.html" class="page">API</a>
+  <ul>
+    <li><a href="../../api/index.html#目录" class="header">目录</a></li>
+    <li><a href="../../api/open/index.html" class="page">开放API</a></li>
+    <li><a href="../../api/management/index.html" class="page">管理API</a>
+    <ul>
+      <li><a href="../../api/management/index.html#目录" class="header">目录</a></li>
+      <li><a href="../../api/management/config.html" class="page">Config配置管理</a></li>
+      <li><a href="../../api/management/naming.html#naming服务管理" class="active page">Naming服务管理</a>
+      <ul>
+        <li><a href="../../api/management/naming.html#listservice" class="header">ListService</a></li>
+        <li><a href="../../api/management/naming.html#getservice" class="header">GetService</a></li>
+        <li><a href="../../api/management/naming.html#createservice" class="header">CreateService</a></li>
+        <li><a href="../../api/management/naming.html#modifyservice" class="header">ModifyService</a></li>
+        <li><a href="../../api/management/naming.html#removeservice" class="header">RemoveService</a></li>
+        <li><a href="../../api/management/naming.html#removeinstance" class="header">RemoveInstance</a></li>
+        <li><a href="../../api/management/naming.html#modifyinstance" class="header">ModifyInstance</a></li>
+      </ul></li>
+      <li><a href="../../api/management/manage.html" class="page">系统管理</a></li>
+      <li><a href="../../api/management/user.html" class="page">用户管理</a></li>
+      <li><a href="../../api/management/grpc.html" class="page">gRPC服务描述定义文件</a></li>
+    </ul></li>
+    <li><a href="../../api/json.html" class="page">JSON 说明</a></li>
+  </ul></li>
+  <li><a href="../../deploy/index.html" class="page">部署</a></li>
+  <li><a href="../../releases.html" class="page">发布</a></li>
+</ul>
+</div>
+</nav>
+<footer class="nav-footer sticky-sidebar-footer">
+<a href="https://akka.io"><img class="logo" src="../../images/akka-logo-reverse.svg"/></a>
+
+</footer>
+</aside>
+<main class="fixed-shift-for-large expanded row">
+<section class="site-content small-12 column">
+<article class="page-content row">
+<div class="small-12 column" id="docs">
+<h1><a href="#naming服务管理" name="naming服务管理" class="anchor"><span class="anchor-link"></span></a>Naming服务管理</h1>
+<ul>
+  <li>gRPC服务地址：<code>/fusion.discoveryx.server.grpc.NamingManagerService</code></li>
+  <li>REST URL前缀：<code>/fusion/discoveryx/console/naming</code></li>
+</ul>
+<p>REST URL路径由 <strong>REST URL前缀</strong> + 服务名组织，均使用 <strong>POST</strong> 方法的请求，JSON序例化格式。如查询服务列表接口访问地址为：<code>POST /fusion/discoveryx/console/naming/ListService</code>。Protobuf与JSON格式转换请参阅： <a href="../json.html">JSON 说明</a>。</p>
+<h2><a href="#listservice" name="listservice" class="anchor"><span class="anchor-link"></span></a>ListService</h2>
+<p><strong>gRPC</strong></p>
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/grpc/server.proto#L25-L27" target="_blank" title="Go to snippet source"></a><code class="language-proto">// 查询服务列表
+rpc ListService (fusion.discoveryx.server.protocol.ListService) returns (fusion.discoveryx.server.protocol.NamingResponse) {
+}</code></pre>
+<p><strong>请求</strong></p>
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/naming.proto#L69-L77" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ListService {
+    string namespace = 1;
+    int32 page = 2;
+    int32 size = 3;
+    string service_name = 4;
+    string group_name = 5;
+    // only return all healthy instances
+    bool all_healthy = 6;
+}</code></pre>
+<p><strong>响应</strong></p>
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/naming.proto#L142-L150" target="_blank" title="Go to snippet source"></a><code class="language-proto">message NamingResponse {
+    int32 status = 1;
+    string message = 2;
+    oneof data {
+        ListedService listed_service = 3;
+        fusion.discoveryx.model.ServiceInfo service_info = 4;
+        fusion.discoveryx.model.Instance instance = 5;
+    }
+}</code></pre>
+<p><code>oneof</code>的<code>listed_service</code>字段将返回匹配查询的服务列表：</p>
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/naming.proto#L81-L86" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ListedService {
+    repeated fusion.discoveryx.model.ServiceInfo service_infos = 1;
+    int32 page = 2;
+    int32 size = 3;
+    int32 total_elements = 4;
+}</code></pre>
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L241-L252" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ServiceInfo {
+    string namespace = 1;
+    string service_name = 2;
+    string group_name = 3;
+    double protect_threshold = 4;
+    map&lt;string, string&gt; metadata = 5;
+    // 实例数
+    int32 instance_total = 6;
+    // 健康实例数
+    int32 instance_healthy_count = 7;
+    repeated Instance instances = 8;
+}</code></pre>
+<p><code>Instance</code>见 <a href="../open/naming.html#instance">开放API#instance</a>。</p>
+<h2><a href="#getservice" name="getservice" class="anchor"><span class="anchor-link"></span></a>GetService</h2>
+<p><strong>gRPC</strong></p>
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/grpc/server.proto#L31-L33" target="_blank" title="Go to snippet source"></a><code class="language-proto">// 查询单个服务
+rpc GetService (fusion.discoveryx.server.protocol.GetService) returns (fusion.discoveryx.server.protocol.NamingResponse) {
+}</code></pre>
+<p><strong>请求</strong></p>
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/naming.proto#L90-L94" target="_blank" title="Go to snippet source"></a><code class="language-proto">message GetService {
+    string namespace = 1;
+    string service_name = 2;
+    google.protobuf.StringValue group_name = 3;
+}</code></pre>
+<p><strong>响应</strong></p>
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/naming.proto#L142-L150" target="_blank" title="Go to snippet source"></a><code class="language-proto">message NamingResponse {
+    int32 status = 1;
+    string message = 2;
+    oneof data {
+        ListedService listed_service = 3;
+        fusion.discoveryx.model.ServiceInfo service_info = 4;
+        fusion.discoveryx.model.Instance instance = 5;
+    }
+}</code></pre>
+<p><code>oneof</code>的<code>listed_service</code>字段将返回匹配查询的服务列表：</p>
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L241-L252" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ServiceInfo {
+    string namespace = 1;
+    string service_name = 2;
+    string group_name = 3;
+    double protect_threshold = 4;
+    map&lt;string, string&gt; metadata = 5;
+    // 实例数
+    int32 instance_total = 6;
+    // 健康实例数
+    int32 instance_healthy_count = 7;
+    repeated Instance instances = 8;
+}</code></pre>
+<h2><a href="#createservice" name="createservice" class="anchor"><span class="anchor-link"></span></a>CreateService</h2>
+<p><strong>gRPC</strong></p>
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/grpc/server.proto#L37-L39" target="_blank" title="Go to snippet source"></a><code class="language-proto">// 创建服务
+rpc CreateService (fusion.discoveryx.server.protocol.CreateService) returns (fusion.discoveryx.server.protocol.NamingResponse) {
+}</code></pre>
+<p><strong>请求</strong></p>
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/naming.proto#L98-L104" target="_blank" title="Go to snippet source"></a><code class="language-proto">message CreateService {
+    string namespace = 1;
+    string service_name = 2;
+    string group_name = 3;
+    double protect_threshold = 4;
+    map&lt;string, string&gt; metadata = 5;
+}</code></pre>
+<p><strong>响应</strong></p>
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/naming.proto#L142-L150" target="_blank" title="Go to snippet source"></a><code class="language-proto">message NamingResponse {
+    int32 status = 1;
+    string message = 2;
+    oneof data {
+        ListedService listed_service = 3;
+        fusion.discoveryx.model.ServiceInfo service_info = 4;
+        fusion.discoveryx.model.Instance instance = 5;
+    }
+}</code></pre>
+<p><code>oneof</code>的<code>listed_service</code>字段将返回匹配查询的服务列表：</p>
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L241-L252" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ServiceInfo {
+    string namespace = 1;
+    string service_name = 2;
+    string group_name = 3;
+    double protect_threshold = 4;
+    map&lt;string, string&gt; metadata = 5;
+    // 实例数
+    int32 instance_total = 6;
+    // 健康实例数
+    int32 instance_healthy_count = 7;
+    repeated Instance instances = 8;
+}</code></pre>
+<h2><a href="#modifyservice" name="modifyservice" class="anchor"><span class="anchor-link"></span></a>ModifyService</h2>
+<p><strong>gRPC</strong></p>
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/grpc/server.proto#L43-L45" target="_blank" title="Go to snippet source"></a><code class="language-proto">// 创建服务
+rpc ModifyService (fusion.discoveryx.server.protocol.ModifyService) returns (fusion.discoveryx.server.protocol.NamingResponse) {
+}</code></pre>
+<p><strong>请求</strong></p>
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/naming.proto#L115-L122" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ModifyService {
+    string namespace = 1;
+    string service_name = 2;
+    google.protobuf.StringValue group_name = 3;
+    google.protobuf.DoubleValue protect_threshold = 4;
+    map&lt;string, string&gt; metadata = 5;
+    bool replace_metadata = 6;
+}</code></pre>
+<p><strong>响应</strong></p>
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/naming.proto#L142-L150" target="_blank" title="Go to snippet source"></a><code class="language-proto">message NamingResponse {
+    int32 status = 1;
+    string message = 2;
+    oneof data {
+        ListedService listed_service = 3;
+        fusion.discoveryx.model.ServiceInfo service_info = 4;
+        fusion.discoveryx.model.Instance instance = 5;
+    }
+}</code></pre>
+<p><code>oneof</code>的<code>listed_service</code>字段将返回匹配查询的服务列表：</p>
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L241-L252" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ServiceInfo {
+    string namespace = 1;
+    string service_name = 2;
+    string group_name = 3;
+    double protect_threshold = 4;
+    map&lt;string, string&gt; metadata = 5;
+    // 实例数
+    int32 instance_total = 6;
+    // 健康实例数
+    int32 instance_healthy_count = 7;
+    repeated Instance instances = 8;
+}</code></pre>
+<h2><a href="#removeservice" name="removeservice" class="anchor"><span class="anchor-link"></span></a>RemoveService</h2>
+<p><strong>gRPC</strong></p>
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/grpc/server.proto#L49-L51" target="_blank" title="Go to snippet source"></a><code class="language-proto">// 删除服务
+rpc RemoveService (fusion.discoveryx.server.protocol.RemoveService) returns (fusion.discoveryx.server.protocol.NamingResponse) {
+}</code></pre>
+<p><strong>请求</strong></p>
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/naming.proto#L108-L111" target="_blank" title="Go to snippet source"></a><code class="language-proto">message RemoveService {
+    string namespace = 1;
+    string service_name = 2;
+}</code></pre>
+<p><strong>响应</strong></p>
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/naming.proto#L142-L150" target="_blank" title="Go to snippet source"></a><code class="language-proto">message NamingResponse {
+    int32 status = 1;
+    string message = 2;
+    oneof data {
+        ListedService listed_service = 3;
+        fusion.discoveryx.model.ServiceInfo service_info = 4;
+        fusion.discoveryx.model.Instance instance = 5;
+    }
+}</code></pre>
+<h2><a href="#removeinstance" name="removeinstance" class="anchor"><span class="anchor-link"></span></a>RemoveInstance</h2>
+<p>见 <a href="../open/naming.html#removeinstance">RemoveInstance 删除实例</a> 。</p>
+<h2><a href="#modifyinstance" name="modifyinstance" class="anchor"><span class="anchor-link"></span></a>ModifyInstance</h2>
+<p>见 <a href="../open/naming.html#modifyinstance">ModifyInstance 编辑实例</a> 。</p>
+</div>
+</article>
+<div class="row">
+<div class="small-12 column">
+<section class="nav-prev-next row">
+<div class="nav-prev small-6 column">
+<a href="../../api/management/config.html"><i class="icon-prev"></i> <span class="link-prev">Config配置管理</span></a>
+</div>
+<div class="nav-next small-6 column clearfix">
+<a class="float-right" href="../../api/management/manage.html">系统管理 <i class="icon-next"></i></a>
+</div>
+</section>
+</div>
+</div>
+<div class="source-github row">
+在此文档中发现错误？该页面的源代码可以在 <a href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-docs/src/main/paradox/api/management/naming.md" target="_blank">这里</a> 找到。欢迎随时编辑并提交Pull Request。
+</div>
+
+<footer class="page-footer row clearfix">
+<img class="akka-icon float-left show-for-medium" src="../../images/akka-icon.svg" />
+<section class="copyright">
+<div>discoveryx-docs is Open Source and available under the Apache 2 License.</div>
+<p class="legal">
+&copy; 2019-2019 <a href="https://akka-fusion.github.com/" target="_blank">Akka Fusion</a> |
+<a href="https://akka-fusion.github.com/fusion-discoveryx/" target="_blank">Fusion DiscoveryX</a> |
+<a href="https://akka-fusion.github.com/fusion-schedulerx/" target="_blank">Fusion SchedulerX</a>
+</p>
+</section>
+</footer>
+</section>
+</main>
+</div>
+
+<script type="text/javascript" src="../../js/scrollsneak.js"></script>
+<script type="text/javascript">jQuery(document).foundation();</script>
+<script type="text/javascript" src="../../js/groups.js"></script>
+<script type="text/javascript" src="../../js/page.js"></script>
+<script type="text/javascript" src="../../js/magellan.js"></script>
+<script type="text/javascript" src="../../js/metadata-toggle.js"></script>
+
+<style type="text/css">@import "../../lib/prettify/prettify.css";</style>
+<script type="text/javascript" src="../../lib/prettify/prettify.js"></script>
+<script type="text/javascript" src="../../lib/prettify/lang-scala.js"></script>
+<script type="text/javascript">//<![CDATA[
+jQuery(function(){window.prettyPrint && prettyPrint()});
+//]]></script>
+<!-- hook for including project specific javascript into the generated docs -->
+
+</body>
+</html>

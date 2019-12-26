@@ -68,7 +68,7 @@ class UserEntity private (persistenceId: PersistenceId, context: ActorContext[Co
     command match {
       case UserCommand(replyTo, cmd) =>
         cmd match {
-          case Cmd.CheckSession(value) => processCheckSession(oldState, replyTo, value.token)
+          case Cmd.CheckSession(value) => processCheckSession(oldState, replyTo, value)
           case Cmd.TokenAccount(value) => processCurrentSessionUser(oldState, replyTo, value)
           case Cmd.Get(value)          => processGet(oldState, replyTo, value)
           case Cmd.Query(value)        => processQuery(oldState, replyTo, value)
@@ -98,12 +98,12 @@ class UserEntity private (persistenceId: PersistenceId, context: ActorContext[Co
       value: Login): Effect[Event, UserState] = {
     oldState.user match {
       case Some(_) if oldState.password == value.password =>
-        Effect.persist(value).thenReply(replyTo) { state =>
+        val token = SessionUtils.generateSessionToken(value.account)
+        Effect.persist(LoginEvent(value, token)).thenReply(replyTo) { state =>
           val maybe = for {
-            session <- state.session
             user <- state.user
           } yield {
-            UserResponse(IntStatus.OK, data = Data.Logined(Logined(session.token, user.account, user.name)))
+            UserResponse(IntStatus.OK, data = Data.Logined(Logined(token, user.account, user.name)))
           }
           maybe.getOrElse(UserResponse(IntStatus.INTERNAL_ERROR, "Save user session failure."))
         }
@@ -164,7 +164,7 @@ class UserEntity private (persistenceId: PersistenceId, context: ActorContext[Co
     val status = checkSession(oldState, value.token)
     if (status == IntStatus.OK) {
       Effect
-        .persist(RefreshSession())
+        .persist(CheckSession(value.token))
         .thenReply(replyTo)(state => UserResponse(status, data = Data.User(state.user.get)))
     } else {
       Effect.reply(replyTo)(UserResponse(status))
@@ -200,30 +200,28 @@ class UserEntity private (persistenceId: PersistenceId, context: ActorContext[Co
   private def processCheckSession(
       oldState: UserState,
       replyTo: ActorRef[UserResponse],
-      token: String): Effect[Event, UserState] = {
-    val status = checkSession(oldState, token)
-    if (status == IntStatus.OK)
-      Effect.persist(RefreshSession()).thenReply(replyTo)(_ => UserResponse(status))
-    else
-      Effect.reply(replyTo)(UserResponse(status))
+      value: CheckSession): Effect[Event, UserState] = {
+    val status = checkSession(oldState, value.token)
+    if (status == IntStatus.OK) Effect.persist(value).thenReply(replyTo)(_ => UserResponse(status))
+    else Effect.reply(replyTo)(UserResponse(status))
   }
 
   private def checkSession(oldState: UserState, token: String): Int = {
-    if (oldState.user.isDefined && oldState.session.exists(session =>
-          session.token == token && (System.currentTimeMillis() - session.activeTime) < settings.sessionTimeout))
+    if (oldState.user.isDefined && oldState.sessions
+          .get(token)
+          .exists(activeTime => (System.currentTimeMillis() - activeTime) < settings.sessionTimeout))
       IntStatus.OK
     else IntStatus.UNAUTHORIZED
   }
 
   private def eventHandler(state: UserState, event: Event): UserState = {
     event match {
-      case _: RefreshSession =>
-        state.copy(session = state.session.map(session => session.copy(activeTime = System.currentTimeMillis())))
-      case value: CreateUser => handleCreateUser(state, value)
-      case value: ModifyUser => handleModifyUser(state, value)
-      case value: RemoveUser => handleRemoveUser(state, value)
-      case value: Login      => handleLogin(state, value)
-      case _                 => state
+      case CheckSession(token) => handleUpdateToken(state, token)
+      case value: CreateUser   => handleCreateUser(state, value)
+      case value: ModifyUser   => handleModifyUser(state, value)
+      case value: RemoveUser   => handleRemoveUser(state, value)
+      case value: LoginEvent   => handleUpdateToken(state, value.token)
+      case _                   => state
     }
   }
 
@@ -246,8 +244,7 @@ class UserEntity private (persistenceId: PersistenceId, context: ActorContext[Co
     state.copy(user = None, password = "")
   }
 
-  private def handleLogin(state: UserState, value: Login): UserState = {
-    val token = SessionUtils.generateSessionToken(value.account)
-    state.copy(session = Some(UserSession(token, System.currentTimeMillis())))
+  private def handleUpdateToken(state: UserState, token: String): UserState = {
+    state.copy(sessions = state.sessions.updated(token, System.currentTimeMillis()))
   }
 }

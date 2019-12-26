@@ -18,7 +18,7 @@ package fusion.discoveryx.server.route
 
 import akka.cluster.typed.Cluster
 import akka.grpc.scaladsl.ServiceHandler
-import akka.http.scaladsl.model.{ HttpRequest, HttpResponse }
+import akka.http.scaladsl.model.{ HttpMethods, HttpRequest, HttpResponse }
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import com.typesafe.scalalogging.StrictLogging
@@ -69,6 +69,10 @@ class Routes(discoveryX: DiscoveryX) extends StrictLogging {
       pathPrefix("console") {
         concat(consoleRoutes: _*)
       }
+    } ~
+    get {
+      getFromResourceDirectory("dist") ~
+      getFromResource("dist/index.html")
     } ~
     extractRequest { request =>
       onSuccess(grpcHandler(request)) { response =>

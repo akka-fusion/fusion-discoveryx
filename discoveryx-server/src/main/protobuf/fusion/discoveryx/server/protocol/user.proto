@@ -47,12 +47,17 @@ message ListedUser {
 
 // #Login
 message Login {
-    option (scalapb.message).extends = "fusion.discoveryx.server.management.UserEntity.Event";
-
     string account = 1;
     string password = 2;
 }
 // #Login
+
+message LoginEvent {
+    option (scalapb.message).extends = "fusion.discoveryx.server.management.UserEntity.Event";
+
+    Login login = 1 [(scalapb.field).no_box = true];
+    string token = 2;
+}
 
 // #Logined
 message Logined {
@@ -108,19 +113,19 @@ message ModifyUser {
 }
 // #ModifyUser
 
-message UserSession {
-    string token = 1;
-    // 活动时间
-    int64 active_time = 2;
-}
-
 message UserState {
     User user = 1;
     string password = 2;
-    UserSession session = 3;
+    map<string, int64> sessions = 3;
+}
+
+message CleanSession {
+    option (scalapb.message).extends = "fusion.discoveryx.server.management.UserEntity.Command";
+    option (scalapb.message).extends = "fusion.discoveryx.server.management.UserEntity.Event";
 }
 
 message CheckSession {
+    option (scalapb.message).extends = "fusion.discoveryx.server.management.UserEntity.Event";
     string token = 1;
 }
 
@@ -133,10 +138,6 @@ message CurrentSessionUser {
 message TokenAccount {
     string token = 1;
     string account = 2;
-}
-
-message RefreshSession {
-    option (scalapb.message).extends = "fusion.discoveryx.server.management.UserEntity.Event";
 }
 
 message UserCommand {

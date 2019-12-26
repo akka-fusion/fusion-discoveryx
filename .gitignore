@@ -103,3 +103,4 @@ logs/
 !/sbt-dist/bin/
 
 node_modules/
+/discoveryx-server/src/main/resources/dist/

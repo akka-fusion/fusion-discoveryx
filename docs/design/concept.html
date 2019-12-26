@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+
+<head>
+<title>DiscoveryX 概念 &bull; Fusion DiscoveryX</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="description" content="discoveryx-docs"/>
+<link rel="canonical" href="https://akka-fusion.github.io/fusion-discoveryx/design/concept.html"/>
+<script type="text/javascript" src="../lib/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="../lib/foundation/dist/js/foundation.min.js"></script>
+<link rel="stylesheet" type="text/css" href="../lib/normalize.css/normalize.css"/>
+<link rel="stylesheet" type="text/css" href="../lib/foundation/dist/css/foundation.min.css"/>
+<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/docsearch.js/2/docsearch.min.css" />
+<link rel="stylesheet" type="text/css" href="../css/icons.css"/>
+<link rel="stylesheet" type="text/css" href="../css/page-6.css"/>
+<link rel="stylesheet" type="text/css" href="../css/banner.css"/>
+<link rel="shortcut icon" href="../images/favicon.ico" />
+<link rel="apple-touch-icon" sizes="180x180" href="../images/apple-touch-icon.png"/>
+<link rel="icon" type="image/png" sizes="32x32" href="../images/favicon-32x32.png"/>
+<link rel="icon" type="image/png" sizes="16x16" href="../images/favicon-16x16.png"/>
+<link rel="manifest" href="../images/manifest.json"/>
+<meta name="msapplication-TileImage" content="../images/mstile-150x150.png"/>
+<meta name="msapplication-TileColor" content="#15a9ce"/>
+<meta name="theme-color" content="#15a9ce"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+
+
+<body id="underlay" data-toggler="nav-open">
+<header class="site-header hide-for-large">
+<div class="sticky-header clearfix">
+<a href="https://akka.io"><img class="logo" src="../images/akka-logo-reverse.svg"/></a>
+
+<button class="menu-icon float-right" type="button" data-toggle="underlay overlay"></button>
+</div>
+<div id="overlay" class="overlay-nav" data-toggler="nav-open">
+<header class="nav-header">
+<div class="nav-header-title">
+<h1><a href="../index.html">Fusion DiscoveryX</a></h1>
+</div>
+<div class="nav-header-version">
+Version 0.1.0
+</div>
+<div class="nav-header-groups">
+<select class="supergroup" name="Language"><option class="group" value="group-scala">Scala</option></select>
+</div>
+</header>
+<nav class="nav-toc">
+<ul>
+  <li><a href="../intro.html" class="page">介绍</a></li>
+  <li><a href="../use/index.html" class="page">使用</a></li>
+  <li><a href="../design/index.html" class="page">设计</a>
+  <ul>
+    <li><a href="../design/concept.html#discoveryx-概念" class="active page">DiscoveryX 概念</a>
+    <ul>
+      <li><a href="../design/concept.html#命名空间-namespace-" class="header">命名空间（namespace）</a></li>
+      <li><a href="../design/concept.html#配置" class="header">配置</a></li>
+      <li><a href="../design/concept.html#配置管理" class="header">配置管理</a></li>
+      <li><a href="../design/concept.html#配置项" class="header">配置项</a></li>
+      <li><a href="../design/concept.html#配置集" class="header">配置集</a></li>
+      <li><a href="../design/concept.html#配置集-id-dataid-" class="header">配置集 ID（dataId）</a></li>
+      <li><a href="../design/concept.html#配置分组" class="header">配置分组</a></li>
+      <li><a href="../design/concept.html#配置快照" class="header">配置快照</a></li>
+      <li><a href="../design/concept.html#服务" class="header">服务</a></li>
+      <li><a href="../design/concept.html#服务名" class="header">服务名</a></li>
+      <li><a href="../design/concept.html#服务注册中心" class="header">服务注册中心</a></li>
+      <li><a href="../design/concept.html#服务发现" class="header">服务发现</a></li>
+      <li><a href="../design/concept.html#元信息" class="header">元信息</a></li>
+      <li><a href="../design/concept.html#应用" class="header">应用</a></li>
+      <li><a href="../design/concept.html#服务分组" class="header">服务分组</a></li>
+      <li><a href="../design/concept.html#实例" class="header">实例</a></li>
+      <li><a href="../design/concept.html#权重" class="header">权重</a></li>
+      <li><a href="../design/concept.html#健康检查" class="header">健康检查</a></li>
+    </ul></li>
+    <li><a href="../design/architecture.html" class="page">架构</a></li>
+    <li><a href="../design/technology.html" class="page">技术实现</a></li>
+  </ul></li>
+  <li><a href="../api/index.html" class="page">API</a></li>
+  <li><a href="../deploy/index.html" class="page">部署</a></li>
+  <li><a href="../releases.html" class="page">发布</a></li>
+</ul>
+</nav>
+</div>
+</header>
+<div class="site-content-wrapper">
+<aside class="sticky-sidebar show-for-large">
+<header class="nav-header sticky-sidebar-header">
+<div class="nav-header-title">
+<h1><a href="../index.html">Fusion DiscoveryX</a></h1>
+</div>
+<div class="nav-header-version">
+Version 0.1.0
+</div>
+<div class="nav-header-groups">
+<select class="supergroup" name="Language"><option class="group" value="group-scala">Scala</option></select>
+</div>
+</header>
+<nav class="site-nav sticky-sidebar-contents">
+<div class="nav-toc">
+<ul>
+  <li><a href="../intro.html" class="page">介绍</a></li>
+  <li><a href="../use/index.html" class="page">使用</a></li>
+  <li><a href="../design/index.html" class="page">设计</a>
+  <ul>
+    <li><a href="../design/concept.html#discoveryx-概念" class="active page">DiscoveryX 概念</a>
+    <ul>
+      <li><a href="../design/concept.html#命名空间-namespace-" class="header">命名空间（namespace）</a></li>
+      <li><a href="../design/concept.html#配置" class="header">配置</a></li>
+      <li><a href="../design/concept.html#配置管理" class="header">配置管理</a></li>
+      <li><a href="../design/concept.html#配置项" class="header">配置项</a></li>
+      <li><a href="../design/concept.html#配置集" class="header">配置集</a></li>
+      <li><a href="../design/concept.html#配置集-id-dataid-" class="header">配置集 ID（dataId）</a></li>
+      <li><a href="../design/concept.html#配置分组" class="header">配置分组</a></li>
+      <li><a href="../design/concept.html#配置快照" class="header">配置快照</a></li>
+      <li><a href="../design/concept.html#服务" class="header">服务</a></li>
+      <li><a href="../design/concept.html#服务名" class="header">服务名</a></li>
+      <li><a href="../design/concept.html#服务注册中心" class="header">服务注册中心</a></li>
+      <li><a href="../design/concept.html#服务发现" class="header">服务发现</a></li>
+      <li><a href="../design/concept.html#元信息" class="header">元信息</a></li>
+      <li><a href="../design/concept.html#应用" class="header">应用</a></li>
+      <li><a href="../design/concept.html#服务分组" class="header">服务分组</a></li>
+      <li><a href="../design/concept.html#实例" class="header">实例</a></li>
+      <li><a href="../design/concept.html#权重" class="header">权重</a></li>
+      <li><a href="../design/concept.html#健康检查" class="header">健康检查</a></li>
+    </ul></li>
+    <li><a href="../design/architecture.html" class="page">架构</a></li>
+    <li><a href="../design/technology.html" class="page">技术实现</a></li>
+  </ul></li>
+  <li><a href="../api/index.html" class="page">API</a></li>
+  <li><a href="../deploy/index.html" class="page">部署</a></li>
+  <li><a href="../releases.html" class="page">发布</a></li>
+</ul>
+</div>
+</nav>
+<footer class="nav-footer sticky-sidebar-footer">
+<a href="https://akka.io"><img class="logo" src="../images/akka-logo-reverse.svg"/></a>
+
+</footer>
+</aside>
+<main class="fixed-shift-for-large expanded row">
+<section class="site-content small-12 column">
+<article class="page-content row">
+<div class="small-12 column" id="docs">
+<h1><a href="#discoveryx-概念" name="discoveryx-概念" class="anchor"><span class="anchor-link"></span></a>DiscoveryX 概念</h1>
+<h2><a href="#命名空间-namespace-" name="命名空间-namespace-" class="anchor"><span class="anchor-link"></span></a>命名空间（namespace）</h2>
+<p>用于进行租户粒度的配置隔离。不同的命名空间下，可以存在相同的 Group 或 Data ID 的配置。Namespace 的常用场景之一是不同环境的配置的区分隔离，例如开发测试环境和生产环境的资源（如配置、服务）隔离等。</p>
+<h2><a href="#配置" name="配置" class="anchor"><span class="anchor-link"></span></a>配置</h2>
+<p>在系统开发过程中，开发者通常会将一些需要变更的参数、变量等从代码中分离出来独立管理，以独立的配置文件的形式存在。目的是让静态的系统工件或者交付物（如 WAR，JAR 包等）更好地和实际的物理运行环境进行适配。配置管理一般包含在系统部署的过程中，由系统管理员或者运维人员完成。配置变更是调整系统运行时的行为的有效手段。</p>
+<h2><a href="#配置管理" name="配置管理" class="anchor"><span class="anchor-link"></span></a>配置管理</h2>
+<p>系统配置的编辑、存储、分发、变更管理、历史版本管理、变更审计等所有与配置相关的活动。</p>
+<h2><a href="#配置项" name="配置项" class="anchor"><span class="anchor-link"></span></a>配置项</h2>
+<p>一个具体的可配置的参数与其值域，通常以 param-key=param-value 的形式存在。例如我们常配置系统的日志输出级别（logLevel=INFO|WARN|ERROR） 就是一个配置项。</p>
+<h2><a href="#配置集" name="配置集" class="anchor"><span class="anchor-link"></span></a>配置集</h2>
+<p>一组相关或者不相关的配置项的集合称为配置集。在系统中，一个配置文件通常就是一个配置集，包含了系统各个方面的配置。例如，一个配置集可能包含了数据源、线程池、日志级别等配置项。</p>
+<h2><a href="#配置集-id-dataid-" name="配置集-id-dataid-" class="anchor"><span class="anchor-link"></span></a>配置集 ID（dataId）</h2>
+<p>DiscoveryX 中的某个配置集的 ID（dataId）。配置集 ID 是组织划分配置的维度之一。Data ID 通常用于组织划分系统的配置集。一个系统或者应用可以包含多个配置集，每个配置集都可以被一个有意义的名称标识。Data ID 通常采用类 Java 包（如 com.akka-fusion.schedulerx.log.level）的命名规则保证全局唯一性。此命名规则非强制。</p>
+<h2><a href="#配置分组" name="配置分组" class="anchor"><span class="anchor-link"></span></a>配置分组</h2>
+<p>DiscoveryX 中的一组配置集，是组织配置的维度之一。通过一个有意义的字符串（如 Buy 或 Trade ）对配置集进行分组，从而区分 Data ID 相同的配置集。当您在 DiscoveryX 上创建一个配置时，如果未填写配置分组的名称，则配置分组的名称默认采用 <code>default</code> 。配置分组的常见场景：不同的应用或组件使用了相同的配置类型，如 database_url 配置和 MQ_topic 配置。</p>
+<h2><a href="#配置快照" name="配置快照" class="anchor"><span class="anchor-link"></span></a>配置快照</h2>
+<p>DiscoveryX 的客户端 SDK 会在本地生成配置的快照。当客户端无法连接到 DiscoveryX Server 时，可以使用配置快照显示系统的整体容灾能力。配置快照类似于 Git 中的本地 commit，也类似于缓存，会在适当的时机更新，但是并没有缓存过期（expiration）的概念。 <em>DiscoveryX 使用 akka-persistence 提供配置快照（通过把每次配置修改事件都进行存储），理论上可以提供无线版本的配置快照。</em></p>
+<h2><a href="#服务" name="服务" class="anchor"><span class="anchor-link"></span></a>服务</h2>
+<p>通过预定义接口网络访问的提供给客户端的软件功能。</p>
+<h2><a href="#服务名" name="服务名" class="anchor"><span class="anchor-link"></span></a>服务名</h2>
+<p>服务提供的标识，通过该标识可以唯一确定其指代的服务。</p>
+<h2><a href="#服务注册中心" name="服务注册中心" class="anchor"><span class="anchor-link"></span></a>服务注册中心</h2>
+<p>存储服务实例和服务负载均衡策略的数据库。</p>
+<h2><a href="#服务发现" name="服务发现" class="anchor"><span class="anchor-link"></span></a>服务发现</h2>
+<p>在计算机网络上，（通常使用服务名）对服务下的实例的地址和元数据进行探测，并以预先定义的接口提供给客户端进行查询。</p>
+<h2><a href="#元信息" name="元信息" class="anchor"><span class="anchor-link"></span></a>元信息</h2>
+<p>DiscoveryX 数据（如配置和服务）描述信息，如服务版本、权重、容灾策略、负载均衡策略、鉴权配置、各种自定义标签 (label)，从作用范围来看，分为服务级别的元信息、集群的元信息及实例的元信息。</p>
+<h2><a href="#应用" name="应用" class="anchor"><span class="anchor-link"></span></a>应用</h2>
+<p>用于标识服务提供方的服务的属性。</p>
+<h2><a href="#服务分组" name="服务分组" class="anchor"><span class="anchor-link"></span></a>服务分组</h2>
+<p>不同的服务可以归类到同一分组。</p>
+<h2><a href="#实例" name="实例" class="anchor"><span class="anchor-link"></span></a>实例</h2>
+<p>提供一个或多个服务的具有可访问网络地址（ip:port）的进程。</p>
+<h2><a href="#权重" name="权重" class="anchor"><span class="anchor-link"></span></a>权重</h2>
+<p>实例级别的配置。权重为浮点数。权重越大，分配给该实例的流量越大。</p>
+<h2><a href="#健康检查" name="健康检查" class="anchor"><span class="anchor-link"></span></a>健康检查</h2>
+<p>以指定方式检查服务下挂载的实例 (Instance) 的健康度，从而确认该实例 (Instance) 是否能提供服务。根据检查结果，实例 (Instance) 会被判断为健康或不健康。对服务发起解析请求时，不健康的实例 (Instance) 不会返回给客户端。</p>
+</div>
+</article>
+<div class="row">
+<div class="small-12 column">
+<section class="nav-prev-next row">
+<div class="nav-prev small-6 column">
+<a href="../design/index.html"><i class="icon-prev"></i> <span class="link-prev">设计</span></a>
+</div>
+<div class="nav-next small-6 column clearfix">
+<a class="float-right" href="../design/architecture.html">架构 <i class="icon-next"></i></a>
+</div>
+</section>
+</div>
+</div>
+<div class="source-github row">
+在此文档中发现错误？该页面的源代码可以在 <a href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-docs/src/main/paradox/design/concept.md" target="_blank">这里</a> 找到。欢迎随时编辑并提交Pull Request。
+</div>
+
+<footer class="page-footer row clearfix">
+<img class="akka-icon float-left show-for-medium" src="../images/akka-icon.svg" />
+<section class="copyright">
+<div>discoveryx-docs is Open Source and available under the Apache 2 License.</div>
+<p class="legal">
+&copy; 2019-2019 <a href="https://akka-fusion.github.com/" target="_blank">Akka Fusion</a> |
+<a href="https://akka-fusion.github.com/fusion-discoveryx/" target="_blank">Fusion DiscoveryX</a> |
+<a href="https://akka-fusion.github.com/fusion-schedulerx/" target="_blank">Fusion SchedulerX</a>
+</p>
+</section>
+</footer>
+</section>
+</main>
+</div>
+
+<script type="text/javascript" src="../js/scrollsneak.js"></script>
+<script type="text/javascript">jQuery(document).foundation();</script>
+<script type="text/javascript" src="../js/groups.js"></script>
+<script type="text/javascript" src="../js/page.js"></script>
+<script type="text/javascript" src="../js/magellan.js"></script>
+<script type="text/javascript" src="../js/metadata-toggle.js"></script>
+
+<style type="text/css">@import "../lib/prettify/prettify.css";</style>
+<script type="text/javascript" src="../lib/prettify/prettify.js"></script>
+<script type="text/javascript" src="../lib/prettify/lang-scala.js"></script>
+<script type="text/javascript">//<![CDATA[
+jQuery(function(){window.prettyPrint && prettyPrint()});
+//]]></script>
+<!-- hook for including project specific javascript into the generated docs -->
+
+</body>
+</html>

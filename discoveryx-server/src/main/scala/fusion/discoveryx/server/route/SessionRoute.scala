@@ -20,7 +20,7 @@ import akka.actor.typed.{ ActorRef, ActorSystem }
 import akka.cluster.sharding.typed.ShardingEnvelope
 import akka.grpc.scaladsl.MetadataImpl
 import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.{ AuthorizationFailedRejection, Directive, Directive0, Directive1 }
+import akka.http.scaladsl.server.{ AuthorizationFailedRejection, Directive0, Directive1 }
 import akka.util.Timeout
 import fusion.discoveryx.server.management.UserEntity
 import fusion.discoveryx.server.protocol.TokenAccount
