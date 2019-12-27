@@ -27,6 +27,7 @@ import scala.concurrent.duration.FiniteDuration
 final class NamingSettings(configuration: Configuration) extends BaseSettings {
   override val c = configuration.getConfiguration(s"${Constants.DISCOVERYX}.server.naming")
   val heartbeatTimeout: FiniteDuration = c.get[FiniteDuration]("heartbeat-timeout")
+  val allowReplaceRegistration: Boolean = c.getBoolean("allow-replace-registration")
 }
 
 object NamingSettings {

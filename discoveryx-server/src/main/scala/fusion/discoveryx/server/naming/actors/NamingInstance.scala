@@ -14,90 +14,75 @@
  * limitations under the License.
  */
 
-package fusion.discoveryx.server.naming
+package fusion.discoveryx.server.naming.actors
 
 import akka.actor.typed.scaladsl.{ ActorContext, Behaviors, TimerScheduler }
 import akka.actor.typed.{ ActorRef, Behavior }
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{ HttpMethods, HttpRequest }
 import akka.stream.scaladsl.Tcp
-import fusion.discoveryx.common.{ Constants, Protocols }
+import fusion.discoveryx.DiscoveryXUtils
+import fusion.discoveryx.common.Protocols
 import fusion.discoveryx.model.{ HealthyCheckMethod, Instance, InstanceModify }
+import fusion.discoveryx.server.naming.{ NamingService, NamingSettings }
+import fusion.discoveryx.server.protocol.InstanceActorEvent
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.{ Failure, Success }
 
-// NamingService 需要判断 NamingInstance actor 是否存在
+/**
+ * NamingService 需要判断 NamingInstance actor 是否存在
+ *
+ * NamingInstance 由 NamingService 启动，既所有Instance都会在同一个节点内，且消息只有自身或 NamingService 可访问，所有其消息不需要实例化。
+ */
 object NamingInstance {
   trait Command
 
   final case class Get(groupName: String, isHealthy: Boolean, replyTo: ActorRef[Option[Instance]]) extends Command
   final case class Modify(in: InstanceModify, replyTo: ActorRef[Instance]) extends Command
   final case object Remove extends Command
+  final case class ReplaceInstance(inst: Instance) extends Command
 
-  private case class SniffResult(isSuccess: Boolean, time: Long = System.currentTimeMillis()) extends Command
-  private case object Heartbeat extends Command
-  private case object HealthyCheckTick extends Command
+  case class SniffResult(isSuccess: Boolean, time: Long = System.currentTimeMillis()) extends Command
+  case object Heartbeat extends Command
+  case object HealthyCheckTick extends Command
 
   private[naming] def apply(
       instance: Instance,
       serviceRef: ActorRef[NamingService.Command],
-      settings: NamingSettings): Behavior[Command] =
+      settings: NamingSettings): Behavior[NamingInstance.Command] =
     Behaviors.setup(context =>
-      Behaviors.withTimers(timers =>
-        new NamingInstance(formatInstance(instance), serviceRef, settings, timers, context).init()))
-
-  private def formatInstance(inst: Instance): Instance =
-    inst.copy(
-      serviceName = if (inst.serviceName.isEmpty) Constants.DEFAULT_GROUP_NAME else inst.serviceName,
-      healthyCheckMethod =
-        if (inst.healthyCheckMethod == HealthyCheckMethod.NOT_SET) HealthyCheckMethod.CLIENT_REPORT
-        else inst.healthyCheckMethod,
-      unhealthyCheckCount = if (inst.unhealthyCheckCount < 1) 1 else inst.unhealthyCheckCount,
-      protocol = Protocols.formatProtocol(inst.protocol))
-
-  private def instanceModify(old: Instance, in: InstanceModify): Instance = {
-    old.copy(
-      groupName = in.groupName.getOrElse(old.groupName),
-      ip = in.ip.getOrElse(old.ip),
-      port = in.port.getOrElse(old.port),
-      weight = in.weight.getOrElse(old.weight),
-      healthy = in.health.getOrElse(old.healthy),
-      enabled = in.enable.getOrElse(old.enabled),
-      metadata = if (in.replaceMetadata) in.metadata else old.metadata ++ in.metadata,
-      healthyCheckMethod =
-        if (in.healthyCheckMethod == HealthyCheckMethod.NOT_SET || in.healthyCheckMethod.isUnrecognized)
-          old.healthyCheckMethod
-        else in.healthyCheckMethod,
-      healthyCheckInterval = in.healthyCheckInterval.getOrElse(old.healthyCheckInterval),
-      unhealthyCheckCount = in.unhealthyCheckCount.getOrElse(old.unhealthyCheckCount),
-      protocol = in.protocol.map(Protocols.formatProtocol).getOrElse(old.protocol))
-  }
+      Behaviors.withTimers(timers => new NamingInstance(instance, serviceRef, settings, timers, context).init()))
 }
 
-import fusion.discoveryx.server.naming.NamingInstance._
-class NamingInstance private (
+import fusion.discoveryx.server.naming.actors.NamingInstance._
+private[naming] class NamingInstance(
     private var instance: Instance,
     serviceRef: ActorRef[NamingService.Command],
     settings: NamingSettings,
     timer: TimerScheduler[Command],
     context: ActorContext[Command]) {
-  private val UNREACHABLE_TIMEOUT =
-    if (instance.healthyCheckInterval < 1) settings.heartbeatTimeout.toMillis else instance.healthyCheckInterval * 1000L
+  private var unreachableTimeout = instance.healthyCheckInterval * 1000L
   private var lastActivityTime = System.currentTimeMillis()
   private var unreachableCount = 0
 
   def init(): Behavior[Command] = {
+    unreachableTimeout =
+      if (instance.healthyCheckInterval < 1) settings.heartbeatTimeout.toMillis
+      else instance.healthyCheckInterval * 1000L
+
+    val healthyCheckInterval: FiniteDuration =
+      if (instance.healthyCheckInterval > 0L) instance.healthyCheckInterval.seconds else settings.heartbeatTimeout
     timer.startTimerWithFixedDelay(HealthyCheckTick, healthyCheckInterval)
+
+    serviceRef ! InstanceActorEvent(context.self, instance)
+
     instance.healthyCheckMethod match {
       case HealthyCheckMethod.TCP_SNIFF | HealthyCheckMethod.UDP_SNIFF => activeSniff()
       case _                                                           => clientReport()
     }
   }
-
-  private def healthyCheckInterval: FiniteDuration =
-    if (instance.healthyCheckInterval > 0L) instance.healthyCheckInterval.seconds else settings.heartbeatTimeout
 
   private def tryChangeHealthy(): Unit = {
     if (unreachableCount < instance.unhealthyCheckCount) {
@@ -114,7 +99,10 @@ class NamingInstance private (
     case in: Get             => processGet(in)
     case Modify(in, replyTo) => processModify(in, replyTo)
     case Remove              => Behaviors.stopped
-    case _                   => Behaviors.unhandled
+    case ReplaceInstance(inst) =>
+      instance = inst
+      init()
+    case _ => Behaviors.unhandled
   }
 
   private def processGet(in: Get): Behavior[Command] = {
@@ -126,17 +114,9 @@ class NamingInstance private (
   }
 
   private def processModify(in: InstanceModify, replyTo: ActorRef[Instance]): Behavior[Command] = {
-    val old = instance
-    instance = instanceModify(instance, in)
+    instance = DiscoveryXUtils.instanceModify(instance, in)
     replyTo ! instance
-    if (old.healthyCheckMethod != instance.healthyCheckMethod) {
-      instance.healthyCheckMethod match {
-        case HealthyCheckMethod.CLIENT_REPORT                            => clientReport()
-        case HealthyCheckMethod.TCP_SNIFF | HealthyCheckMethod.UDP_SNIFF => activeSniff()
-        case HealthyCheckMethod.NOT_SET                                  => Behaviors.same
-      }
-    } else
-      Behaviors.same
+    init()
   }
 
   ////////////////////////////////////////////////////////////////
@@ -149,7 +129,7 @@ class NamingInstance private (
       Behaviors.same
 
     case HealthyCheckTick =>
-      if ((System.currentTimeMillis() - lastActivityTime) >= UNREACHABLE_TIMEOUT) {
+      if ((System.currentTimeMillis() - lastActivityTime) >= unreachableTimeout) {
         unreachableCount += 1
       }
       tryChangeHealthy()

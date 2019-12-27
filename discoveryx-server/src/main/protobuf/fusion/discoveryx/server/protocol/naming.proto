@@ -10,6 +10,64 @@ option (scalapb.options) = {
   collection_type: "scala.collection.immutable.Seq"
 };
 
+message InstanceActorEvent {
+    option (scalapb.message).extends = "fusion.discoveryx.server.naming.NamingService.Command";
+    option (scalapb.message).companion_extends = "fusion.protobuf.ActorRefCompanion";
+
+    string ref = 1 [(scalapb.field).type = "akka.actor.typed.ActorRef[fusion.discoveryx.server.naming.actors.NamingInstance.Command]"];
+    fusion.discoveryx.model.Instance instance = 2 [(scalapb.field).no_box = true];
+}
+
+message InstancesQueried {
+    option (scalapb.message).extends = "fusion.discoveryx.server.naming.NamingService.Command";
+    option (scalapb.message).companion_extends = "fusion.protobuf.ActorRefCompanion";
+
+    string reply_to = 1 [(scalapb.field).type = "akka.actor.typed.ActorRef[fusion.discoveryx.model.NamingReply]"];
+    repeated fusion.discoveryx.model.Instance instances = 2;
+    // 可用次数
+    int32 available_times = 3;
+    fusion.discoveryx.model.InstanceQuery query = 4 [(scalapb.field).no_box = true];
+}
+
+
+////////////////////////////////////////////////////////////////
+//// Listener persistence events.
+
+message InstanceSaveEvent {
+    option (scalapb.message).extends = "fusion.discoveryx.server.naming.NamingService.Event";
+    option (scalapb.message).extends = "fusion.discoveryx.server.naming.NamingService.Command";
+    option (scalapb.message).companion_extends = "fusion.protobuf.ActorRefCompanion";
+
+    string instance_ref = 1 [(scalapb.field).type = "akka.actor.typed.ActorRef[fusion.discoveryx.server.naming.actors.NamingInstance.Command]"];
+    bool healthy = 2;
+}
+
+message InstanceRemoveEvent {
+    option (scalapb.message).extends = "fusion.discoveryx.server.naming.NamingService.Event";
+    option (scalapb.message).extends = "fusion.discoveryx.server.naming.NamingService.Command";
+    option (scalapb.message).companion_extends = "fusion.protobuf.ActorRefCompanion";
+
+    string instance_ref = 1 [(scalapb.field).type = "akka.actor.typed.ActorRef[fusion.discoveryx.server.naming.actors.NamingInstance.Command]"];
+}
+
+//// Listener persistence events.
+////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////
+//// Listener notify events.
+
+message NamingServiceEvent {
+    option (scalapb.message).extends = "fusion.discoveryx.server.naming.NamingService.Event";
+    fusion.discoveryx.model.ServiceEvent event = 2 [(scalapb.field).no_box = true];
+}
+
+message ServiceEventStop {
+    option (scalapb.message).extends = "fusion.discoveryx.server.naming.NamingService.Event";
+}
+
+//// Listener notify events.
+////////////////////////////////////////////////////////////////
+
 message NamingReplyCommand {
     option (scalapb.message).extends = "fusion.discoveryx.server.naming.NamingService.Command";
     option (scalapb.message).companion_extends = "fusion.protobuf.ActorRefCompanion";
@@ -32,14 +90,6 @@ message NamingListenerCommand {
 
     string reply_to = 1 [(scalapb.field).type = "akka.actor.typed.ActorRef[fusion.discoveryx.server.naming.NamingService.Event]"];
     fusion.discoveryx.model.ServiceListener listener = 2 [(scalapb.field).no_box = true];
-}
-
-message NamingServiceEvent {
-    option (scalapb.message).extends = "fusion.discoveryx.server.naming.NamingService.Event";
-    fusion.discoveryx.model.ServiceEvent event = 2 [(scalapb.field).no_box = true];
-}
-message ServiceEventStop {
-    option (scalapb.message).extends = "fusion.discoveryx.server.naming.NamingService.Event";
 }
 
 message Heartbeat {
@@ -96,6 +146,8 @@ message GetService {
 
 // #CreateService
 message CreateService {
+    option (scalapb.message).extends = "fusion.discoveryx.server.naming.NamingService.Event";
+
     string namespace = 1;
     string service_name = 2;
     string group_name = 3;
@@ -106,6 +158,8 @@ message CreateService {
 
 // #RemoveService
 message RemoveService {
+    option (scalapb.message).extends = "fusion.discoveryx.server.naming.NamingService.Event";
+
     string namespace = 1;
     string service_name = 2;
 }
@@ -113,6 +167,8 @@ message RemoveService {
 
 // #ModifyService
 message ModifyService {
+    option (scalapb.message).extends = "fusion.discoveryx.server.naming.NamingService.Event";
+
     string namespace = 1;
     string service_name = 2;
     google.protobuf.StringValue group_name = 3;

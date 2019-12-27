@@ -49,6 +49,8 @@ object Dependencies {
 
   val _akkaHttps = Seq(_akkaHttp, _akkaHttp2, _akkaHttpTestkit % Test)
 
+  val _akkaSerializationJackson = "com.typesafe.akka" %% "akka-serialization-jackson" % versionAkka
+
   val _akkaPersistenceCassandras = Seq("com.typesafe.akka" %% "akka-persistence-cassandra" % "0.101").map(
     _.exclude("org.scala-lang", "scala-library")
       .cross(CrossVersion.binary)

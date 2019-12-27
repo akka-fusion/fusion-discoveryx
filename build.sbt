@@ -2,6 +2,10 @@ import Commons._
 import Dependencies._
 import Environment._
 
+ThisBuild / offline := true
+
+ThisBuild / updateOptions := updateOptions.value.withCachedResolution(true).withLatestSnapshots(false)
+
 ThisBuild / buildEnv := {
   sys.props
     .get("build.env")
@@ -96,6 +100,7 @@ lazy val discoveryxServer = _project("discoveryx-server")
         _h2,
         _hikariCP,
         _fusionProtobufV3,
+        _akkaSerializationJackson,
         _fusionCore,
         _akkaPersistenceQuery,
         _akkaPersistenceJdbc,
