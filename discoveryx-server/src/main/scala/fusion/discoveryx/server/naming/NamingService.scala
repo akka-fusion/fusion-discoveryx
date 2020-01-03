@@ -26,7 +26,6 @@ import fusion.discoveryx.common.Constants
 import fusion.discoveryx.model._
 import fusion.discoveryx.server.naming.internal.NamingServiceBehavior
 import helloscala.common.exception.HSBadRequestException
-import helloscala.common.util.StringUtils
 
 import scala.concurrent.duration._
 import scala.util.control.NonFatal
@@ -52,7 +51,7 @@ object NamingService {
       DiscoveryXUtils.requireString(serviceName, "serviceName")
       Right(s"$namespace${Constants.ENTITY_ID_SEPARATOR}$serviceName")
     } catch {
-      case NonFatal(e) => Left(e.getMessage)
+      case NonFatal(e) => Left(e.getLocalizedMessage)
     }
   }
 

@@ -50,9 +50,6 @@ object DiscoveryXUtils {
       requireString(in.serviceName, "serviceName")
       val inst = Instance(
         makeInstanceId(in.ip, in.port),
-//        in.namespace,
-//        in.serviceName,
-//        in.groupName,
         in.ip,
         in.port,
         in.weight,
@@ -64,10 +61,11 @@ object DiscoveryXUtils {
         in.healthyCheckInterval,
         in.unhealthyCheckCount,
         in.protocol,
+        in.useTls,
         in.httpPath)
       Right(formatInstance(inst))
     } catch {
-      case NonFatal(e) => Left(e.getMessage)
+      case NonFatal(e) => Left(e.getLocalizedMessage)
     }
 
   private def formatInstance(inst: Instance): Instance =
@@ -98,7 +96,8 @@ object DiscoveryXUtils {
         else in.healthyCheckMethod,
       healthyCheckInterval = in.healthyCheckInterval.getOrElse(old.healthyCheckInterval),
       unhealthyCheckCount = in.unhealthyCheckCount.getOrElse(old.unhealthyCheckCount),
-      protocol = in.protocol.map(Protocols.formatProtocol).getOrElse(old.protocol),
+      protocol = if (in.protocol.isUnknown || in.protocol.isUnrecognized) old.protocol else in.protocol,
+      useTls = in.useTls.getOrElse(old.useTls),
       httpPath = in.httpPath.getOrElse(old.httpPath))
   }
 

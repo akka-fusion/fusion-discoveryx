@@ -49,7 +49,7 @@ object SessionUtils {
         case other             => Left(s"Parse account from token failure. parsed value is $other")
       }
     } catch {
-      case NonFatal(e) => Left(e.getMessage)
+      case NonFatal(e) => Left(e.getLocalizedMessage)
     }
 
   def generateSessionToken(account: String): String = {

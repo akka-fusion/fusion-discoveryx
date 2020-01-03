@@ -9,7 +9,7 @@ object Commons {
 
   def basicSettings =
     Seq(
-      organization := "com.akka-fusion",
+      organization := "com.akka-fusion.fusion",
       organizationName := "akka-fusion.com",
       organizationHomepage := Some(url("https://github.com/akka-fusion/fusion-discoveryx")),
       homepage := Some(url("https://akka-fusion.github.io/fusion-discoveryx")),

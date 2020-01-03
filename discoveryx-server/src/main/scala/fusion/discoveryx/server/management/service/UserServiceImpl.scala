@@ -16,13 +16,12 @@
 
 package fusion.discoveryx.server.management.service
 
-import akka.actor.typed.{ ActorRef, ActorSystem }
 import akka.actor.typed.scaladsl.AskPattern._
+import akka.actor.typed.{ ActorRef, ActorSystem }
 import akka.cluster.sharding.typed.ShardingEnvelope
 import akka.util.Timeout
 import fusion.discoveryx.server.grpc.UserService
-import fusion.discoveryx.server.management
-import fusion.discoveryx.server.management.{ UserEntity, UserManager }
+import fusion.discoveryx.server.management.UserEntity
 import fusion.discoveryx.server.protocol.UserCommand.Cmd
 import fusion.discoveryx.server.protocol._
 import fusion.discoveryx.server.util.SessionUtils

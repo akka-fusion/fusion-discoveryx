@@ -24,10 +24,11 @@ import akka.stream.scaladsl.Source
 import com.typesafe.scalalogging.StrictLogging
 import fusion.common.extension.FusionCoordinatedShutdown
 import fusion.discoveryx.client.{ NamingClient, NamingClientSettings }
-import fusion.discoveryx.common.Headers
+import fusion.discoveryx.common.{ Constants, Headers }
 import fusion.discoveryx.grpc.NamingServiceClient
 import fusion.discoveryx.model._
 import helloscala.common.IntStatus
+import helloscala.common.util.{ NetworkUtils, StringUtils }
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -55,19 +56,27 @@ private[client] class NamingClientImpl(val settings: NamingClientSettings, val c
     try {
       val namespace = settings.namespace.getOrElse(throw new IllegalArgumentException("'namespace' not set."))
       val serviceName = settings.serviceName.getOrElse(throw new IllegalArgumentException("'service-name' not set."))
-      val ip = settings.ip.getOrElse(throw new IllegalArgumentException("'ip' not set."))
+      val ip = settings.ip
+        .orElse(NetworkUtils.firstOnlineInet4Address().map(_.getHostAddress))
+        .getOrElse(throw new IllegalArgumentException("'ip' not set."))
       val port = settings.port.getOrElse(throw new IllegalArgumentException("'port' not set."))
       val in = InstanceRegister(
         namespace,
         serviceName,
-        settings.groupName.getOrElse(""),
+        settings.groupName.filter(StringUtils.isNoneBlank).getOrElse(Constants.DEFAULT_GROUP_NAME),
         ip,
         port,
-        weight = settings.weight,
-        health = true,
-        enable = settings.enable,
-        ephemeral = settings.ephemeral,
-        metadata = settings.metadata)
+        settings.weight,
+        settings.health,
+        settings.enable,
+        settings.ephemeral,
+        settings.metadata,
+        settings.healthyCheckMethod,
+        settings.healthyCheckInterval,
+        settings.unhealthyCheckCount,
+        settings.protocol,
+        settings.useTls,
+        settings.httpPath)
       registerInstance(in)
     } catch {
       case NonFatal(e) => Future.failed(e)

@@ -114,7 +114,7 @@ class NamingManager private (namespace: String, context: ActorContext[Command]) 
 
   @inline private def futureReply(f: Future[NamingResponse], replyTo: ActorRef[NamingResponse]): Unit = f.onComplete {
     case Success(reply) => replyTo ! reply
-    case Failure(e)     => NamingResponse(IntStatus.INTERNAL_ERROR, e.getMessage)
+    case Failure(e)     => NamingResponse(IntStatus.INTERNAL_ERROR, e.getLocalizedMessage)
   }
 
   private def processModifyService(state: NamingManagerState, in: ModifyService): Future[NamingResponse] =

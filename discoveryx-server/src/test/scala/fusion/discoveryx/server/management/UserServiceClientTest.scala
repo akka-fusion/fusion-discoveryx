@@ -27,7 +27,7 @@ import fusion.discoveryx.server.util.ProtobufJson4s
 import org.scalatest.WordSpecLike
 
 class UserServiceClientTest
-    extends ScalaTestWithActorTestKit(ConfigFactory.load("application-test.conf"))
+    extends ScalaTestWithActorTestKit(ConfigFactory.load("application-helloscala.conf"))
     with WordSpecLike {
   "UserServiceClient" must {
     implicit val classicSystem = FusionCore(system).classicSystem
@@ -36,7 +36,8 @@ class UserServiceClientTest
     val client = UserServiceClient(GrpcClientSettings.fromConfig(UserService.name))
 
     "CreateUser" in {
-      val resp = client.createUser(CreateUser("yangbajing", "yangbajing", "Fusion DiscoveryX User")).futureValue
+      val resp =
+        client.createUser(CreateUser("discoveryx", "discoveryx", "Fusion DiscoveryX Administrator")).futureValue
       println(ProtobufJson4s.toJsonPrettyString(resp))
     }
   }

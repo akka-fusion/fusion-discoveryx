@@ -20,11 +20,9 @@ import akka.actor.typed.{ ActorRef, ActorSystem }
 import akka.cluster.sharding.typed.ShardingEnvelope
 import akka.grpc.scaladsl.MetadataImpl
 import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.model.headers.HttpChallenges
 import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.{ AuthenticationFailedRejection, AuthorizationFailedRejection, Directive0, Directive1 }
+import akka.http.scaladsl.server.{ Directive0, Directive1 }
 import akka.util.Timeout
-import fusion.discoveryx.common.Constants
 import fusion.discoveryx.server.management.UserEntity
 import fusion.discoveryx.server.protocol.{ TokenAccount, UserResponse }
 import fusion.discoveryx.server.util.{ CheckUserSessionHelper, SessionUtils }

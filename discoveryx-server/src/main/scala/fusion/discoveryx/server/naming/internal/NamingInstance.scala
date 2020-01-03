@@ -19,12 +19,13 @@ package fusion.discoveryx.server.naming.internal
 import akka.actor.typed.scaladsl.{ ActorContext, Behaviors, TimerScheduler }
 import akka.actor.typed.{ ActorRef, Behavior }
 import fusion.discoveryx.DiscoveryXUtils
-import fusion.discoveryx.common.Protocols
-import fusion.discoveryx.model.{ HealthyCheckMethod, Instance, InstanceModify, NamingChangeType }
+import fusion.discoveryx.model.{ HealthyCheckMethod, HealthyCheckProtocol, Instance, InstanceModify, NamingChangeType }
 import fusion.discoveryx.server.naming.{ NamingService, NamingSettings }
 import fusion.discoveryx.server.protocol.{ InstanceActorEvent, InstanceRemoveEvent }
 import fusion.discoveryx.server.util.ProtobufJson4s
+import helloscala.common.exception.HSBadRequestException
 
+import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.{ Failure, Success }
 
@@ -84,8 +85,8 @@ private[naming] class NamingInstance(
         .toJsonString(instance)}.")
 
     instance.healthyCheckMethod match {
-      case HealthyCheckMethod.TCP_SNIFF | HealthyCheckMethod.UDP_SNIFF => activeSniff()
-      case _                                                           => clientReport()
+      case HealthyCheckMethod.SERVER_SNIFF => activeSniff()
+      case _                               => clientReport()
     }
   }
 
@@ -172,26 +173,24 @@ private[naming] class NamingInstance(
   }
 
   private def sendSniffRequest(): Behavior[Command] = {
-    // TODO send TCP or UDP request
-    //      更改 unreachableCount 值
-    //      unreachableCount 与 instance.
-
-    val sniffResultF = instance.protocol match {
-      case Protocols.TCP   => SniffUtils.sniffTcp(instance.ip, instance.port)
-      case Protocols.UDP   => SniffUtils.sniffUdp(instance.ip, instance.port)
-      case Protocols.HTTP  => SniffUtils.sniffHttp(Protocols.HTTP, instance.ip, instance.port, instance.httpPath)
-      case Protocols.HTTPS => SniffUtils.sniffHttp(Protocols.HTTPS, instance.ip, instance.port, instance.httpPath)
+    val future = instance.protocol match {
+      case HealthyCheckProtocol.TCP => SniffUtils.sniffTcp(instance.useTls, instance.ip, instance.port)
+      case HealthyCheckProtocol.UDP => SniffUtils.sniffUdp(instance.ip, instance.port)
+      case HealthyCheckProtocol.HTTP =>
+        SniffUtils.sniffHttp(instance.useTls, instance.ip, instance.port, instance.httpPath)
+      case other => Future.failed(HSBadRequestException(s"Invalid healthy check protocol: $other."))
     }
 
-    context.pipeToSelf(sniffResultF) {
+    context.pipeToSelf(future) {
       case Success(value) =>
         if (!value) {
-          context.log.debug(s"Sniff '${instance.protocol}://${instance.ip}:${instance.port}' failure, return false.")
+          context.log.warn(
+            s"Sniff '${instance.protocol.name.toLowerCase()}://${instance.ip}:${instance.port}' failure, return false.")
         }
         SniffResult(value)
       case Failure(e) =>
-        context.log.debug(
-          s"Sniff '${instance.protocol}://${instance.ip}:${instance.port}' failure, exception: ${e.getLocalizedMessage}.")
+        context.log.warn(
+          s"Sniff '${instance.protocol.name.toLowerCase()}://${instance.ip}:${instance.port}' failure, exception: ${e.getLocalizedMessage}.")
         SniffResult(false)
     }
 

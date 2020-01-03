@@ -146,8 +146,14 @@ message ServiceItem {
 enum HealthyCheckMethod {
     NOT_SET = 0;
     CLIENT_REPORT = 1;
-    TCP_SNIFF = 2;
-    UDP_SNIFF = 3;
+    SERVER_SNIFF = 2;
+}
+
+enum HealthyCheckProtocol {
+    UNKNOWN = 0;
+    UDP = 1;
+    TCP = 2;
+    HTTP = 3;
 }
 
 message Instance {
@@ -172,10 +178,11 @@ message Instance {
     int32 healthy_check_interval = 10;
     // Unhealthy check count
     int32 unhealthy_check_count = 11;
-    // 实例协议
-    string protocol = 12;
+    // Healthy check protocl
+    HealthyCheckProtocol protocol = 12;
+    bool use_tls = 13;
     // HTTP healthy check uri path.
-    string http_path = 13;
+    string http_path = 14;
 }
 // #Instance
 
@@ -201,10 +208,11 @@ message InstanceRegister {
     int32 healthy_check_interval = 12;
     // Unhealthy check count
     int32 unhealthy_check_count = 13;
-    // 实例协议
-    string protocol = 14;
+    // Healthy check protocol
+    HealthyCheckProtocol protocol = 14;
+    bool use_tls = 15;
     // HTTP healthy check uri path.
-    string http_path = 15;
+    string http_path = 16;
 }
 // #InstanceRegister
 
@@ -232,8 +240,9 @@ message InstanceModify {
     // Unhealthy check count
     google.protobuf.Int32Value unhealthy_check_count = 14;
     // 实例协议
-    google.protobuf.StringValue protocol = 15;
-    google.protobuf.StringValue http_path = 16;
+    HealthyCheckProtocol protocol = 15;
+    google.protobuf.BoolValue use_tls = 16;
+    google.protobuf.StringValue http_path = 17;
 }
 // #InstanceModify
 

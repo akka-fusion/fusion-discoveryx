@@ -83,7 +83,7 @@ class UserManager(context: ActorContext[UserEntity.Command]) {
     command match {
       case Cmd.List(in) =>
         processListUser(state, in)
-          .recover { case e => UserResponse(IntStatus.INTERNAL_ERROR, e.getMessage) }
+          .recover { case e => UserResponse(IntStatus.INTERNAL_ERROR, e.getLocalizedMessage) }
           .foreach(replyTo ! _)
         Effect.none
       case Cmd.Empty => Effect.none

@@ -16,26 +16,64 @@
 
 package fusion.discoveryx.server.naming.internal
 
+import java.net.InetSocketAddress
+
+import akka.actor.ActorRef
 import akka.actor.typed.ActorSystem
+import akka.actor.typed.scaladsl.adapter._
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{ HttpMethods, HttpRequest }
-import akka.stream.scaladsl.Tcp
+import akka.io.{ IO, UdpConnected }
+import akka.stream.scaladsl.{ Keep, Sink, Source, Tcp }
+import akka.stream.{ CompletionStrategy, OverflowStrategy }
+import akka.util.ByteString
+import com.typesafe.scalalogging.StrictLogging
 
 import scala.concurrent.Future
 
-object SniffUtils {
-  def sniffTcp(ip: String, port: Int)(implicit system: ActorSystem[_]): Future[Boolean] = {
-    Tcp(system).bind(ip, port)
-    ???
+object SniffUtils extends StrictLogging {
+  def sniffTcp(useTls: Boolean, ip: String, port: Int)(implicit system: ActorSystem[_]): Future[Boolean] = {
+    // TODO SSLEngine 的创建方式应可优化
+    val connection = if (useTls) {
+      Tcp(system).outgoingConnectionWithTls(
+        InetSocketAddress.createUnresolved(ip, port),
+        () => {
+          val engine = Http(system).defaultClientHttpsContext.sslContext.createSSLEngine()
+          engine.setUseClientMode(true)
+          engine
+        })
+    } else {
+      Tcp(system).outgoingConnection(ip, port)
+    }
+
+    Source.single(ByteString.empty).via(connection).map(_ => true).runWith(Sink.head)
   }
 
   def sniffUdp(ip: String, port: Int)(implicit system: ActorSystem[_]): Future[Boolean] = {
-    ???
+    val udp = IO(UdpConnected)(system.toClassic)
+
+    val (handler, future) = Source
+      .actorRef[UdpConnected.Event](completionMatcher(udp), failureMatcher, 2, OverflowStrategy.dropHead)
+      .toMat(Sink.ignore)(Keep.both)
+      .run()
+
+    udp ! UdpConnected.Connect(handler, InetSocketAddress.createUnresolved(ip, port))
+
+    future.map(_ => true)(system.executionContext)
+  }
+  private def completionMatcher(udp: ActorRef): PartialFunction[Any, CompletionStrategy] = {
+    case UdpConnected.Connected =>
+      udp ! UdpConnected.Disconnect
+      CompletionStrategy.immediately
+  }
+  private def failureMatcher: PartialFunction[Any, Throwable] = {
+    case UdpConnected.Disconnected => new IllegalStateException()
   }
 
-  def sniffHttp(protocol: String, ip: String, port: Int, httpPath: String)(
+  def sniffHttp(useTls: Boolean, ip: String, port: Int, httpPath: String)(
       implicit system: ActorSystem[_]): Future[Boolean] = {
     import system.executionContext
+    val protocol = if (useTls) "https" else "http"
     val path = if (httpPath.isEmpty || httpPath.head != '/') s"/$httpPath" else httpPath
     Http(system).singleRequest(HttpRequest(HttpMethods.GET, s"$protocol://$ip:$port$path")).map(_.status.isSuccess())
   }

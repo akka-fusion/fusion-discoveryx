@@ -16,7 +16,7 @@
 
 package fusion.discoveryx.common
 
-import helloscala.common.util.StringUtils
+import fusion.discoveryx.model.HealthyCheckProtocol
 
 object Constants {
   val DISCOVERYX = "discoveryx"
@@ -40,19 +40,6 @@ object Headers {
 }
 
 object Protocols {
-  val TCP = "tcp"
-  val UDP = "udp"
-  val HTTP = "http"
-  val HTTPS = "https"
-  val DEFAULT_PROTOCOL = TCP
-  val VALID_PROTOCOLS = Set(TCP, UDP, HTTP, HTTPS)
-
-  def formatProtocol(protocol: String): String = {
-    if (StringUtils.isNoneBlank(protocol)) {
-      val v = protocol.trim.toLowerCase
-      if (Protocols.VALID_PROTOCOLS(v)) v else Protocols.DEFAULT_PROTOCOL
-    } else {
-      Protocols.DEFAULT_PROTOCOL
-    }
-  }
+  @inline def formatProtocol(protocol: HealthyCheckProtocol): HealthyCheckProtocol =
+    if (protocol.isUnknown || protocol.isUnrecognized) HealthyCheckProtocol.HTTP else protocol
 }
