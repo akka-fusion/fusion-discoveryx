@@ -35,13 +35,11 @@ object SniffUtils extends StrictLogging {
   def sniffTcp(useTls: Boolean, ip: String, port: Int)(implicit system: ActorSystem[_]): Future[Boolean] = {
     // TODO SSLEngine 的创建方式应可优化
     val connection = if (useTls) {
-      Tcp(system).outgoingConnectionWithTls(
-        InetSocketAddress.createUnresolved(ip, port),
-        () => {
-          val engine = Http(system).defaultClientHttpsContext.sslContext.createSSLEngine()
-          engine.setUseClientMode(true)
-          engine
-        })
+      Tcp(system).outgoingConnectionWithTls(InetSocketAddress.createUnresolved(ip, port), () => {
+        val engine = Http(system).defaultClientHttpsContext.sslContext.createSSLEngine()
+        engine.setUseClientMode(true)
+        engine
+      })
     } else {
       Tcp(system).outgoingConnection(ip, port)
     }

@@ -1,5 +1,3 @@
-DROP TABLE IF EXISTS public.journal;
-
 CREATE TABLE IF NOT EXISTS public.journal
 (
     ordering        BIGSERIAL,
@@ -12,8 +10,6 @@ CREATE TABLE IF NOT EXISTS public.journal
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS journal_ordering_idx ON public.journal (ordering);
-
-DROP TABLE IF EXISTS public.snapshot;
 
 CREATE TABLE IF NOT EXISTS public.snapshot
 (

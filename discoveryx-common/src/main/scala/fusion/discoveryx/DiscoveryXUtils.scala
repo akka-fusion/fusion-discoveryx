@@ -70,7 +70,6 @@ object DiscoveryXUtils {
 
   private def formatInstance(inst: Instance): Instance =
     inst.copy(
-//      serviceName = if (inst.serviceName.isEmpty) Constants.DEFAULT_GROUP_NAME else inst.serviceName,
       healthyCheckMethod =
         if (inst.healthyCheckMethod == HealthyCheckMethod.NOT_SET) HealthyCheckMethod.CLIENT_REPORT
         else inst.healthyCheckMethod,
@@ -83,7 +82,6 @@ object DiscoveryXUtils {
 
   def instanceModify(old: Instance, in: InstanceModify): Instance = {
     old.copy(
-//      groupName = in.groupName.getOrElse(old.groupName),
       ip = in.ip.getOrElse(old.ip),
       port = in.port.getOrElse(old.port),
       weight = in.weight.getOrElse(old.weight),

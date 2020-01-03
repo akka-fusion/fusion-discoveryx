@@ -2,11 +2,11 @@
 <html class="no-js" lang="en">
 
 <head>
-<title>单机部署 &bull; Fusion DiscoveryX</title>
+<title>服务注册、发现设计 &bull; Fusion DiscoveryX</title>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <meta name="description" content="discoveryx-docs"/>
-<link rel="canonical" href="https://akka-fusion.github.io/fusion-discoveryx/deploy/single.html"/>
+<link rel="canonical" href="https://akka-fusion.github.io/fusion-discoveryx/design/naming.html"/>
 <script type="text/javascript" src="../lib/jquery/jquery.min.js"></script>
 <script type="text/javascript" src="../lib/foundation/dist/js/foundation.min.js"></script>
 <link rel="stylesheet" type="text/css" href="../lib/normalize.css/normalize.css"/>
@@ -49,15 +49,16 @@ Version 0.1.0
 <ul>
   <li><a href="../intro.html" class="page">介绍</a></li>
   <li><a href="../use/index.html" class="page">使用</a></li>
-  <li><a href="../design/index.html" class="page">设计</a></li>
-  <li><a href="../api/index.html" class="page">API</a></li>
-  <li><a href="../deploy/index.html" class="page">部署</a>
+  <li><a href="../design/index.html" class="page">设计</a>
   <ul>
-    <li><a href="../deploy/package.html" class="page">软件包</a></li>
-    <li><a href="../deploy/single.html#单机部署" class="active page">单机部署</a></li>
-    <li><a href="../deploy/cluster-jdbc.html" class="page">集群部署（使用JDBC持久化）</a></li>
-    <li><a href="../deploy/persistence-cassandra.html" class="page">集群部署（使用Cassandra作为存储）</a></li>
+    <li><a href="../design/concept.html" class="page">DiscoveryX 概念</a></li>
+    <li><a href="../design/architecture.html" class="page">架构</a></li>
+    <li><a href="../design/config.html" class="page">配置管理设计</a></li>
+    <li><a href="../design/naming.html#服务注册-发现设计" class="active page">服务注册、发现设计</a></li>
+    <li><a href="../design/technology.html" class="page">技术实现</a></li>
   </ul></li>
+  <li><a href="../api/index.html" class="page">API</a></li>
+  <li><a href="../deploy/index.html" class="page">部署</a></li>
   <li><a href="../releases.html" class="page">发布</a></li>
 </ul>
 </nav>
@@ -81,15 +82,16 @@ Version 0.1.0
 <ul>
   <li><a href="../intro.html" class="page">介绍</a></li>
   <li><a href="../use/index.html" class="page">使用</a></li>
-  <li><a href="../design/index.html" class="page">设计</a></li>
-  <li><a href="../api/index.html" class="page">API</a></li>
-  <li><a href="../deploy/index.html" class="page">部署</a>
+  <li><a href="../design/index.html" class="page">设计</a>
   <ul>
-    <li><a href="../deploy/package.html" class="page">软件包</a></li>
-    <li><a href="../deploy/single.html#单机部署" class="active page">单机部署</a></li>
-    <li><a href="../deploy/cluster-jdbc.html" class="page">集群部署（使用JDBC持久化）</a></li>
-    <li><a href="../deploy/persistence-cassandra.html" class="page">集群部署（使用Cassandra作为存储）</a></li>
+    <li><a href="../design/concept.html" class="page">DiscoveryX 概念</a></li>
+    <li><a href="../design/architecture.html" class="page">架构</a></li>
+    <li><a href="../design/config.html" class="page">配置管理设计</a></li>
+    <li><a href="../design/naming.html#服务注册-发现设计" class="active page">服务注册、发现设计</a></li>
+    <li><a href="../design/technology.html" class="page">技术实现</a></li>
   </ul></li>
+  <li><a href="../api/index.html" class="page">API</a></li>
+  <li><a href="../deploy/index.html" class="page">部署</a></li>
   <li><a href="../releases.html" class="page">发布</a></li>
 </ul>
 </div>
@@ -103,24 +105,24 @@ Version 0.1.0
 <section class="site-content small-12 column">
 <article class="page-content row">
 <div class="small-12 column" id="docs">
-<h1><a href="#单机部署" name="单机部署" class="anchor"><span class="anchor-link"></span></a>单机部署</h1>
-<p>单机部署默认使用嵌入式数据库 <strong>H2</strong>。</p>
+<h1><a href="#服务注册-发现设计" name="服务注册-发现设计" class="anchor"><span class="anchor-link"></span></a>服务注册、发现设计</h1>
+<p><code>NamingManager</code> -&gt; <code>NamingService</code> -&gt; <code>NamingInstance</code></p>
 </div>
 </article>
 <div class="row">
 <div class="small-12 column">
 <section class="nav-prev-next row">
 <div class="nav-prev small-6 column">
-<a href="../deploy/package.html"><i class="icon-prev"></i> <span class="link-prev">软件包</span></a>
+<a href="../design/config.html"><i class="icon-prev"></i> <span class="link-prev">配置管理设计</span></a>
 </div>
 <div class="nav-next small-6 column clearfix">
-<a class="float-right" href="../deploy/cluster-jdbc.html">集群部署（使用JDBC持久化） <i class="icon-next"></i></a>
+<a class="float-right" href="../design/technology.html">技术实现 <i class="icon-next"></i></a>
 </div>
 </section>
 </div>
 </div>
 <div class="source-github row">
-在此文档中发现错误？该页面的源代码可以在 <a href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-docs/src/main/paradox/deploy/single.md" target="_blank">这里</a> 找到。欢迎随时编辑并提交Pull Request。
+在此文档中发现错误？该页面的源代码可以在 <a href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-docs/src/main/paradox/design/naming.md" target="_blank">这里</a> 找到。欢迎随时编辑并提交Pull Request。
 </div>
 
 <footer class="page-footer row clearfix">

@@ -27,7 +27,7 @@ import helloscala.common.IntStatus
 import org.scalatest.WordSpec
 
 class ConfigManagementRouteTest extends WordSpec with FusionRouteTest with StrictLogging {
-  DiscoveryXServer.checkDatabase(system.settings.config)
+  DiscoveryXServer.checkRDBMS(system.settings.config)
 
   lazy private val configRoute = new ConfigRoute(discoveryX.namespaceRef)(discoveryX.system)
   lazy private val route = configRoute.consoleRoute
