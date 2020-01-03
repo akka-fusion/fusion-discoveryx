@@ -18,7 +18,7 @@ package fusion.discoveryx.server.management
 
 import akka.actor.typed.scaladsl.{ ActorContext, Behaviors, TimerScheduler }
 import akka.actor.typed.{ ActorRef, ActorSystem, Behavior }
-import akka.cluster.sharding.typed.ShardingEnvelope
+import akka.cluster.sharding.typed.{ ClusterShardingSettings, ShardingEnvelope }
 import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, Entity, EntityContext, EntityTypeKey }
 import akka.persistence.typed.PersistenceId
 import akka.persistence.typed.scaladsl.{ Effect, EventSourcedBehavior }
@@ -28,6 +28,7 @@ import fusion.discoveryx.server.protocol._
 import fusion.discoveryx.server.util.SessionUtils
 import helloscala.common.IntStatus
 import helloscala.common.util.StringUtils
+import scala.concurrent.duration._
 
 object UserEntity {
   trait Command
@@ -43,7 +44,9 @@ object UserEntity {
   }
 
   def init(system: ActorSystem[_]): ActorRef[ShardingEnvelope[Command]] =
-    ClusterSharding(system).init(Entity(TypeKey)(context => apply(context)))
+    ClusterSharding(system).init(
+      Entity(TypeKey)(context => apply(context))
+        .withSettings(ClusterShardingSettings(system).withPassivateIdleEntityAfter(2.hours)))
 
   private def apply(entityContext: EntityContext[Command]): Behavior[Command] =
     Behaviors.setup(
@@ -213,7 +216,8 @@ class UserEntity private (
       replyTo: ActorRef[UserResponse],
       value: CheckSession): Effect[Event, UserState] = {
     checkSession(oldState, value.token) match {
-      case IntStatus.NOT_FOUND => Effect.reply(replyTo)(UserResponse(IntStatus.UNAUTHORIZED))
+      case IntStatus.NOT_FOUND =>
+        Effect.reply(replyTo)(UserResponse(IntStatus.UNAUTHORIZED, "token not exists."))
       case IntStatus.OK =>
         Effect.persist(CheckSession(value.token)).thenReply(replyTo)(_ => UserResponse(IntStatus.OK))
       case IntStatus.UNAUTHORIZED =>

@@ -24,7 +24,9 @@ import akka.http.scaladsl.server.Route
 import com.typesafe.scalalogging.StrictLogging
 import fusion.discoveryx.common.Constants
 import fusion.discoveryx.server.DiscoveryX
+import fusion.discoveryx.server.config.route.ConfigRoute
 import fusion.discoveryx.server.management.route.ManagementRoute
+import fusion.discoveryx.server.naming.route.NamingRoute
 
 import scala.concurrent.Future
 

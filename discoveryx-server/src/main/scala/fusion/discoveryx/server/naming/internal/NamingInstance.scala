@@ -14,20 +14,17 @@
  * limitations under the License.
  */
 
-package fusion.discoveryx.server.naming.actors
+package fusion.discoveryx.server.naming.internal
 
 import akka.actor.typed.scaladsl.{ ActorContext, Behaviors, TimerScheduler }
 import akka.actor.typed.{ ActorRef, Behavior }
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.{ HttpMethods, HttpRequest }
-import akka.stream.scaladsl.Tcp
 import fusion.discoveryx.DiscoveryXUtils
 import fusion.discoveryx.common.Protocols
-import fusion.discoveryx.model.{ HealthyCheckMethod, Instance, InstanceModify }
+import fusion.discoveryx.model.{ HealthyCheckMethod, Instance, InstanceModify, NamingChangeType }
 import fusion.discoveryx.server.naming.{ NamingService, NamingSettings }
-import fusion.discoveryx.server.protocol.InstanceActorEvent
+import fusion.discoveryx.server.protocol.{ InstanceActorEvent, InstanceRemoveEvent }
+import fusion.discoveryx.server.util.ProtobufJson4s
 
-import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.{ Failure, Success }
 
@@ -39,7 +36,7 @@ import scala.util.{ Failure, Success }
 object NamingInstance {
   trait Command
 
-  final case class Get(groupName: String, isHealthy: Boolean, replyTo: ActorRef[Option[Instance]]) extends Command
+  final case class Get(isHealthy: Boolean, replyTo: ActorRef[Option[Instance]]) extends Command
   final case class Modify(in: InstanceModify, replyTo: ActorRef[Instance]) extends Command
   final case object Remove extends Command
   final case class ReplaceInstance(inst: Instance) extends Command
@@ -53,21 +50,25 @@ object NamingInstance {
       serviceRef: ActorRef[NamingService.Command],
       settings: NamingSettings): Behavior[NamingInstance.Command] =
     Behaviors.setup(context =>
-      Behaviors.withTimers(timers => new NamingInstance(instance, serviceRef, settings, timers, context).init()))
+      Behaviors.withTimers(timers =>
+        new NamingInstance(instance, serviceRef, settings, timers, context).become(NamingChangeType.NAMING_INIT)))
 }
 
-import fusion.discoveryx.server.naming.actors.NamingInstance._
+import fusion.discoveryx.server.naming.internal.NamingInstance._
 private[naming] class NamingInstance(
     private var instance: Instance,
     serviceRef: ActorRef[NamingService.Command],
     settings: NamingSettings,
     timer: TimerScheduler[Command],
     context: ActorContext[Command]) {
+  private implicit val system = context.system
   private var unreachableTimeout = instance.healthyCheckInterval * 1000L
   private var lastActivityTime = System.currentTimeMillis()
   private var unreachableCount = 0
 
-  def init(): Behavior[Command] = {
+  println(s"NamingInstance startup, ${context.self}")
+
+  def become(changeType: NamingChangeType): Behavior[Command] = {
     unreachableTimeout =
       if (instance.healthyCheckInterval < 1) settings.heartbeatTimeout.toMillis
       else instance.healthyCheckInterval * 1000L
@@ -76,7 +77,11 @@ private[naming] class NamingInstance(
       if (instance.healthyCheckInterval > 0L) instance.healthyCheckInterval.seconds else settings.heartbeatTimeout
     timer.startTimerWithFixedDelay(HealthyCheckTick, healthyCheckInterval)
 
-    serviceRef ! InstanceActorEvent(context.self, instance)
+    serviceRef ! InstanceActorEvent(context.self, instance, changeType)
+
+    context.log.debug(
+      s"NamingInstance actor become type: $changeType. unreachableTimeout: $unreachableTimeout, healthyCheckInterval: $healthyCheckInterval, instance: ${ProtobufJson4s
+        .toJsonString(instance)}.")
 
     instance.healthyCheckMethod match {
       case HealthyCheckMethod.TCP_SNIFF | HealthyCheckMethod.UDP_SNIFF => activeSniff()
@@ -96,19 +101,26 @@ private[naming] class NamingInstance(
   }
 
   private def receive: Command => Behavior[Command] = {
-    case in: Get             => processGet(in)
-    case Modify(in, replyTo) => processModify(in, replyTo)
-    case Remove              => Behaviors.stopped
-    case ReplaceInstance(inst) =>
-      instance = inst
-      init()
-    case _ => Behaviors.unhandled
+    case in: Get               => processGet(in)
+    case Modify(in, replyTo)   => processModify(in, replyTo)
+    case Remove                => processRemove()
+    case ReplaceInstance(inst) => processReplace(inst)
+    case _                     => Behaviors.unhandled
+  }
+
+  private def processRemove(): Behavior[Command] = {
+    serviceRef ! InstanceRemoveEvent(instance.instanceId)
+    Behaviors.stopped
+  }
+
+  private def processReplace(inst: Instance): Behavior[Command] = {
+    instance = inst
+    become(NamingChangeType.INSTANCE_MODIFY)
   }
 
   private def processGet(in: Get): Behavior[Command] = {
-    val beGroupName = in.groupName.isEmpty || instance.groupName.contains(in.groupName)
     val beHealthy = !in.isHealthy || instance.healthy
-    val resp = if (beGroupName && beHealthy) Some(instance) else None
+    val resp = if (beHealthy) Some(instance) else None
     in.replyTo ! resp
     Behaviors.same
   }
@@ -116,7 +128,7 @@ private[naming] class NamingInstance(
   private def processModify(in: InstanceModify, replyTo: ActorRef[Instance]): Behavior[Command] = {
     instance = DiscoveryXUtils.instanceModify(instance, in)
     replyTo ! instance
-    init()
+    become(NamingChangeType.INSTANCE_MODIFY)
   }
 
   ////////////////////////////////////////////////////////////////
@@ -165,10 +177,10 @@ private[naming] class NamingInstance(
     //      unreachableCount 与 instance.
 
     val sniffResultF = instance.protocol match {
-      case Protocols.TCP   => sniffTcp(instance.ip, instance.port)
-      case Protocols.UDP   => sniffUdp(instance.ip, instance.port)
-      case Protocols.HTTP  => sniffHttp(Protocols.HTTP, instance.ip, instance.port)
-      case Protocols.HTTPS => sniffHttp(Protocols.HTTPS, instance.ip, instance.port)
+      case Protocols.TCP   => SniffUtils.sniffTcp(instance.ip, instance.port)
+      case Protocols.UDP   => SniffUtils.sniffUdp(instance.ip, instance.port)
+      case Protocols.HTTP  => SniffUtils.sniffHttp(Protocols.HTTP, instance.ip, instance.port, instance.httpPath)
+      case Protocols.HTTPS => SniffUtils.sniffHttp(Protocols.HTTPS, instance.ip, instance.port, instance.httpPath)
     }
 
     context.pipeToSelf(sniffResultF) {
@@ -184,21 +196,5 @@ private[naming] class NamingInstance(
     }
 
     Behaviors.same
-  }
-
-  private def sniffTcp(ip: String, port: Int): Future[Boolean] = {
-    Tcp(context.system).bind(instance.ip, instance.port)
-    ???
-  }
-
-  private def sniffUdp(ip: String, port: Int): Future[Boolean] = {
-    ???
-  }
-
-  private def sniffHttp(protocol: String, ip: String, port: Int): Future[Boolean] = {
-    import context.executionContext
-    Http(context.system)
-      .singleRequest(HttpRequest(HttpMethods.GET, s"$protocol://$ip:$port/"))
-      .map(_.status.isSuccess())
   }
 }

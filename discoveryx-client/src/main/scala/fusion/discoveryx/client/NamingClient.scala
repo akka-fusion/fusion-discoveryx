@@ -74,10 +74,10 @@ trait NamingClient {
 }
 
 object NamingClient {
-  case class InstanceKey(namespace: String, serviceName: String, instanceId: String)
+  case class InstanceKey( /*namespace: String, serviceName: String, */ instanceId: String)
   object InstanceKey {
-    def apply(in: Instance): InstanceKey = InstanceKey(in.namespace, in.serviceName, in.instanceId)
-    def apply(in: InstanceRemove): InstanceKey = InstanceKey(in.namespace, in.serviceName, in.instanceId)
+    def apply(in: Instance): InstanceKey = InstanceKey( /*in.namespace, in.serviceName,*/ in.instanceId)
+    def apply(in: InstanceRemove): InstanceKey = InstanceKey( /*in.namespace, in.serviceName,*/ in.instanceId)
   }
 
   def apply(system: ActorSystem[_]): NamingClient = {

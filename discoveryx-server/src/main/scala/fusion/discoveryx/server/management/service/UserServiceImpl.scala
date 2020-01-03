@@ -16,11 +16,12 @@
 
 package fusion.discoveryx.server.management.service
 
-import akka.actor.typed.ActorSystem
+import akka.actor.typed.{ ActorRef, ActorSystem }
 import akka.actor.typed.scaladsl.AskPattern._
 import akka.cluster.sharding.typed.ShardingEnvelope
 import akka.util.Timeout
 import fusion.discoveryx.server.grpc.UserService
+import fusion.discoveryx.server.management
 import fusion.discoveryx.server.management.{ UserEntity, UserManager }
 import fusion.discoveryx.server.protocol.UserCommand.Cmd
 import fusion.discoveryx.server.protocol._
@@ -30,10 +31,11 @@ import helloscala.common.IntStatus
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-class UserServiceImpl()(implicit system: ActorSystem[_]) extends UserService {
+class UserServiceImpl(
+    userEntity: ActorRef[ShardingEnvelope[UserEntity.Command]],
+    userManager: ActorRef[UserEntity.Command])(implicit system: ActorSystem[_])
+    extends UserService {
   implicit private val timeout: Timeout = 5.seconds
-  private val userEntity = UserEntity.init(system)
-  private val userManager = UserManager.init(system)
 
   override def login(in: Login): Future[UserResponse] = askUserEntity(in.account, Cmd.Login(in))
 

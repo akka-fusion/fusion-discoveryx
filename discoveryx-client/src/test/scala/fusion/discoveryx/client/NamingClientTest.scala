@@ -75,9 +75,9 @@ class NamingClientTest extends ScalaTestWithActorTestKit with WordSpecLike with 
       reply.status should be(IntStatus.OK)
       val queried = reply.data.serviceInfo.value
       queried.instances should have size 1
-      queried.instances.exists(_.namespace == namespace) shouldBe true
-      queried.instances.exists(_.serviceName == serviceName) shouldBe true
-      queried.instances.exists(_.groupName == groupName) shouldBe true
+      queried.namespace shouldBe namespace
+      queried.serviceName shouldBe serviceName
+      queried.groupName shouldBe groupName
     }
     "hearbeat" in {
       TimeUnit.SECONDS.sleep(10)

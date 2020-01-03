@@ -21,41 +21,45 @@ import akka.actor.typed.scaladsl.Behaviors
 import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, Entity, EntityContext, EntityTypeKey }
 import akka.cluster.sharding.typed.{ ClusterShardingSettings, ShardingEnvelope }
 import akka.persistence.typed.PersistenceId
+import fusion.discoveryx.DiscoveryXUtils
 import fusion.discoveryx.common.Constants
 import fusion.discoveryx.model._
+import fusion.discoveryx.server.naming.internal.NamingServiceBehavior
 import helloscala.common.exception.HSBadRequestException
 import helloscala.common.util.StringUtils
 
 import scala.concurrent.duration._
+import scala.util.control.NonFatal
 
 object NamingService {
   trait Command
-//  private[naming] final case class InternalInstanceModified(reply: NamingReply, replyTo: ActorRef[NamingReply])
-//      extends Command
-  private[naming] final case class InternalHealthyChanged(inst: Instance, healthy: Boolean) extends Command
-
   trait Event
 
   object ServiceKey {
-    def unapply(entityId: String): Option[ServiceItem] = entityId.split(' ') match {
+    def unapply(entityId: String): Option[ServiceItem] = entityId.split(Constants.ENTITY_ID_SEPARATOR) match {
       case Array(namespace, serviceName) =>
         Some(new ServiceItem(namespace, serviceName, Constants.DEFAULT_GROUP_NAME))
       case _ => None
     }
   }
 
-  val TypeKey: EntityTypeKey[Command] = EntityTypeKey[Command]("NamingService")
+  val NAME = "NamingService"
+  val TypeKey: EntityTypeKey[Command] = EntityTypeKey[Command](NAME)
 
-  def entityId(namespace: String, serviceName: String): Either[String, String] = {
-    if (StringUtils.isBlank(namespace) || StringUtils.isBlank(serviceName))
-      Left("entityId invalid, need '[namespace] [serviceName]' format.")
-    else Right(s"$namespace $serviceName")
+  def makeEntityId(namespace: String, serviceName: String): Either[String, String] = {
+    try {
+      DiscoveryXUtils.requireString(namespace, "namespace")
+      DiscoveryXUtils.requireString(serviceName, "serviceName")
+      Right(s"$namespace${Constants.ENTITY_ID_SEPARATOR}$serviceName")
+    } catch {
+      case NonFatal(e) => Left(e.getMessage)
+    }
   }
 
   def init(system: ActorSystem[_]): ActorRef[ShardingEnvelope[Command]] =
     ClusterSharding(system).init(
       Entity(NamingService.TypeKey)(entityContext => apply(entityContext))
-        .withSettings(ClusterShardingSettings(system).withPassivateIdleEntityAfter(Duration.Zero)))
+        .withSettings(ClusterShardingSettings(system).withPassivateIdleEntityAfter(2.hours)))
 
   private def apply(entityContext: EntityContext[Command]): Behavior[Command] = Behaviors.setup[Command] { context =>
     val ServiceItem = ServiceKey
@@ -64,7 +68,7 @@ object NamingService {
         s"${context.self} create child error. entityId invalid, need '[namespace] [serviceName]' format."))
     Behaviors.withTimers(
       timers =>
-        new actors.NamingServiceBehavior(ServiceItem, timers, context)
+        new NamingServiceBehavior(ServiceItem, timers, context)
           .eventSourcedBehavior(PersistenceId.of(entityContext.entityTypeKey.name, entityContext.entityId)))
   }
 }

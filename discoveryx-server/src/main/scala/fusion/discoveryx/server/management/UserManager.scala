@@ -55,7 +55,7 @@ class UserManager(context: ActorContext[UserEntity.Command]) {
 
   def eventSourcedBehavior(): EventSourcedBehavior[UserEntity.Command, Event, UserManagerState] =
     EventSourcedBehavior[UserEntity.Command, Event, UserManagerState](
-      PersistenceId.ofUniqueId(NAME),
+      PersistenceId.of(NAME, "userManager"),
       UserManagerState.defaultInstance,
       commandHandler,
       eventHandler).withRetention(settings.retentionCriteria)

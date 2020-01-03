@@ -49,10 +49,7 @@ trait RetentionCriteriaSettings {
   def keepNSnapshots: Int = c.getInt("snapshot.keep-n-snapshots")
 
   def retentionCriteria: SnapshotCountRetentionCriteria = {
-    var retention = RetentionCriteria.snapshotEvery(100, 2)
-    if (journalOnDelete) {
-      retention = retention.withDeleteEventsOnSnapshot
-    }
-    retention
+    val retention = RetentionCriteria.snapshotEvery(numberOfEvents, keepNSnapshots)
+    if (journalOnDelete) retention.withDeleteEventsOnSnapshot else retention
   }
 }

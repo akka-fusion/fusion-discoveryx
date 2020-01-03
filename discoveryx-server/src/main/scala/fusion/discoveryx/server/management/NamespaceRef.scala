@@ -39,10 +39,9 @@ object NamespaceRef {
         case (ctx, ExistNamespace(namespace, replyTo)) =>
           replicatorAdapter.askGet(Replicator.Get(Key, Replicator.ReadLocal), {
             case chg @ Replicator.GetSuccess(Key) =>
-              ctx.log.debug(s"$namespace, ORSet elements: ${chg.get(Key).elements}")
               InternalNamespaceExists(chg.get(Key).contains(namespace), replyTo)
             case _ =>
-              ctx.log.debug(s"ORSet $Key not exists.")
+              ctx.log.warn(s"ORSet $Key not exists.")
               InternalNamespaceExists(false, replyTo)
           })
           Behaviors.same

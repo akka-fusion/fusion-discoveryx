@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-package fusion.discoveryx.server.route
+package fusion.discoveryx.server.config.route
 
 import akka.http.scaladsl.model.StatusCodes
 import com.typesafe.scalalogging.StrictLogging
 import fusion.discoveryx.model.{ ConfigGet, ConfigItem, ConfigRemove }
 import fusion.discoveryx.server.DiscoveryXServer
 import fusion.discoveryx.server.protocol.{ ConfigResponse, ListConfig }
+import fusion.discoveryx.server.route.FusionRouteTest
 import fusion.discoveryx.server.util.ProtobufJson4s
 import helloscala.common.IntStatus
 import org.scalatest.WordSpec

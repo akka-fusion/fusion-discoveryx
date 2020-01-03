@@ -30,7 +30,7 @@ import fusion.core.extension.FusionCore
 import fusion.discoveryx.common.Constants
 import fusion.discoveryx.server.grpc.{ ManagementServiceHandler, UserServiceHandler }
 import fusion.discoveryx.server.management.service.{ ManagementServiceImpl, UserServiceImpl }
-import fusion.discoveryx.server.management.{ Management, UserEntity }
+import fusion.discoveryx.server.management.{ Management, UserEntity, UserManager }
 import fusion.discoveryx.server.protocol._
 import fusion.discoveryx.server.route.{ SessionRoute, pathPost }
 import helloscala.common.IntStatus
@@ -42,8 +42,9 @@ class ManagementRoute()(implicit system: ActorSystem[_]) extends SessionRoute {
   private implicit val timeout: Timeout = 5.seconds
   private val managementRef = Management.init(system)
   private val userEntity = UserEntity.init(system)
+  private val userManager = UserManager.init(system)
   private val managementService = new ManagementServiceImpl(managementRef)
-  private val userService = new UserServiceImpl()
+  private val userService = new UserServiceImpl(userEntity, userManager)
   private val validationSession: Directive0 = createValidationSession(userEntity)
 
   val grpcHandler: List[PartialFunction[HttpRequest, Future[HttpResponse]]] = {

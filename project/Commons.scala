@@ -25,7 +25,7 @@ object Commons {
           "-unchecked",
           "-Ywarn-dead-code",
           "-Xlint")
-        if (buildEnv.value != BuildEnv.Developement) {
+        if (buildEnv.value != BuildEnv.Development) {
           list ++= Seq("-Xelide-below", "2001")
         }
         list
@@ -35,8 +35,6 @@ object Commons {
       shellPrompt := { s =>
         Project.extract(s).currentProject.id + " > "
       },
-      resolvers += "Bintray akka-fusion".at("https://akka-fusion.bintray.com/maven"),
-      resolvers += Resolver.sonatypeRepo("snapshots"),
       fork in run := true,
       fork in Test := true,
       parallelExecution in Test := false) ++ Environment.settings // ++ Formatting.settings
@@ -61,7 +59,7 @@ object Publishing {
 
 object Environment {
   object BuildEnv extends Enumeration {
-    val Production, Stage, Test, Developement = Value
+    val Production, Stage, Test, Development = Value
   }
 
   val buildEnv = settingKey[BuildEnv.Value]("The current build environment")

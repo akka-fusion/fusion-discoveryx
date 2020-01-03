@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package fusion.discoveryx.server.naming.actors
+package fusion.discoveryx.server.naming.internal
 
 import akka.actor.typed._
 import akka.actor.typed.scaladsl.AskPattern._
 import akka.actor.typed.scaladsl.{ ActorContext, Behaviors, TimerScheduler }
 import akka.cluster.sharding.typed.ShardingEnvelope
-import akka.persistence.typed.PersistenceId
+import akka.persistence.typed.{ PersistenceId, RecoveryCompleted }
 import akka.persistence.typed.scaladsl.{ Effect, EventSourcedBehavior }
 import akka.stream.scaladsl.{ Sink, Source }
 import akka.util.Timeout
@@ -30,6 +30,7 @@ import fusion.discoveryx.model._
 import fusion.discoveryx.server.naming.{ NamingManager, NamingService, NamingSettings }
 import fusion.discoveryx.server.protocol.NamingReplyCommand.Cmd
 import fusion.discoveryx.server.protocol._
+import fusion.discoveryx.server.util.ProtobufJson4s
 import helloscala.common.IntStatus
 import helloscala.common.util.StringUtils
 
@@ -45,28 +46,33 @@ private[naming] class NamingServiceBehavior(
   import NamingService._
   private implicit val system = context.system
   private val settings = NamingSettings(context.system)
-//  private val serviceState = new ServiceState()
+  private var unusedIdx = 0
   private var listeners: Map[ActorRef[Event], ServiceListener] = Map()
 
   NamingManager.init(context.system) ! ShardingEnvelope(serviceItem.namespace, ServiceCreated(serviceItem.serviceName))
   context.log.info(s"NamingService started: $serviceItem")
 
   def eventSourcedBehavior(persistenceId: PersistenceId): EventSourcedBehavior[Command, Event, NamingServiceState] =
-    EventSourcedBehavior(persistenceId, NamingServiceState(), commandHandler, eventHandler).receiveSignal {
-      case (_, PostStop) =>
-        cleanup()
-      case (_, Terminated(ref)) =>
-        try {
-          listeners = listeners.removed(ref.unsafeUpcast[Event])
-        } catch {
-          case NonFatal(_) => // do nothing
-        }
-        try {
-          context.self ! InstanceRemoveEvent(ref.unsafeUpcast[NamingInstance.Command])
-        } catch {
-          case NonFatal(_) => // do nothing
-        }
-    }
+    EventSourcedBehavior(persistenceId, NamingServiceState(), commandHandler, eventHandler)
+      .receiveSignal {
+        case (_, PostStop) =>
+          cleanup()
+        case (_, Terminated(ref)) =>
+          try {
+            listeners = listeners.removed(ref.unsafeUpcast[Event])
+          } catch {
+            case NonFatal(_) => // do nothing
+          }
+          try {
+            context.self ! InstanceUnhealthyEvent(ref.unsafeUpcast[NamingInstance.Command].path.name)
+          } catch {
+            case NonFatal(_) => // do nothing
+          }
+        case (state, RecoveryCompleted) =>
+          // Init NamingInstance actor
+          state.instances.foreach(spawnNamingInstance)
+      }
+      .withTagger(_ => Set(NamingService.NAME))
 
   private def commandHandler(state: NamingServiceState, command: Command): Effect[Event, NamingServiceState] =
     command match {
@@ -93,32 +99,43 @@ private[naming] class NamingServiceBehavior(
         context.watch(ref)
         Effect.none
 
-      case InternalHealthyChanged(inst, healthy) =>
-        notifyServiceEventListeners(inst, healthy)
+      case event: InstanceUnhealthyEvent =>
+        notifyServiceEventListeners(NamingChangeType.INSTANCE_UNHEALTHY, NamingReply.Data.Empty)
+        Effect.persist(event)
 
       case event: InstanceRemoveEvent =>
+        notifyServiceEventListeners(NamingChangeType.INSTANCE_REMOVE, NamingReply.Data.Empty)
         Effect.persist(event)
 
       case evt: InstanceActorEvent =>
-        Effect.persist(InstanceSaveEvent(evt.ref, evt.instance.healthy))
+        if (!evt.changeType.isUnrecognized && !evt.changeType.isNamingInit) {
+          notifyServiceEventListeners(evt.changeType, NamingReply.Data.Instance(evt.instance))
+        }
+        Effect.persist(InstanceSaveEvent(evt.instance, evt.instance.healthy))
 
       case _: StopServiceInstance =>
         Effect.stop()
     }
 
   private def eventHandler(state: NamingServiceState, event: Event): NamingServiceState = event match {
-    case InstanceSaveEvent(instanceId, healthy) =>
-      state.theChanged(instanceId, healthy)
+    case InstanceSaveEvent(inst, healthy) =>
+      val newState = NamingServiceStateUtils.theChanged(state, inst, healthy)
+      unusedIdx = if (unusedIdx < newState.healthIds.length) unusedIdx else 0
+      newState
 
-    case InstanceRemoveEvent(instanceId) =>
-      val instanceIds = state.instanceIds.filterNot(_ == instanceId)
-      val healthyIds = state.healthyIds.filterNot(_ == instanceId)
-      val unusedIdx = if (state.unusedIdx < healthyIds.length) state.unusedIdx else 0
-      state.copy(instanceIds = instanceIds, healthyIds = healthyIds, unusedIdx)
+    case InstanceRemoveEvent(instId) =>
+      unusedIdx = if (unusedIdx < state.healthIds.length) unusedIdx else 0
+      NamingServiceStateUtils.removeInstance(state, instId)
+
+    case InstanceUnhealthyEvent(instId) =>
+      unusedIdx = if (unusedIdx < state.healthIds.length) unusedIdx else 0
+      NamingServiceStateUtils.unhealthyInstance(state, instId)
 
     case value: ModifyService =>
       val old = state.serviceItem
       val serviceItem = state.serviceItem.copy(
+        namespace = value.namespace,
+        serviceName = value.serviceName,
         groupName = value.groupName.filterNot(str => StringUtils.isBlank(str)).getOrElse(old.groupName),
         protectThreshold = value.protectThreshold.getOrElse(old.protectThreshold),
         metadata = if (value.replaceMetadata) value.metadata else old.metadata ++ value.metadata)
@@ -126,6 +143,8 @@ private[naming] class NamingServiceBehavior(
 
     case value: CreateService =>
       val serviceItem = state.serviceItem.copy(
+        namespace = value.namespace,
+        serviceName = value.serviceName,
         groupName = if (StringUtils.isBlank(value.groupName)) Constants.DEFAULT_GROUP_NAME else value.groupName,
         protectThreshold = value.protectThreshold,
         metadata = value.metadata)
@@ -154,29 +173,49 @@ private[naming] class NamingServiceBehavior(
       availableTimes: Int,
       query: InstanceQuery): Effect[Event, NamingServiceState] = {
     if (instances.isEmpty && availableTimes > 0) {
-      state.nextOption() match {
+      nextStateInstance(state) match {
         case Some(ref) =>
           val future =
-            ref.ask[Option[Instance]](askReplyTo => NamingInstance.Get(query.groupName, query.oneHealthy, askReplyTo))
+            ref.ask[Option[Instance]](askReplyTo => NamingInstance.Get(query.oneHealthy, askReplyTo))
           context.pipeToSelf(future) {
-            case Success(Some(instance)) => InstancesQueried(replyTo, instance :: Nil, 0, query)
-            case _                       => InstancesQueried(replyTo, Nil, availableTimes - 1, query)
+            case Success(Some(instance)) => InstancesQueried(replyTo, instance +: instances, 0, query)
+            case _                       => InstancesQueried(replyTo, instances, availableTimes - 1, query)
           }
         case _ =>
-          context.self ! InstancesQueried(replyTo, Nil, availableTimes - 1, query)
+          context.self ! InstancesQueried(replyTo, instances, availableTimes - 1, query)
       }
       Effect.none
     } else {
       val resp =
         NamingReply(
           IntStatus.OK,
-          data = NamingReply.Data.ServiceInfo(state.currentServiceInfo().copy(instances = instances)))
+          data =
+            NamingReply.Data.ServiceInfo(NamingServiceStateUtils.currentServiceInfo(state).copy(instances = instances)))
       Effect.reply(replyTo)(resp)
     }
   }
 
+  private def nextStateInstance(state: NamingServiceState) = {
+    if (unusedIdx < state.healthIds.length) {
+      val idx = unusedIdx
+      moveUnusedIdx(state)
+      val instId = state.healthIds(idx)
+      context.child(instId).map(_.unsafeUpcast[NamingInstance.Command])
+    } else {
+      None
+    }
+  }
+
+  private def moveUnusedIdx(state: NamingServiceState): Unit = {
+    var idx = unusedIdx + 1
+    if (idx >= state.healthIds.length) {
+      idx = 0
+    }
+    unusedIdx = idx
+  }
+
   private def processHeartbeat(state: NamingServiceState, instanceId: String): Effect[Event, NamingServiceState] = {
-    state.findChild(context, instanceId).foreach(_ ! NamingInstance.Heartbeat)
+    NamingServiceStateUtils.findChild(state, context, instanceId).foreach(_ ! NamingInstance.Heartbeat)
     Effect.none
   }
 
@@ -188,7 +227,7 @@ private[naming] class NamingServiceBehavior(
 
   private def modifyService(replyTo: ActorRef[NamingReply], value: ModifyService): Effect[Event, NamingServiceState] = {
     Effect.persist(value).thenReply(replyTo) { state =>
-      val data = NamingReply.Data.ServiceInfo(state.currentServiceInfo())
+      val data = NamingReply.Data.ServiceInfo(NamingServiceStateUtils.currentServiceInfo(state))
       notifyServiceEventListeners(NamingChangeType.SERVICE_MODIFY, data)
       NamingReply(IntStatus.OK, data = data)
     }
@@ -196,7 +235,7 @@ private[naming] class NamingServiceBehavior(
 
   private def createService(replyTo: ActorRef[NamingReply], value: CreateService): Effect[Event, NamingServiceState] = {
     Effect.persist(value).thenReply(replyTo) { state =>
-      val data = NamingReply.Data.ServiceInfo(state.currentServiceInfo())
+      val data = NamingReply.Data.ServiceInfo(NamingServiceStateUtils.currentServiceInfo(state))
       notifyServiceEventListeners(NamingChangeType.SERVICE_CREATE, data)
       NamingReply(IntStatus.OK, data = data)
     }
@@ -216,34 +255,37 @@ private[naming] class NamingServiceBehavior(
     }
   }
 
-  private def notifyServiceEventListeners(inst: Instance, healthy: Boolean): Effect[Event, NamingServiceState] = {
-    val event = NamingServiceEvent(
-      ServiceEvent(
-        if (healthy) NamingChangeType.INSTANCE_HEALTHY else NamingChangeType.INSTANCE_UNHEALTHY,
-        serviceItem.namespace,
-        serviceItem.serviceName,
-        instance = Some(inst)))
-    for ((ref, _) <- listeners) {
-      ref ! event
-    }
-    Effect.none
-  }
-
   private def queryInstance(
       state: NamingServiceState,
       replyTo: ActorRef[NamingReply],
       in: InstanceQuery): Effect[Event, NamingServiceState] = {
     if (in.oneHealthy) {
-      val availableTimes = state.healthyIds.length
+      val availableTimes = state.healthIds.length
       if (availableTimes > 0) {
         context.self ! InstancesQueried(replyTo, Nil, availableTimes)
       } else {
-        replyTo ! NamingReply(IntStatus.OK, data = NamingReply.Data.ServiceInfo(state.currentServiceInfo()))
+        replyTo ! NamingReply(
+          IntStatus.OK,
+          data = NamingReply.Data.ServiceInfo(NamingServiceStateUtils.currentServiceInfo(state)))
       }
     } else {
-      val future = Source(state.instanceIds)
+      val log = context.log
+      val future = Source(state.instances)
+        .mapConcat { inst =>
+          context.child(inst.instanceId) match {
+            case Some(ref) =>
+              try {
+                ref.unsafeUpcast[NamingInstance.Command] :: Nil
+              } catch {
+                case NonFatal(e) =>
+                  log.warn(s"unsafeUpcast[NamingInstance.Command] error: ${e.toString}")
+                  Nil
+              }
+            case _ => Nil
+          }
+        }
         .mapAsync(4) { ref =>
-          ref.ask[Option[Instance]](replyTo => NamingInstance.Get(in.groupName, in.allHealthy, replyTo))
+          ref.ask[Option[Instance]](replyTo => NamingInstance.Get(in.allHealthy, replyTo))
         }
         .collect { case Some(instance) => instance }
         .runWith(Sink.seq)
@@ -262,8 +304,8 @@ private[naming] class NamingServiceBehavior(
       state: NamingServiceState,
       replyTo: ActorRef[NamingReply],
       in: InstanceModify): Effect[Event, NamingServiceState] = {
-    val future = state
-      .findChild(context, in.instanceId)
+    val future = NamingServiceStateUtils
+      .findChild(state, context, in.instanceId)
       .map { ref =>
         ref
           .ask[Instance](replyTo => NamingInstance.Modify(in, replyTo))
@@ -287,10 +329,9 @@ private[naming] class NamingServiceBehavior(
       state: NamingServiceState,
       replyTo: ActorRef[NamingReply],
       in: InstanceRemove): Effect[Event, NamingServiceState] = {
-    val status = state.findChild(context, in.instanceId) match {
+    val status = NamingServiceStateUtils.findChild(state, context, in.instanceId) match {
       case Some(ref) =>
         ref ! NamingInstance.Remove
-        notifyServiceEventListeners(NamingChangeType.INSTANCE_REMOVE, NamingReply.Data.Empty)
         IntStatus.OK
       case _ => IntStatus.NOT_FOUND
     }
@@ -302,22 +343,45 @@ private[naming] class NamingServiceBehavior(
       state: NamingServiceState,
       replyTo: ActorRef[NamingReply],
       in: InstanceRegister): Effect[Event, NamingServiceState] = {
-    val inst = DiscoveryXUtils.toInstance(in)
-    val resp = state.findChild(context, inst.instanceId) match {
-      case Some(ref) if settings.allowReplaceRegistration =>
-        ref ! NamingInstance.ReplaceInstance(inst)
-        NamingReply(IntStatus.OK, data = NamingReply.Data.Instance(inst))
-      case Some(_) =>
-        NamingReply(IntStatus.CONFLICT, "Service instance existed.")
-      case _ =>
-        context.spawn(
-          Behaviors.supervise(NamingInstance(inst, context.self, settings)).onFailure(SupervisorStrategy.resume),
-          inst.instanceId)
-        NamingReply(IntStatus.OK, data = NamingReply.Data.Instance(inst))
+    val response = DiscoveryXUtils.toInstance(in) match {
+      case Right(inst) =>
+        val maybe = NamingServiceStateUtils.findChild(state, context, inst.instanceId)
+        context.log.debug(s"Child actor [NamingInstance]: $maybe. ${state.instances}")
+        maybe match {
+          case Some(ref) if settings.allowReplaceRegistration =>
+            ref ! NamingInstance.ReplaceInstance(inst)
+            NamingReply(IntStatus.OK, data = NamingReply.Data.Instance(inst))
+          case Some(_) =>
+            NamingReply(IntStatus.CONFLICT, s"Service instance existed, in: ${ProtobufJson4s.toJsonString(in)}.")
+          case _ =>
+            spawnNamingInstance(inst)
+            NamingReply(IntStatus.OK, data = NamingReply.Data.Instance(inst))
+        }
+
+      case Left(message) =>
+        NamingReply(IntStatus.BAD_REQUEST, message)
     }
-    if (IntStatus.isSuccess(resp.status)) {
-      notifyServiceEventListeners(NamingChangeType.INSTANCE_REGISTER, resp.data)
+
+    if (IntStatus.isSuccess(response.status)) {
+      notifyServiceEventListeners(NamingChangeType.INSTANCE_REGISTER, response.data)
     }
-    Effect.reply(replyTo)(resp)
+
+    replyTo ! response
+    val evt = ModifyService(
+      in.namespace,
+      in.serviceName,
+      StringUtils.option(in.groupName).orElse(Some(Constants.DEFAULT_GROUP_NAME)),
+      metadata = in.metadata)
+    Effect.persist(evt)
   }
+
+  @inline private def spawnNamingInstance(inst: Instance): Unit =
+    try {
+      context.spawn(
+        Behaviors.supervise(NamingInstance(inst, context.self, settings)).onFailure(SupervisorStrategy.resume),
+        inst.instanceId)
+    } catch {
+      case NonFatal(e) =>
+        context.log.error(s"spawnNamingInstance($inst) error.", e)
+    }
 }

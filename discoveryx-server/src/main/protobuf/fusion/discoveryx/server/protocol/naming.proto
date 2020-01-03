@@ -10,12 +10,19 @@ option (scalapb.options) = {
   collection_type: "scala.collection.immutable.Seq"
 };
 
+message NamingServiceState {
+    repeated fusion.discoveryx.model.Instance instances = 1 [(scalapb.field).collection_type = "Vector"];
+    repeated string health_ids = 2 [(scalapb.field).collection_type = "Vector"];
+    fusion.discoveryx.model.ServiceItem service_item = 3 [(scalapb.field).no_box = true];
+}
+
 message InstanceActorEvent {
     option (scalapb.message).extends = "fusion.discoveryx.server.naming.NamingService.Command";
     option (scalapb.message).companion_extends = "fusion.protobuf.ActorRefCompanion";
 
-    string ref = 1 [(scalapb.field).type = "akka.actor.typed.ActorRef[fusion.discoveryx.server.naming.actors.NamingInstance.Command]"];
+    string ref = 1 [(scalapb.field).type = "akka.actor.typed.ActorRef[fusion.discoveryx.server.naming.internal.NamingInstance.Command]"];
     fusion.discoveryx.model.Instance instance = 2 [(scalapb.field).no_box = true];
+    fusion.discoveryx.model.NamingChangeType change_type = 3;
 }
 
 message InstancesQueried {
@@ -29,7 +36,6 @@ message InstancesQueried {
     fusion.discoveryx.model.InstanceQuery query = 4 [(scalapb.field).no_box = true];
 }
 
-
 ////////////////////////////////////////////////////////////////
 //// Listener persistence events.
 
@@ -38,16 +44,22 @@ message InstanceSaveEvent {
     option (scalapb.message).extends = "fusion.discoveryx.server.naming.NamingService.Command";
     option (scalapb.message).companion_extends = "fusion.protobuf.ActorRefCompanion";
 
-    string instance_ref = 1 [(scalapb.field).type = "akka.actor.typed.ActorRef[fusion.discoveryx.server.naming.actors.NamingInstance.Command]"];
+    fusion.discoveryx.model.Instance instance = 1 [(scalapb.field).no_box = true];
     bool healthy = 2;
 }
 
 message InstanceRemoveEvent {
     option (scalapb.message).extends = "fusion.discoveryx.server.naming.NamingService.Event";
     option (scalapb.message).extends = "fusion.discoveryx.server.naming.NamingService.Command";
-    option (scalapb.message).companion_extends = "fusion.protobuf.ActorRefCompanion";
 
-    string instance_ref = 1 [(scalapb.field).type = "akka.actor.typed.ActorRef[fusion.discoveryx.server.naming.actors.NamingInstance.Command]"];
+    string instance_id = 1;
+}
+
+message InstanceUnhealthyEvent {
+    option (scalapb.message).extends = "fusion.discoveryx.server.naming.NamingService.Event";
+    option (scalapb.message).extends = "fusion.discoveryx.server.naming.NamingService.Command";
+
+    string instance_id = 1;
 }
 
 //// Listener persistence events.
@@ -103,15 +115,19 @@ message Heartbeat {
 // NamingManager 使用
 ////////////////////////////////////////////////////////////////////////////////
 
+message NamingManagerState {
+    repeated string service_names = 1;
+}
+
 message ServiceCreated {
     option (scalapb.message).extends = "fusion.discoveryx.server.naming.NamingManager.Command";
-    option (scalapb.message).companion_extends = "fusion.protobuf.ActorRefCompanion";
+    option (scalapb.message).extends = "fusion.discoveryx.server.naming.NamingManager.Event";
     string service_name = 1;
 }
 
 message ServiceRemoved {
     option (scalapb.message).extends = "fusion.discoveryx.server.naming.NamingManager.Command";
-    option (scalapb.message).companion_extends = "fusion.protobuf.ActorRefCompanion";
+    option (scalapb.message).extends = "fusion.discoveryx.server.naming.NamingManager.Event";
     string service_name = 1;
 }
 

@@ -91,8 +91,10 @@ private[client] class NamingClientImpl(val settings: NamingClientSettings, val c
         heartbeatInstances.get(key).foreach(_.cancel())
         heartbeatInstances = heartbeatInstances.updated(key, cancellable)
         logger.info(s"注册实例成功，开始心跳调度。${settings.heartbeatInterval} | $inst")
-        heartbeat(source, inst).runForeach(bo => logger.debug(s"Received heartbeat response: $bo")).failed.foreach {
-          e =>
+        heartbeat(source, in, inst.instanceId)
+          .runForeach(bo => logger.debug(s"Received heartbeat response: $bo"))
+          .failed
+          .foreach { e =>
             if (heartbeatInstances.contains(key)) {
               heartbeatInstancesOnRemoves(key)
               logger.error(
@@ -102,7 +104,7 @@ private[client] class NamingClientImpl(val settings: NamingClientSettings, val c
               logger.error(
                 s"Heartbeat connection is abnormally disconnect, exited. exception throw: ${e.getLocalizedMessage}")
             }
-        }
+          }
       case Success(reply) =>
         logger.warn(s"注册实例错误，返回：$reply")
       case Failure(exception) =>
@@ -152,14 +154,17 @@ private[client] class NamingClientImpl(val settings: NamingClientSettings, val c
   @inline private def namespace: String =
     settings.namespace.getOrElse(throw new IllegalArgumentException("Configuration parameter 'namespace' not set."))
 
-  private def heartbeat(in: Source[InstanceHeartbeat, NotUsed], inst: Instance): Source[ServerStatusBO, NotUsed] = {
+  private def heartbeat(
+      in: Source[InstanceHeartbeat, NotUsed],
+      register: InstanceRegister,
+      instanceId: String): Source[ServerStatusBO, NotUsed] = {
     client
       .heartbeat()
-      .addHeader(Headers.NAMESPACE, inst.namespace)
-      .addHeader(Headers.SERVICE_NAME, inst.serviceName)
-      .addHeader(Headers.IP, inst.ip)
-      .addHeader(Headers.PORT, Integer.toString(inst.port))
-      .addHeader(Headers.INSTANCE_ID, inst.instanceId)
+      .addHeader(Headers.NAMESPACE, register.namespace)
+      .addHeader(Headers.SERVICE_NAME, register.serviceName)
+      .addHeader(Headers.IP, register.ip)
+      .addHeader(Headers.PORT, Integer.toString(register.port))
+      .addHeader(Headers.INSTANCE_ID, instanceId)
       .invoke(in)
   }
 }

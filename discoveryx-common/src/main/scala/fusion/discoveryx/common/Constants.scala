@@ -22,6 +22,7 @@ object Constants {
   val DISCOVERYX = "discoveryx"
   val NODE_SERVER = "server"
   val DEFAULT_GROUP_NAME = "default"
+  val ENTITY_ID_SEPARATOR = ':'
 
   val MANAGEMENT = "management"
   val CONFIG = "config"

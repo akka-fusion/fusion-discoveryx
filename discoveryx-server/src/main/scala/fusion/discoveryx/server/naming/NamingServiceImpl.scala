@@ -84,7 +84,7 @@ class NamingServiceImpl(namespaceRef: ActorRef[ExistNamespace])(implicit system:
 
   override def listenerService(in: ServiceListener, metadata: Metadata): Source[ServiceEvent, NotUsed] = {
     try {
-      val entityId = NamingService.entityId(in.namespace, in.serviceName) match {
+      val entityId = NamingService.makeEntityId(in.namespace, in.serviceName) match {
         case Right(value) => value
         case Left(errMsg) => throw HSBadRequestException(errMsg)
       }
@@ -122,7 +122,7 @@ class NamingServiceImpl(namespaceRef: ActorRef[ExistNamespace])(implicit system:
       val instanceId = metadata
         .getText(Headers.INSTANCE_ID)
         .getOrElse(throw HSBadRequestException(s"Request header missing, need '${Headers.INSTANCE_ID}'."))
-      val entityId = NamingService.entityId(namespace, serviceName) match {
+      val entityId = NamingService.makeEntityId(namespace, serviceName) match {
         case Right(value) => value
         case Left(errMsg) => throw HSBadRequestException(errMsg)
       }
@@ -141,7 +141,7 @@ class NamingServiceImpl(namespaceRef: ActorRef[ExistNamespace])(implicit system:
   private def askNaming(namespace: String, serviceName: String, cmd: NamingReplyCommand.Cmd): Future[NamingReply] = {
     namespaceRef.ask[NamespaceExists](replyTo => ExistNamespace(namespace, replyTo)).flatMap {
       case NamespaceExists(true) =>
-        NamingService.entityId(namespace, serviceName) match {
+        NamingService.makeEntityId(namespace, serviceName) match {
           case Right(entityId) =>
             serviceInstanceRegion
               .ask[NamingReply](replyTo => ShardingEnvelope(entityId, NamingReplyCommand(replyTo, cmd)))

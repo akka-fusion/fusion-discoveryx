@@ -121,14 +121,15 @@ message ConfigReply {
 ////////////////////////////////////////////////////////////////////////////////
 
 enum NamingChangeType {
-    SERVICE_CREATE = 0;
-    SERVICE_MODIFY = 1;
-    SERVICE_REMOVE = 2;
-    INSTANCE_REGISTER = 3;
-    INSTANCE_MODIFY = 4;
-    INSTANCE_REMOVE = 5;
-    INSTANCE_UNHEALTHY = 6;
-    INSTANCE_HEALTHY = 7;
+    NAMING_INIT = 0;
+    SERVICE_CREATE = 1;
+    SERVICE_MODIFY = 2;
+    SERVICE_REMOVE = 3;
+    INSTANCE_REGISTER = 4;
+    INSTANCE_MODIFY = 5;
+    INSTANCE_REMOVE = 6;
+    INSTANCE_UNHEALTHY = 7;
+    INSTANCE_HEALTHY = 8;
 }
 
 message ServiceItem {
@@ -152,31 +153,29 @@ enum HealthyCheckMethod {
 message Instance {
     // unique id of this instance.
     string instance_id = 1;
-    // Service information of instance
-    string namespace = 2;
-    string service_name = 3;
-    string group_name = 4;
     // instance ip
-    string ip = 5;
+    string ip = 2;
     // instance port
-    int32 port = 6;
+    int32 port = 3;
     // instance weight
-    double weight = 7;
+    double weight = 4;
     // instance health status
-    bool healthy = 8;
+    bool healthy = 5;
     // If instance is enabled to accept request
-    bool enabled = 9;
+    bool enabled = 6;
     // If instance is ephemeral
-    bool ephemeral = 10;
+    bool ephemeral = 7;
     // user extended attributes
-    map<string, string> metadata = 11;
-    HealthyCheckMethod healthy_check_method = 12;
+    map<string, string> metadata = 8;
+    HealthyCheckMethod healthy_check_method = 9;
     // Healthy check per N seconds
-    int32 healthy_check_interval = 13;
+    int32 healthy_check_interval = 10;
     // Unhealthy check count
-    int32 unhealthy_check_count = 14;
+    int32 unhealthy_check_count = 11;
     // 实例协议
-    string protocol = 15;
+    string protocol = 12;
+    // HTTP healthy check uri path.
+    string http_path = 13;
 }
 // #Instance
 
@@ -189,7 +188,7 @@ message InstanceRegister {
     int32 port = 5;
     // instance weight
     double weight = 6;
-    // instance health status
+    // instance health status. If set to true, it will be available immediately. Otherwise, it will be available after the first heartbeat detection is successful.
     bool health = 7;
     // If instance is enabled to accept request
     bool enable = 8;
@@ -204,6 +203,8 @@ message InstanceRegister {
     int32 unhealthy_check_count = 13;
     // 实例协议
     string protocol = 14;
+    // HTTP healthy check uri path.
+    string http_path = 15;
 }
 // #InstanceRegister
 
@@ -232,6 +233,7 @@ message InstanceModify {
     google.protobuf.Int32Value unhealthy_check_count = 14;
     // 实例协议
     google.protobuf.StringValue protocol = 15;
+    google.protobuf.StringValue http_path = 16;
 }
 // #InstanceModify
 
