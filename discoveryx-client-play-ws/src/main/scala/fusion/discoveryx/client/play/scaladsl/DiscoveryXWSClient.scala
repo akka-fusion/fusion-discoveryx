@@ -18,12 +18,35 @@ package fusion.discoveryx.client.play.scaladsl
 
 import akka.actor.typed.ActorSystem
 import fusion.discoveryx.client.{ DefaultNamingClient, NamingClient }
-import play.api.libs.ws.{ StandaloneWSClient, StandaloneWSRequest }
+import play.api.libs.ws.{ StandaloneWSClient, StandaloneWSRequest, WSClient, WSRequest }
 
 import scala.concurrent.duration._
 import scala.concurrent.{ Await, Future }
 
-final class DiscoveryXStandaloneWSClient private (client: StandaloneWSClient)(implicit system: ActorSystem[_])
+object DiscoveryXWSClient {
+  def apply(client: StandaloneWSClient)(implicit system: ActorSystem[_]): DiscoveryXStandaloneWSClient =
+    new DiscoveryXStandaloneWSClient(client)
+
+  def apply(client: WSClient)(system: ActorSystem[_]): DiscoveryXWSClient = new DiscoveryXWSClient(client)(system)
+}
+
+final class DiscoveryXWSClient(client: WSClient)(implicit system: ActorSystem[_]) extends WSClient {
+  import system.executionContext
+  val namingClient: NamingClient = DefaultNamingClient(system)
+
+  override def underlying[T]: T = client.underlying
+
+  override def url(uri: String): WSRequest = url(uri, 5.seconds)
+
+  def url(uri: String, timeout: FiniteDuration): WSRequest = Await.result(asyncUrl(uri), timeout)
+
+  def asyncUrl(url: String): Future[WSRequest] =
+    namingClient.generateUri(url).map(uri => client.url(uri.map(_.toString()).getOrElse(url)))
+
+  override def close(): Unit = client.close()
+}
+
+final class DiscoveryXStandaloneWSClient(client: StandaloneWSClient)(implicit system: ActorSystem[_])
     extends StandaloneWSClient {
   import system.executionContext
   val namingClient: NamingClient = DefaultNamingClient(system)
@@ -35,16 +58,7 @@ final class DiscoveryXStandaloneWSClient private (client: StandaloneWSClient)(im
   def url(uri: String, timeout: FiniteDuration): StandaloneWSRequest = Await.result(asyncUrl(uri), timeout)
 
   def asyncUrl(url: String): Future[StandaloneWSRequest] =
-    namingClient.generateUri(url).map(uri => client.url(uri.toString()))
+    namingClient.generateUri(url).map(uri => client.url(uri.map(_.toString()).getOrElse(url)))
 
   override def close(): Unit = client.close()
-}
-
-object DiscoveryXStandaloneWSClient {
-  def apply(client: StandaloneWSClient)(implicit system: ActorSystem[_]): StandaloneWSClient =
-    new DiscoveryXStandaloneWSClient(client)
-
-  // Java API
-  def create(client: StandaloneWSClient, system: ActorSystem[_]): StandaloneWSClient =
-    apply(client)(system)
 }

@@ -55,7 +55,6 @@ Version 0.1.0
     <ul>
       <li><a href="../use/sdk-scala.html#module-info" class="header">Module Info</a></li>
       <li><a href="../use/sdk-scala.html#使用" class="header">使用</a></li>
-      <li><a href="../use/sdk-scala.html#配置" class="header">配置</a></li>
     </ul></li>
     <li><a href="../use/akka.html" class="page">在 Akka 中使用</a></li>
     <li><a href="../use/play.html" class="page">在 Play 中使用</a></li>
@@ -93,7 +92,6 @@ Version 0.1.0
     <ul>
       <li><a href="../use/sdk-scala.html#module-info" class="header">Module Info</a></li>
       <li><a href="../use/sdk-scala.html#使用" class="header">使用</a></li>
-      <li><a href="../use/sdk-scala.html#配置" class="header">配置</a></li>
     </ul></li>
     <li><a href="../use/akka.html" class="page">在 Akka 中使用</a></li>
     <li><a href="../use/play.html" class="page">在 Play 中使用</a></li>
@@ -125,7 +123,7 @@ Version 0.1.0
   &lt;version&gt;0.1.0&lt;/version&gt;
 &lt;/dependency&gt;</code></pre></dd></dl>
 <h2><a href="#使用" name="使用" class="anchor"><span class="anchor-link"></span></a>使用</h2>
-<h3><a href="#通过配置使用" name="通过配置使用" class="anchor"><span class="anchor-link"></span></a>通过配置使用</h3>
+<h3><a href="#grpc-client配置" name="grpc-client配置" class="anchor"><span class="anchor-link"></span></a>gRPC Client配置</h3>
 <p>Fusion DiscoveryX Client for Scala SDK 使用 akka-grpc 开发，使用时需要配置 <code>akka.grpc.client</code> 指定 DiscoveryX Server 地址。</p>
 <pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-client/src/main/resources/reference.conf#L66-L81" target="_blank" title="Go to snippet source"></a><code class="language-conf">akka.grpc.client {
   // DiscoveryX 配置管理服务
@@ -143,9 +141,8 @@ Version 0.1.0
     port = 48000
   }
 }</code></pre>
+<h3><a href="#自动注册服务" name="自动注册服务" class="anchor"><span class="anchor-link"></span></a>自动注册服务</h3>
 <p>若需要把服务自动注册到 DiscoveryX Server，需要配置 <code>discoveryx.client.naming.auto-registration = true</code> 。同时，还需要设置<code>namespace</code>、<code>service-name</code>、<code>ip</code>、<code>port</code>，其中<code>ip</code>可通过自动检测获取（当不指定或设置为空字符串时，若发现自动检测到的IP地址不正确请手动指定）。</p>
-<h2><a href="#配置" name="配置" class="anchor"><span class="anchor-link"></span></a>配置</h2>
-<p><strong>discoveryx.client</strong></p>
 <pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-client/src/main/resources/reference.conf#L2-L62" target="_blank" title="Go to snippet source"></a><code class="language-conf">discoveryx.client {
   naming {
     // 自动注册服务。default: false
@@ -203,23 +200,6 @@ Version 0.1.0
 
     // protocol 设置为 HTTP 或 HTTPS 时指定的GET请求URI PATH路径
     // 对于HTTP（HTTPS）检测，当HTTP响应状态值为 [200, 299] 范围内时认为服务实例状态为 healthy。
-  }
-}</code></pre>
-<p><strong>akka.grpc.client</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-client/src/main/resources/reference.conf#L66-L81" target="_blank" title="Go to snippet source"></a><code class="language-conf">akka.grpc.client {
-  // DiscoveryX 配置管理服务
-  &quot;fusion.discoveryx.grpc.ConfigService&quot; {
-    // 是否使用 tls
-    use-tls = false
-    host = &quot;127.0.0.1&quot;
-    port = 48000
-  }
-  // DiscoveryX 服务注册、发现管理服务
-  &quot;fusion.discoveryx.grpc.NamingService&quot; {
-    // 是否使用 tls
-    use-tls = false
-    host = &quot;127.0.0.1&quot;
-    port = 48000
   }
 }</code></pre>
 </div>

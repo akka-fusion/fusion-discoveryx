@@ -75,5 +75,6 @@ object Dependencies {
 
   val _alpnAgent = "org.mortbay.jetty.alpn" % "jetty-alpn-agent" % versionAlpnAgent
 
-  val _playWS = "com.typesafe.play" %% "play-ahc-ws-standalone" % "2.1.2"
+  val _playWSStandalone = "com.typesafe.play" %% "play-ahc-ws-standalone" % "2.1.2"
+  val _playWS = "com.typesafe.play" %% "play-ws" % "2.8.0"
 }

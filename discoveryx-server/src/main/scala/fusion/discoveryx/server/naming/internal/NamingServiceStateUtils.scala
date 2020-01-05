@@ -26,8 +26,13 @@ object NamingServiceStateUtils {
   def removeInstance(state: NamingServiceState, instanceId: String): NamingServiceState =
     state.copy(state.instances.filterNot(_.instanceId == instanceId), state.healthIds.filterNot(_ == instanceId))
 
-  def unhealthyInstance(state: NamingServiceState, instanceId: String): NamingServiceState =
-    state.copy(healthIds = state.healthIds.filterNot(_ == instanceId))
+  def unhealthyInstance(state: NamingServiceState, instanceId: String): NamingServiceState = {
+    val idx = state.instances.indexWhere(_.instanceId == instanceId)
+    val inst = state.instances(idx)
+    val newInst = if (inst.healthy) inst.copy(healthy = false) else inst
+    val netInstances = state.instances.updated(idx, newInst)
+    state.copy(netInstances, state.healthIds.filterNot(_ == instanceId))
+  }
 
   def theChanged(state: NamingServiceState, inst: Instance, healthy: Boolean): NamingServiceState = {
     val idx = state.instances.indexWhere(_.instanceId == inst.instanceId)

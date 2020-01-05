@@ -72,5 +72,5 @@ final class NamingClientSettings private (val c: Configuration) {
     .getOrElse(HealthyCheckProtocol.HTTP)
   val useTls: Boolean = c.getOrElse("use-tls", false)
   val httpPath: String = c.getOrElse("http-path", "")
-  override def toString: String = c.underlying.root().toString
+  override def toString: String = c.underlying.root().render()
 }

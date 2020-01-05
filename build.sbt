@@ -49,11 +49,12 @@ lazy val discoveryxDocs = _project("discoveryx-docs")
         "project.name" -> "Fusion DiscoveryX",
         "canonical.base_url" -> "http://akka-fusion.github.io/akka-fusion/",
         "github.base_url" -> s"https://github.com/akka-fusion/fusion-discoveryx/tree/${version.value}",
-        "version" -> version.value,
         "scala.version" -> scalaVersion.value,
         "scala.binary_version" -> scalaBinaryVersion.value,
         "scaladoc.akka.base_url" -> s"http://doc.akka.io/api/$versionAkka",
-        "akka.version" -> versionAkka))
+        "play.ahc-ws-standalone.version" -> "2.1.2",
+        "akka.version" -> versionAkka,
+        "version" -> version.value))
 
 lazy val discoveryxFunctest = _project("discoveryx-functest")
   .enablePlugins(MultiJvmPlugin)
@@ -68,16 +69,15 @@ lazy val discoveryxClientPlayWs =
   _project("discoveryx-client-play-ws")
     .dependsOn(discoveryxClient)
     .settings(Publishing.publishing: _*)
-    .settings(libraryDependencies ++= Seq(_playWS % Provided))
+    .settings(libraryDependencies ++= Seq(_playWS % Provided, _playWSStandalone))
 
 lazy val discoveryxServer = _project("discoveryx-server")
-  .enablePlugins(JavaAgent, AkkaGrpcPlugin, JavaAppPackaging) //, LauncherJarPlugin)
+  .enablePlugins(JavaAgent, AkkaGrpcPlugin, JavaAppPackaging)
   .dependsOn(discoveryxCommon)
   .settings(
     skip in publish := true,
     javaAgents += _alpnAgent % "runtime;test",
     akkaGrpcCodeGeneratorSettings += "server_power_apis",
-    //akkaGrpcGeneratedSources := Seq(AkkaGrpc.Server),
     mainClass in Compile := Some("fusion.discoveryx.server.FusionDiscoveryXMain"),
     maintainer := "yang.xunjing@qq.com",
     bashScriptExtraDefines ++= Seq(

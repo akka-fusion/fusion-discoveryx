@@ -135,32 +135,40 @@ private[client] class NamingClientImpl(val settings: NamingClientSettings, val c
 
   override def queryInstance(in: InstanceQuery): Future[NamingReply] = client.queryInstance(in)
 
-  override def oneHealthyInstance(serviceName: String): Future[Option[Instance]] = {
+  override def oneHealthyInstance(serviceName: String): Future[Option[Instance]] =
+    oneHealthyInstance(unsafeNamespace, serviceName)
+
+  override def oneHealthyInstance(namespace: String, serviceName: String): Future[Option[Instance]] = {
     import system.executionContext
     val in = InstanceQuery(namespace, serviceName, oneHealthy = true)
-    queryInstance(in).map(_.data.serviceInfo.flatMap(_.instances.headOption))
+    queryInstance(in).map(_.data.serviceInfo.flatMap(si =>
+      if (si.instances.isEmpty) {
+        logger.warn(s"There is no healthy service instance, service is '$namespace@$serviceName'.")
+        None
+      } else {
+        Some(si.instances.head)
+      }))
   }
 
-  override def generateUri(uri: Uri): Future[Uri] = {
+  override def generateUri(uri: Uri): Future[Option[Uri]] = {
     import system.executionContext
     val host = uri.authority.host
     if (host.isNamedHost() && uri.authority.port <= 0) {
-      oneHealthyInstance(host.address()).collect {
-        case Some(inst) =>
-          val authority = uri.authority.copy(host = Uri.Host(inst.ip), port = inst.port)
-          uri.copy(authority = authority)
-      }
+      oneHealthyInstance(host.address()).map(_.map { inst =>
+        val authority = uri.authority.copy(host = Uri.Host(inst.ip), port = inst.port)
+        uri.copy(authority = authority)
+      })
     } else {
-      Future.successful(uri)
+      Future.successful(Some(uri))
     }
   }
 
-  override def generateUri(uri: akka.http.javadsl.model.Uri): Future[akka.http.javadsl.model.Uri] = {
+  override def generateUri(uri: akka.http.javadsl.model.Uri): Future[Option[akka.http.javadsl.model.Uri]] = {
     import system.executionContext
-    generateUri(uri.asScala()).map(akka.http.javadsl.model.Uri.create)
+    generateUri(uri.asScala()).map(_.map(akka.http.javadsl.model.Uri.create))
   }
 
-  @inline private def namespace: String =
+  @inline private def unsafeNamespace: String =
     settings.namespace.getOrElse(throw new IllegalArgumentException("Configuration parameter 'namespace' not set."))
 
   private def heartbeat(

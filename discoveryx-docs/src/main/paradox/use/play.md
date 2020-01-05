@@ -4,7 +4,9 @@
 
 需要在项目中添加如下依赖：
 
-@@dependency[sbt,Gradle,Maven] { group="com.akka-fusion.fusion" artifact="discoveryx-client-play-ws_$scala.binary_version$" version="$version$" }
+@@dependency[sbt,Gradle,Maven] { 
+  group="com.akka-fusion.fusion" artifact="discoveryx-client-play-ws_$scala.binary_version$" version="$version$" 
+}
 
 ## Scala SDK与服务发现配置
 

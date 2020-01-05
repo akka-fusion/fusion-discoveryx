@@ -67,8 +67,6 @@ private[naming] class NamingInstance(
   private var lastActivityTime = System.currentTimeMillis()
   private var unreachableCount = 0
 
-  println(s"NamingInstance startup, ${context.self}")
-
   def become(changeType: NamingChangeType): Behavior[Command] = {
     unreachableTimeout =
       if (instance.healthyCheckInterval < 1) settings.heartbeatTimeout.toMillis
@@ -94,9 +92,13 @@ private[naming] class NamingInstance(
     if (unreachableCount < instance.unhealthyCheckCount) {
       if (!instance.healthy) {
         instance = instance.copy(healthy = true)
+        serviceRef ! InstanceActorEvent(context.self, instance, NamingChangeType.INSTANCE_HEALTHY)
       }
     } else {
-      instance = instance.copy(healthy = false)
+      if (instance.healthy) {
+        instance = instance.copy(healthy = false)
+        serviceRef ! InstanceActorEvent(context.self, instance, NamingChangeType.INSTANCE_UNHEALTHY)
+      }
       unreachableCount = 0
     }
   }
@@ -139,6 +141,7 @@ private[naming] class NamingInstance(
     case Heartbeat =>
       lastActivityTime = System.currentTimeMillis()
       unreachableCount = 0
+      tryChangeHealthy()
       Behaviors.same
 
     case HealthyCheckTick =>
