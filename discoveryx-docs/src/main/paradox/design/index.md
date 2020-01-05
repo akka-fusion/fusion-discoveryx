@@ -6,6 +6,8 @@
 
 - [concept](concept.md)
 - [architecture](architecture.md)
+- [config](config.md)
+- [naming](naming.md)
 - [technology](technology.md)
 
 @@@

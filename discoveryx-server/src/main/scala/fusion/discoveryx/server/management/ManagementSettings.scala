@@ -27,6 +27,8 @@ import scala.concurrent.duration.FiniteDuration
 class ManagementSettings(configuration: Configuration) extends BaseSettings with RetentionCriteriaSettings {
   val c: Configuration = configuration.getConfiguration(s"${Constants.DISCOVERYX}.server.management")
   lazy val sessionTimeout: Long = c.get[FiniteDuration]("session-timeout").toMillis
+
+  @inline def isValidSession(activeTime: Long) = (System.currentTimeMillis() - activeTime) < sessionTimeout
 }
 
 object ManagementSettings {

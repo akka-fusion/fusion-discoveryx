@@ -19,6 +19,7 @@ package fusion.discoveryx.client
 import akka.actor.typed.ActorSystem
 import com.typesafe.config.Config
 import fusion.discoveryx.common.Constants
+import fusion.discoveryx.model.{ HealthyCheckMethod, HealthyCheckProtocol }
 import helloscala.common.Configuration
 
 import scala.concurrent.duration.FiniteDuration
@@ -35,6 +36,7 @@ object NamingClientSettings {
 }
 
 final class NamingClientSettings private (val c: Configuration) {
+  val autoRegistration: Boolean = c.getOrElse("auto-registration", false)
   val heartbeatInterval: FiniteDuration = c.getDuration("heartbeat-interval").toScala
   val oneHealthy: Boolean = c.getBoolean("one-healthy")
   val allHealthy: Boolean = c.getBoolean("all-healthy")
@@ -44,9 +46,31 @@ final class NamingClientSettings private (val c: Configuration) {
   val ip: Option[String] = c.get[Option[String]]("ip")
   val port: Option[Int] = c.get[Option[Int]]("port")
   val enable: Boolean = c.getOrElse("enable", true)
+  val health: Boolean = c.getOrElse("health", true)
   val weight: Double = c.getOrElse("weight", 1.0)
   val ephemeral: Boolean = c.getOrElse("ephemeral", false)
   val metadata: Map[String, String] =
     if (c.hasPath("metadata")) c.get[Map[String, String]]("metadata") else Map()
-  override def toString: String = c.underlying.root().toString
+  val healthyCheckMethod: HealthyCheckMethod = c
+    .get[Option[String]]("healthy-check-method")
+    .flatMap(name => HealthyCheckMethod.fromName(name))
+    .orElse(c.get[Option[Int]]("healthy-check-method").map(id => HealthyCheckMethod.fromValue(id)))
+    .filterNot(v => v.isUnrecognized || v.isNotSet)
+    .getOrElse(HealthyCheckMethod.CLIENT_REPORT)
+  val healthyCheckInterval: Int = c.getOrElse("healthy-check-interval", 10)
+  val unhealthyCheckCount: Int = {
+    val count = c.getOrElse("unhealthy-check-count", 1)
+    if (count < 1) 1 else count
+  }
+  val protocol: HealthyCheckProtocol = c
+    .get[Option[String]]("protocol")
+    .flatMap(HealthyCheckProtocol.fromName)
+    .orElse(
+      c.get[Option[Int]]("protocol")
+        .map(HealthyCheckProtocol.fromValue)
+        .filterNot(v => v.isUnrecognized || v.isUnknown))
+    .getOrElse(HealthyCheckProtocol.HTTP)
+  val useTls: Boolean = c.getOrElse("use-tls", false)
+  val httpPath: String = c.getOrElse("http-path", "")
+  override def toString: String = c.underlying.root().render()
 }

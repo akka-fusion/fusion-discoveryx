@@ -20,7 +20,8 @@ import akka.actor.testkit.typed.scaladsl.{ ActorTestKit, ScalaTestWithActorTestK
 import com.typesafe.config.ConfigFactory
 import fusion.common.config.FusionConfigFactory
 import fusion.discoveryx.common.Constants
-import fusion.discoveryx.server.protocol.{ CreateUser, UserRole }
+import fusion.discoveryx.server.management.{ UserEntity, UserManager }
+import fusion.discoveryx.server.protocol.{ CreateUser, Login, UserRole }
 import fusion.discoveryx.server.util.ProtobufJson4s
 import helloscala.common.IntStatus
 import org.scalatest.WordSpecLike
@@ -32,7 +33,7 @@ class UserServiceTest
         FusionConfigFactory
           .arrangeConfig(ConfigFactory.load("application-test.conf"), Constants.DISCOVERYX, Seq("akka"))))
     with WordSpecLike {
-  private val userService = new UserServiceImpl()
+  private val userService = new UserServiceImpl(UserEntity.init(system), UserManager.init(system))
 
   "UserServiceTest" should {
     "removeUser" in {}
@@ -50,6 +51,10 @@ class UserServiceTest
 
     "listUser" in {}
 
-    "login" in {}
+    "login" in {
+      val response = userService.login(Login("discoveryx", "discoveryx")).futureValue
+      println(ProtobufJson4s.toJsonPrettyString(response))
+      response.status should be(IntStatus.OK)
+    }
   }
 }

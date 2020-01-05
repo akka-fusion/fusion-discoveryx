@@ -50,7 +50,13 @@ Version 0.1.0
   <li><a href="../intro.html" class="page">介绍</a></li>
   <li><a href="../use/index.html" class="page">使用</a>
   <ul>
-    <li><a href="../use/quick-start.html#快速开始" class="active page">快速开始</a></li>
+    <li><a href="../use/quick-start.html#快速开始" class="active page">快速开始</a>
+    <ul>
+      <li><a href="../use/quick-start.html#下载" class="header">下载</a></li>
+      <li><a href="../use/quick-start.html#启动服务" class="header">启动服务</a></li>
+      <li><a href="../use/quick-start.html#接下来" class="header">接下来</a></li>
+    </ul></li>
+    <li><a href="../use/sdk-scala.html" class="page">Scala SDK</a></li>
     <li><a href="../use/akka.html" class="page">在 Akka 中使用</a></li>
     <li><a href="../use/play.html" class="page">在 Play 中使用</a></li>
     <li><a href="../use/spring.html" class="page">在 Spring 中使用</a></li>
@@ -82,7 +88,13 @@ Version 0.1.0
   <li><a href="../intro.html" class="page">介绍</a></li>
   <li><a href="../use/index.html" class="page">使用</a>
   <ul>
-    <li><a href="../use/quick-start.html#快速开始" class="active page">快速开始</a></li>
+    <li><a href="../use/quick-start.html#快速开始" class="active page">快速开始</a>
+    <ul>
+      <li><a href="../use/quick-start.html#下载" class="header">下载</a></li>
+      <li><a href="../use/quick-start.html#启动服务" class="header">启动服务</a></li>
+      <li><a href="../use/quick-start.html#接下来" class="header">接下来</a></li>
+    </ul></li>
+    <li><a href="../use/sdk-scala.html" class="page">Scala SDK</a></li>
     <li><a href="../use/akka.html" class="page">在 Akka 中使用</a></li>
     <li><a href="../use/play.html" class="page">在 Play 中使用</a></li>
     <li><a href="../use/spring.html" class="page">在 Spring 中使用</a></li>
@@ -104,7 +116,24 @@ Version 0.1.0
 <article class="page-content row">
 <div class="small-12 column" id="docs">
 <h1><a href="#快速开始" name="快速开始" class="anchor"><span class="anchor-link"></span></a>快速开始</h1>
-<p>TODO</p>
+<h2><a href="#下载" name="下载" class="anchor"><span class="anchor-link"></span></a>下载</h2>
+<p>下载压缩包 <a href="https://github.com/akka-fusion/fusion-discoveryx/releases">discoveryx-server-0.1.0.zip</a>，解压到目录。如：</p>
+<pre><code>/home/yangjing/discoveryx-server-0.1.0
+</code></pre>
+<h2><a href="#启动服务" name="启动服务" class="anchor"><span class="anchor-link"></span></a>启动服务</h2>
+<p>进入软件根目录执行启动脚本运行：</p>
+<pre><code>cd discoveryx-server-0.1.0/
+./bin/discoveryx-server
+</code></pre>
+<p><strong>Windows</strong>系统请执行 <code>bin/discoveryx-server.bat</code> 。</p>
+<p>打开浏览器，输入：<code>http://localhost:48000</code>即可访问 Fusion DiscoveryX 管理控制台。</p><div class="callout note "><div class="callout-title">Note</div>
+<p>默认将使用 H2 嵌入式文件数据库，这种方式只适合测试使用。若需要在产品中使用，请使用独立数据库，参阅： <a href="../deploy/cluster-jdbc.html">集群部署（使用JDBC持久化）</a> 或 <a href="../deploy/persistence-cassandra.html">集群部署（使用Cassandra作为存储）</a> 。</p></div>
+<h2><a href="#接下来" name="接下来" class="anchor"><span class="anchor-link"></span></a>接下来</h2>
+<ul>
+  <li><a href="akka.html">在 Akka 中使用</a></li>
+  <li><a href="play.html">在 Play 中使用</a></li>
+  <li><a href="spring.html">在 Spring 中使用</a></li>
+</ul>
 </div>
 </article>
 <div class="row">
@@ -114,7 +143,7 @@ Version 0.1.0
 <a href="../use/index.html"><i class="icon-prev"></i> <span class="link-prev">使用</span></a>
 </div>
 <div class="nav-next small-6 column clearfix">
-<a class="float-right" href="../use/akka.html">在 Akka 中使用 <i class="icon-next"></i></a>
+<a class="float-right" href="../use/sdk-scala.html">Scala SDK <i class="icon-next"></i></a>
 </div>
 </section>
 </div>
@@ -128,7 +157,7 @@ Version 0.1.0
 <section class="copyright">
 <div>discoveryx-docs is Open Source and available under the Apache 2 License.</div>
 <p class="legal">
-&copy; 2019-2019 <a href="https://akka-fusion.github.com/" target="_blank">Akka Fusion</a> |
+&copy; 2019-2020 <a href="https://akka-fusion.github.com/" target="_blank">Akka Fusion</a> |
 <a href="https://akka-fusion.github.com/fusion-discoveryx/" target="_blank">Fusion DiscoveryX</a> |
 <a href="https://akka-fusion.github.com/fusion-schedulerx/" target="_blank">Fusion SchedulerX</a>
 </p>

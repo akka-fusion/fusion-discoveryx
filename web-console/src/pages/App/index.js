@@ -136,7 +136,7 @@ export default class App extends Component {
               </Switch>
             </div>
           </Content>
-          <Footer style={{ textAlign: 'center' }}>Ant Design ©2018 Created by Ant UED</Footer>
+          <Footer style={{ textAlign: 'center' }}>Fusion DiscoveryX ©2019 Created by Akka Fusion Team.</Footer>
         </Layout>
       </Layout>
     );

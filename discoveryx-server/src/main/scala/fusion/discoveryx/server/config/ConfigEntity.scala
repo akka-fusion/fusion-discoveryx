@@ -22,6 +22,7 @@ import akka.cluster.sharding.typed.ShardingEnvelope
 import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, Entity, EntityContext, EntityTypeKey }
 import akka.persistence.typed.PersistenceId
 import akka.persistence.typed.scaladsl.{ Effect, EventSourcedBehavior }
+import fusion.discoveryx.common.Constants
 import fusion.discoveryx.model.{ ChangeType, ConfigItem, ConfigQuery, ConfigReply }
 import fusion.discoveryx.server.protocol.ConfigEntityCommand.Cmd
 import fusion.discoveryx.server.protocol._
@@ -36,15 +37,16 @@ object ConfigEntity {
   val TypeKey: EntityTypeKey[Command] = EntityTypeKey(NAME)
 
   object ConfigKey {
-    def unapply(entityId: String): Option[ConfigKey] = entityId.split(' ') match {
+    def unapply(entityId: String): Option[ConfigKey] = entityId.split(Constants.ENTITY_ID_SEPARATOR) match {
       case Array(namespace, dataId) => Some(new ConfigKey(namespace, dataId))
       case _                        => None
     }
   }
 
-  def makeEntityId(key: fusion.discoveryx.server.protocol.ConfigKey) = s"${key.namespace} ${key.dataId}"
+  @inline def makeEntityId(key: fusion.discoveryx.server.protocol.ConfigKey): String =
+    makeEntityId(key.namespace, key.dataId)
 
-  def makeEntityId(namespace: String, dataId: String) = s"$namespace $dataId"
+  @inline def makeEntityId(namespace: String, dataId: String) = s"$namespace${Constants.ENTITY_ID_SEPARATOR}$dataId"
 
   def init(system: ActorSystem[_]): ActorRef[ShardingEnvelope[Command]] =
     ClusterSharding(system).init(
@@ -61,7 +63,7 @@ object ConfigEntity {
             context).eventSourcedBehavior()
         case _ =>
           throw HSInternalErrorException(
-            s"Invalid entityId, need '[namespace] [dataId]'，but ${entityContext.entityId} is ${entityContext.entityId.split(' ').toSeq}")
+            s"Invalid entityId, need '[namespace]${Constants.ENTITY_ID_SEPARATOR}[dataId]'，but ${entityContext.entityId} is ${entityContext.entityId.split(Constants.ENTITY_ID_SEPARATOR).toSeq}")
       })
 }
 

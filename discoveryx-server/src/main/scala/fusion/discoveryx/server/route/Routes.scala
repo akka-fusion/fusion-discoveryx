@@ -18,25 +18,26 @@ package fusion.discoveryx.server.route
 
 import akka.cluster.typed.Cluster
 import akka.grpc.scaladsl.ServiceHandler
-import akka.http.scaladsl.model.{ HttpMethods, HttpRequest, HttpResponse }
+import akka.http.scaladsl.model.{ HttpRequest, HttpResponse }
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import com.typesafe.scalalogging.StrictLogging
 import fusion.discoveryx.common.Constants
 import fusion.discoveryx.server.DiscoveryX
+import fusion.discoveryx.server.config.route.ConfigRoute
 import fusion.discoveryx.server.management.route.ManagementRoute
+import fusion.discoveryx.server.naming.route.NamingRoute
 
 import scala.concurrent.Future
 
 class Routes(discoveryX: DiscoveryX) extends StrictLogging {
   private implicit val system = discoveryX.system
+  private val roles = Cluster(system).selfMember.roles
   private var openRoutes: List[Route] = Nil
   private var consoleRoutes: List[Route] = Nil
   private var grpcHandlers: List[PartialFunction[HttpRequest, Future[HttpResponse]]] = Nil
 
   def init(): Routes = {
-    val cluster = Cluster(system)
-    val roles = cluster.selfMember.roles
     logger.debug(s"Cluster roles: $roles.")
     if (roles(Constants.MANAGEMENT)) {
       val m = new ManagementRoute()
@@ -62,22 +63,26 @@ class Routes(discoveryX: DiscoveryX) extends StrictLogging {
 
   def route: Route = {
     val grpcHandler: HttpRequest => Future[HttpResponse] = ServiceHandler.concatOrNotFound(grpcHandlers: _*)
-    pathPrefix("fusion" / Constants.DISCOVERYX) {
+    var routes = List(extractRequest { request =>
+      onSuccess(grpcHandler(request)) { response =>
+        complete(response)
+      }
+    })
+    if (roles(Constants.MANAGEMENT)) {
+      routes ::= get {
+        getFromResourceDirectory("dist") ~
+        getFromResource("dist/index.html")
+      }
+    }
+    routes ::= pathPrefix("fusion" / Constants.DISCOVERYX) {
       pathPrefix("v1") {
         concat(openRoutes: _*)
       } ~
       pathPrefix("console") {
         concat(consoleRoutes: _*)
       }
-    } ~
-    get {
-      getFromResourceDirectory("dist") ~
-      getFromResource("dist/index.html")
-    } ~
-    extractRequest { request =>
-      onSuccess(grpcHandler(request)) { response =>
-        complete(response)
-      }
     }
+
+    concat(routes: _*)
   }
 }

@@ -25,14 +25,22 @@ docker-compose -f docker-compose.yml up -d // --build
 *默认使用akka-persistence-jdbc(postgres) 数据库，若需要使用akka-persistence-cassandra请将测试类的配置文件修改为`application-test_cassandra.conf`。*
 
 ```sbtshell
-> discoveryx-server/testOnly fusion.discoveryx.server.route.NamingManagementRouteTest
+> discoveryx-server/testOnly fusion.discoveryx.server.naming.route.NamingManagementRouteTest
 ```
 
 **配置管理测试**
 
 ```sbtshell
-> discoveryx-server/testOnly fusion.discoveryx.server.route.ConfigManagementRouteTest
+> discoveryx-server/testOnly fusion.discoveryx.server.config.route.ConfigManagementRouteTest
 ```
+
+## Package, Deployment
+
+```
+./release.sh
+```
+
+生成的zip软件包在目录：`discoveryx-server/target/universal`。
 
 ## 技术
 

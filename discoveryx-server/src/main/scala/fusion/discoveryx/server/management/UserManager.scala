@@ -55,7 +55,7 @@ class UserManager(context: ActorContext[UserEntity.Command]) {
 
   def eventSourcedBehavior(): EventSourcedBehavior[UserEntity.Command, Event, UserManagerState] =
     EventSourcedBehavior[UserEntity.Command, Event, UserManagerState](
-      PersistenceId.ofUniqueId(NAME),
+      PersistenceId.of(NAME, "userManager"),
       UserManagerState.defaultInstance,
       commandHandler,
       eventHandler).withRetention(settings.retentionCriteria)
@@ -83,7 +83,7 @@ class UserManager(context: ActorContext[UserEntity.Command]) {
     command match {
       case Cmd.List(in) =>
         processListUser(state, in)
-          .recover { case e => UserResponse(IntStatus.INTERNAL_ERROR, e.getMessage) }
+          .recover { case e => UserResponse(IntStatus.INTERNAL_ERROR, e.getLocalizedMessage) }
           .foreach(replyTo ! _)
         Effect.none
       case Cmd.Empty => Effect.none

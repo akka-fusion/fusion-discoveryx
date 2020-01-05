@@ -16,7 +16,7 @@
 
 package fusion.discoveryx.client
 
-import akka.actor.typed.ActorSystem
+import akka.actor.typed.{ ActorSystem, Extension }
 import akka.actor.typed.scaladsl.adapter._
 import akka.grpc.GrpcClientSettings
 import akka.http.scaladsl.model.Uri
@@ -27,7 +27,7 @@ import fusion.discoveryx.model._
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 
-trait NamingClient {
+trait NamingClient extends Extension {
   val settings: NamingClientSettings
   val client: NamingServiceClient
 
@@ -69,15 +69,17 @@ trait NamingClient {
 
   def oneHealthyInstance(serviceName: String): Future[Option[Instance]]
 
-  def generateUri(uri: Uri): Future[Uri]
-  def generateUri(uri: akka.http.javadsl.model.Uri): Future[akka.http.javadsl.model.Uri]
+  def oneHealthyInstance(namespace: String, serviceName: String): Future[Option[Instance]]
+
+  def generateUri(uri: Uri): Future[Option[Uri]]
+  def generateUri(uri: akka.http.javadsl.model.Uri): Future[Option[akka.http.javadsl.model.Uri]]
 }
 
 object NamingClient {
-  case class InstanceKey(namespace: String, serviceName: String, instanceId: String)
+  case class InstanceKey( /*namespace: String, serviceName: String, */ instanceId: String)
   object InstanceKey {
-    def apply(in: Instance): InstanceKey = InstanceKey(in.namespace, in.serviceName, in.instanceId)
-    def apply(in: InstanceRemove): InstanceKey = InstanceKey(in.namespace, in.serviceName, in.instanceId)
+    def apply(in: Instance): InstanceKey = InstanceKey( /*in.namespace, in.serviceName,*/ in.instanceId)
+    def apply(in: InstanceRemove): InstanceKey = InstanceKey( /*in.namespace, in.serviceName,*/ in.instanceId)
   }
 
   def apply(system: ActorSystem[_]): NamingClient = {

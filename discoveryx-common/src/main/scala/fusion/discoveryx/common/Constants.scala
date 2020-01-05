@@ -16,10 +16,13 @@
 
 package fusion.discoveryx.common
 
+import fusion.discoveryx.model.HealthyCheckProtocol
+
 object Constants {
   val DISCOVERYX = "discoveryx"
   val NODE_SERVER = "server"
   val DEFAULT_GROUP_NAME = "default"
+  val ENTITY_ID_SEPARATOR = ':'
 
   val MANAGEMENT = "management"
   val CONFIG = "config"
@@ -34,4 +37,9 @@ object Headers {
   val IP = "x-discoveryx-ip"
   val PORT = "x-discoveryx-port"
   val INSTANCE_ID = "x-discoveryx-instance-id"
+}
+
+object Protocols {
+  @inline def formatProtocol(protocol: HealthyCheckProtocol): HealthyCheckProtocol =
+    if (protocol.isUnknown || protocol.isUnrecognized) HealthyCheckProtocol.HTTP else protocol
 }

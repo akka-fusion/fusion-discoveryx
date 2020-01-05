@@ -51,7 +51,12 @@ Version 0.1.0
   <li><a href="../use/index.html" class="page">使用</a>
   <ul>
     <li><a href="../use/quick-start.html" class="page">快速开始</a></li>
-    <li><a href="../use/akka.html#在-akka-中使用" class="active page">在 Akka 中使用</a></li>
+    <li><a href="../use/sdk-scala.html" class="page">Scala SDK</a></li>
+    <li><a href="../use/akka.html#在-akka-中使用" class="active page">在 Akka 中使用</a>
+    <ul>
+      <li><a href="../use/akka.html#module-info" class="header">Module Info</a></li>
+      <li><a href="../use/akka.html#服务发现" class="header">服务发现</a></li>
+    </ul></li>
     <li><a href="../use/play.html" class="page">在 Play 中使用</a></li>
     <li><a href="../use/spring.html" class="page">在 Spring 中使用</a></li>
   </ul></li>
@@ -83,7 +88,12 @@ Version 0.1.0
   <li><a href="../use/index.html" class="page">使用</a>
   <ul>
     <li><a href="../use/quick-start.html" class="page">快速开始</a></li>
-    <li><a href="../use/akka.html#在-akka-中使用" class="active page">在 Akka 中使用</a></li>
+    <li><a href="../use/sdk-scala.html" class="page">Scala SDK</a></li>
+    <li><a href="../use/akka.html#在-akka-中使用" class="active page">在 Akka 中使用</a>
+    <ul>
+      <li><a href="../use/akka.html#module-info" class="header">Module Info</a></li>
+      <li><a href="../use/akka.html#服务发现" class="header">服务发现</a></li>
+    </ul></li>
     <li><a href="../use/play.html" class="page">在 Play 中使用</a></li>
     <li><a href="../use/spring.html" class="page">在 Spring 中使用</a></li>
   </ul></li>
@@ -104,14 +114,32 @@ Version 0.1.0
 <article class="page-content row">
 <div class="small-12 column" id="docs">
 <h1><a href="#在-akka-中使用" name="在-akka-中使用" class="anchor"><span class="anchor-link"></span></a>在 Akka 中使用</h1>
-<p>TODO</p>
+<h2><a href="#module-info" name="module-info" class="anchor"><span class="anchor-link"></span></a>Module Info</h2>
+<p>需要在项目中添加如下依赖：</p><dl class="dependency"><dt>sbt</dt><dd><pre class="prettyprint"><code class="language-scala">libraryDependencies += "com.akka-fusion.fusion" %% "discoveryx-client" % "0.1.0"</code></pre></dd><dt>Gradle</dt><dd><pre class="prettyprint"><code class="language-gradle">dependencies {
+  compile group: 'com.akka-fusion.fusion', name: 'discoveryx-client_2.13', version: '0.1.0'
+}</code></pre></dd><dt>Maven</dt><dd><pre class="prettyprint"><code class="language-xml">&lt;dependency&gt;
+  &lt;groupId&gt;com.akka-fusion.fusion&lt;/groupId&gt;
+  &lt;artifactId&gt;discoveryx-client_2.13&lt;/artifactId&gt;
+  &lt;version&gt;0.1.0&lt;/version&gt;
+&lt;/dependency&gt;</code></pre></dd></dl>
+<h2><a href="#服务发现" name="服务发现" class="anchor"><span class="anchor-link"></span></a>服务发现</h2>
+<p>Akka通过 <a href="https://doc.akka.io/docs/akka/current/discovery/index.html">akka-discovery</a> 提供了默认的服务发现功能，DiscoveryX Client提供了对其的支持。我们只需要配置<code>akka.discovery</code>设置使用<code>fusion-discoveryx</code>使用 DiscoveryX Client 来为 akka-discovery 提供服务发现功能。</p>
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-client/src/main/resources/reference.conf#L85-L93" target="_blank" title="Go to snippet source"></a><code class="language-conf">akka.discovery {
+  method = fusion-discoveryx
+
+  fusion-discoveryx {
+    class = fusion.discoveryx.client.DiscoveryXAkkaDiscovery
+
+    setting = discoveryx.client.naming
+  }
+}</code></pre>
 </div>
 </article>
 <div class="row">
 <div class="small-12 column">
 <section class="nav-prev-next row">
 <div class="nav-prev small-6 column">
-<a href="../use/quick-start.html"><i class="icon-prev"></i> <span class="link-prev">快速开始</span></a>
+<a href="../use/sdk-scala.html"><i class="icon-prev"></i> <span class="link-prev">Scala SDK</span></a>
 </div>
 <div class="nav-next small-6 column clearfix">
 <a class="float-right" href="../use/play.html">在 Play 中使用 <i class="icon-next"></i></a>
@@ -128,7 +156,7 @@ Version 0.1.0
 <section class="copyright">
 <div>discoveryx-docs is Open Source and available under the Apache 2 License.</div>
 <p class="legal">
-&copy; 2019-2019 <a href="https://akka-fusion.github.com/" target="_blank">Akka Fusion</a> |
+&copy; 2019-2020 <a href="https://akka-fusion.github.com/" target="_blank">Akka Fusion</a> |
 <a href="https://akka-fusion.github.com/fusion-discoveryx/" target="_blank">Fusion DiscoveryX</a> |
 <a href="https://akka-fusion.github.com/fusion-schedulerx/" target="_blank">Fusion SchedulerX</a>
 </p>

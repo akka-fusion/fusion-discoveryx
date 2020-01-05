@@ -63,7 +63,7 @@ class ConfigManager private (namespace: String, context: ActorContext[Command]) 
         case ConfigManagerCommand(replyTo, cmd) =>
           onManagerCommand(cmd).onComplete {
             case Success(value) => replyTo ! value
-            case Failure(e)     => replyTo ! ConfigResponse(IntStatus.INTERNAL_ERROR, e.getMessage)
+            case Failure(e)     => replyTo ! ConfigResponse(IntStatus.INTERNAL_ERROR, e.getLocalizedMessage)
           }
           Behaviors.same
         case InternalConfigKeys(keys) =>

@@ -24,10 +24,11 @@ import akka.stream.scaladsl.Source
 import com.typesafe.scalalogging.StrictLogging
 import fusion.common.extension.FusionCoordinatedShutdown
 import fusion.discoveryx.client.{ NamingClient, NamingClientSettings }
-import fusion.discoveryx.common.Headers
+import fusion.discoveryx.common.{ Constants, Headers }
 import fusion.discoveryx.grpc.NamingServiceClient
 import fusion.discoveryx.model._
 import helloscala.common.IntStatus
+import helloscala.common.util.{ NetworkUtils, StringUtils }
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -55,19 +56,27 @@ private[client] class NamingClientImpl(val settings: NamingClientSettings, val c
     try {
       val namespace = settings.namespace.getOrElse(throw new IllegalArgumentException("'namespace' not set."))
       val serviceName = settings.serviceName.getOrElse(throw new IllegalArgumentException("'service-name' not set."))
-      val ip = settings.ip.getOrElse(throw new IllegalArgumentException("'ip' not set."))
+      val ip = settings.ip
+        .orElse(NetworkUtils.firstOnlineInet4Address().map(_.getHostAddress))
+        .getOrElse(throw new IllegalArgumentException("'ip' not set."))
       val port = settings.port.getOrElse(throw new IllegalArgumentException("'port' not set."))
       val in = InstanceRegister(
         namespace,
         serviceName,
-        settings.groupName.getOrElse(""),
+        settings.groupName.filter(StringUtils.isNoneBlank).getOrElse(Constants.DEFAULT_GROUP_NAME),
         ip,
         port,
-        weight = settings.weight,
-        health = true,
-        enable = settings.enable,
-        ephemeral = settings.ephemeral,
-        metadata = settings.metadata)
+        settings.weight,
+        settings.health,
+        settings.enable,
+        settings.ephemeral,
+        settings.metadata,
+        settings.healthyCheckMethod,
+        settings.healthyCheckInterval,
+        settings.unhealthyCheckCount,
+        settings.protocol,
+        settings.useTls,
+        settings.httpPath)
       registerInstance(in)
     } catch {
       case NonFatal(e) => Future.failed(e)
@@ -91,8 +100,10 @@ private[client] class NamingClientImpl(val settings: NamingClientSettings, val c
         heartbeatInstances.get(key).foreach(_.cancel())
         heartbeatInstances = heartbeatInstances.updated(key, cancellable)
         logger.info(s"注册实例成功，开始心跳调度。${settings.heartbeatInterval} | $inst")
-        heartbeat(source, inst).runForeach(bo => logger.debug(s"Received heartbeat response: $bo")).failed.foreach {
-          e =>
+        heartbeat(source, in, inst.instanceId)
+          .runForeach(bo => logger.debug(s"Received heartbeat response: $bo"))
+          .failed
+          .foreach { e =>
             if (heartbeatInstances.contains(key)) {
               heartbeatInstancesOnRemoves(key)
               logger.error(
@@ -102,7 +113,7 @@ private[client] class NamingClientImpl(val settings: NamingClientSettings, val c
               logger.error(
                 s"Heartbeat connection is abnormally disconnect, exited. exception throw: ${e.getLocalizedMessage}")
             }
-        }
+          }
       case Success(reply) =>
         logger.warn(s"注册实例错误，返回：$reply")
       case Failure(exception) =>
@@ -124,42 +135,53 @@ private[client] class NamingClientImpl(val settings: NamingClientSettings, val c
 
   override def queryInstance(in: InstanceQuery): Future[NamingReply] = client.queryInstance(in)
 
-  override def oneHealthyInstance(serviceName: String): Future[Option[Instance]] = {
+  override def oneHealthyInstance(serviceName: String): Future[Option[Instance]] =
+    oneHealthyInstance(unsafeNamespace, serviceName)
+
+  override def oneHealthyInstance(namespace: String, serviceName: String): Future[Option[Instance]] = {
     import system.executionContext
     val in = InstanceQuery(namespace, serviceName, oneHealthy = true)
-    queryInstance(in).map(_.data.serviceInfo.flatMap(_.instances.headOption))
+    queryInstance(in).map(_.data.serviceInfo.flatMap(si =>
+      if (si.instances.isEmpty) {
+        logger.warn(s"There is no healthy service instance, service is '$namespace@$serviceName'.")
+        None
+      } else {
+        Some(si.instances.head)
+      }))
   }
 
-  override def generateUri(uri: Uri): Future[Uri] = {
+  override def generateUri(uri: Uri): Future[Option[Uri]] = {
     import system.executionContext
     val host = uri.authority.host
     if (host.isNamedHost() && uri.authority.port <= 0) {
-      oneHealthyInstance(host.address()).collect {
-        case Some(inst) =>
-          val authority = uri.authority.copy(host = Uri.Host(inst.ip), port = inst.port)
-          uri.copy(authority = authority)
-      }
+      oneHealthyInstance(host.address()).map(_.map { inst =>
+        val authority = uri.authority.copy(host = Uri.Host(inst.ip), port = inst.port)
+        uri.copy(authority = authority)
+      })
     } else {
-      Future.successful(uri)
+      Future.successful(Some(uri))
     }
   }
 
-  override def generateUri(uri: akka.http.javadsl.model.Uri): Future[akka.http.javadsl.model.Uri] = {
+  override def generateUri(uri: akka.http.javadsl.model.Uri): Future[Option[akka.http.javadsl.model.Uri]] = {
     import system.executionContext
-    generateUri(uri.asScala()).map(akka.http.javadsl.model.Uri.create)
+    generateUri(uri.asScala()).map(_.map(akka.http.javadsl.model.Uri.create))
   }
 
-  @inline private def namespace: String =
+  @inline private def unsafeNamespace: String =
     settings.namespace.getOrElse(throw new IllegalArgumentException("Configuration parameter 'namespace' not set."))
 
-  private def heartbeat(in: Source[InstanceHeartbeat, NotUsed], inst: Instance): Source[ServerStatusBO, NotUsed] = {
+  private def heartbeat(
+      in: Source[InstanceHeartbeat, NotUsed],
+      register: InstanceRegister,
+      instanceId: String): Source[ServerStatusBO, NotUsed] = {
     client
       .heartbeat()
-      .addHeader(Headers.NAMESPACE, inst.namespace)
-      .addHeader(Headers.SERVICE_NAME, inst.serviceName)
-      .addHeader(Headers.IP, inst.ip)
-      .addHeader(Headers.PORT, Integer.toString(inst.port))
-      .addHeader(Headers.INSTANCE_ID, inst.instanceId)
+      .addHeader(Headers.NAMESPACE, register.namespace)
+      .addHeader(Headers.SERVICE_NAME, register.serviceName)
+      .addHeader(Headers.IP, register.ip)
+      .addHeader(Headers.PORT, Integer.toString(register.port))
+      .addHeader(Headers.INSTANCE_ID, instanceId)
       .invoke(in)
   }
 }

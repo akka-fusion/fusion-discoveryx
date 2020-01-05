@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package fusion.discoveryx.server.route
+package fusion.discoveryx.server.naming.route
 
 import akka.actor
 import akka.actor.typed.{ ActorRef, ActorSystem }
@@ -23,19 +23,26 @@ import akka.http.scaladsl.model.{ HttpRequest, HttpResponse }
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.stream.{ Materializer, SystemMaterializer }
+import akka.util.Timeout
 import fusion.core.extension.FusionCore
 import fusion.discoveryx.grpc.NamingServicePowerApiHandler
 import fusion.discoveryx.model.{ InstanceModify, InstanceQuery, InstanceRegister, InstanceRemove }
 import fusion.discoveryx.server.grpc.NamingManagerServiceHandler
 import fusion.discoveryx.server.management.NamespaceRef.ExistNamespace
+import fusion.discoveryx.server.management.UserEntity
 import fusion.discoveryx.server.naming.{ NamingManagerServiceImpl, NamingServiceImpl }
 import fusion.discoveryx.server.protocol._
+import fusion.discoveryx.server.route.{ SessionRoute, pathPost }
 
 import scala.concurrent.Future
+import scala.concurrent.duration._
 
-class NamingRoute(namespaceRef: ActorRef[ExistNamespace])(implicit system: ActorSystem[_]) {
+class NamingRoute(namespaceRef: ActorRef[ExistNamespace])(implicit system: ActorSystem[_]) extends SessionRoute {
+  private implicit val timeout: Timeout = 5.seconds
   private val namingManagerService = new NamingManagerServiceImpl(namespaceRef)
   private val namingService = new NamingServiceImpl(namespaceRef)
+  private val userEntity = UserEntity.init(system)
+  private val validationSession = createValidationSession(userEntity)
 
   val grpcHandler: List[PartialFunction[HttpRequest, Future[HttpResponse]]] = {
     implicit val mat: Materializer = SystemMaterializer(system).materializer
@@ -46,29 +53,31 @@ class NamingRoute(namespaceRef: ActorRef[ExistNamespace])(implicit system: Actor
   import fusion.discoveryx.server.util.ProtobufJsonSupport._
 
   def consoleRoute: Route = pathPrefix("naming") {
-    pathPost("ListService") {
-      entity(as[ListService]) { in =>
-        complete(namingManagerService.listService(in))
-      }
-    } ~
-    pathPost("GetService") {
-      entity(as[GetService]) { in =>
-        complete(namingManagerService.getService(in))
-      }
-    } ~
-    pathPost("CreateService") {
-      entity(as[CreateService]) { in =>
-        complete(namingManagerService.createService(in))
-      }
-    } ~
-    pathPost("RemoveService") {
-      entity(as[RemoveService]) { in =>
-        complete(namingManagerService.removeService(in))
-      }
-    } ~
-    pathPost("ModifyService") {
-      entity(as[ModifyService]) { in =>
-        complete(namingManagerService.modifyService(in))
+    validationSession {
+      pathPost("ListService") {
+        entity(as[ListService]) { in =>
+          complete(namingManagerService.listService(in))
+        }
+      } ~
+      pathPost("GetService") {
+        entity(as[GetService]) { in =>
+          complete(namingManagerService.getService(in))
+        }
+      } ~
+      pathPost("CreateService") {
+        entity(as[CreateService]) { in =>
+          complete(namingManagerService.createService(in))
+        }
+      } ~
+      pathPost("RemoveService") {
+        entity(as[RemoveService]) { in =>
+          complete(namingManagerService.removeService(in))
+        }
+      } ~
+      pathPost("ModifyService") {
+        entity(as[ModifyService]) { in =>
+          complete(namingManagerService.modifyService(in))
+        }
       }
     }
   }
@@ -80,18 +89,24 @@ class NamingRoute(namespaceRef: ActorRef[ExistNamespace])(implicit system: Actor
       }
     } ~
     pathPost("RegisterInstance") {
-      entity(as[InstanceRegister]) { in =>
-        complete(namingService.registerInstance(in, new MetadataImpl()))
+      validationSession {
+        entity(as[InstanceRegister]) { in =>
+          complete(namingService.registerInstance(in, new MetadataImpl()))
+        }
       }
     } ~
     pathPost("ModifyInstance") {
-      entity(as[InstanceModify]) { in =>
-        complete(namingService.modifyInstance(in, new MetadataImpl()))
+      validationSession {
+        entity(as[InstanceModify]) { in =>
+          complete(namingService.modifyInstance(in, new MetadataImpl()))
+        }
       }
     } ~
     pathPost("RemoveInstance") {
-      entity(as[InstanceRemove]) { in =>
-        complete(namingService.removeInstance(in, new MetadataImpl()))
+      validationSession {
+        entity(as[InstanceRemove]) { in =>
+          complete(namingService.removeInstance(in, new MetadataImpl()))
+        }
       }
     }
   }

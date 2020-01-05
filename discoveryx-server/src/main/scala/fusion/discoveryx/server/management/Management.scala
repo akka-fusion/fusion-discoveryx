@@ -131,11 +131,11 @@ class Management private (context: ActorContext[Command]) {
       .receiveSignal {
         case (state, RecoveryCompleted) =>
           context.log.debug(s"RecoveryCompleted, state: $state")
-          storeNamespace(set => state.namespaces.foldLeft(set)((data, ns) => data :+ ns.namespace))
+          storeNamespaceDistributedData(set => state.namespaces.foldLeft(set)((data, ns) => data :+ ns.namespace))
       }
       .withRetention(settings.retentionCriteria)
 
-  private def storeNamespace(func: ORSet[String] => ORSet[String]): Unit = {
+  private def storeNamespaceDistributedData(func: ORSet[String] => ORSet[String]): Unit = {
     distributedData.replicator ! Replicator.Update(
       NamespaceRef.Key,
       ORSet.empty[String],
@@ -160,7 +160,7 @@ class Management private (context: ActorContext[Command]) {
       in: RemoveNamespace): Effect[Event, ManagementState] = {
     if (oldState.namespaces.exists(_.namespace == in.namespace)) {
       Effect.persist(in).thenReply(replyTo) { _ =>
-        storeNamespace(set => set.remove(in.namespace))
+        storeNamespaceDistributedData(set => set.remove(in.namespace))
         NamingManager.init(context.system) ! ShardingEnvelope(in.namespace, StopNamingManager())
         configManager ! ShardingEnvelope(in.namespace, StopConfigManager())
         ManagementResponse(IntStatus.OK)
@@ -207,7 +207,7 @@ class Management private (context: ActorContext[Command]) {
     } else {
       val namespace = Namespace(Utils.timeBasedUuid().toString, in.name, in.description)
       Effect.persist[Event, ManagementState](namespace).thenReply(replyTo) { _ =>
-        storeNamespace(set => set :+ namespace.namespace)
+        storeNamespaceDistributedData(set => set :+ namespace.namespace)
         ManagementResponse(IntStatus.OK, data = Data.Namespace(namespace))
       }
     }

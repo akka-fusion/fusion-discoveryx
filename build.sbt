@@ -2,6 +2,10 @@ import Commons._
 import Dependencies._
 import Environment._
 
+ThisBuild / offline := true
+
+ThisBuild / updateOptions := updateOptions.value.withCachedResolution(true).withLatestSnapshots(false)
+
 ThisBuild / buildEnv := {
   sys.props
     .get("build.env")
@@ -10,10 +14,10 @@ ThisBuild / buildEnv := {
       case "prod"  => Some(BuildEnv.Production)
       case "stage" => Some(BuildEnv.Stage)
       case "test"  => Some(BuildEnv.Test)
-      case "dev"   => Some(BuildEnv.Developement)
+      case "dev"   => Some(BuildEnv.Development)
       case _       => None
     }
-    .getOrElse(BuildEnv.Developement)
+    .getOrElse(BuildEnv.Development)
 }
 
 ThisBuild / scalaVersion := versionScala213
@@ -24,37 +28,33 @@ ThisBuild / scalafmtOnCompile := true
 
 ThisBuild / sonarUseExternalConfig := true
 
+ThisBuild / resolvers ++= Seq(
+  "Bintray akka-fusion".at("https://akka-fusion.bintray.com/maven"),
+  Resolver.sonatypeRepo("snapshots"))
+
 lazy val root = Project(id = "fusion-discoveryx", base = file("."))
-  .aggregate(discoveryxFunctest, discoveryxPlay, discoveryxServer, discoveryxClient, discoveryxCommon)
+  .aggregate(discoveryxFunctest, discoveryxClientPlayWs, discoveryxServer, discoveryxClient, discoveryxCommon)
   .settings(Environment.settings: _*)
   .settings(skip in publish := true, aggregate in sonarScan := false)
 
 lazy val discoveryxDocs = _project("discoveryx-docs")
-  .enablePlugins( /*ParadoxMaterialThemePlugin*/ AkkaParadoxPlugin)
-  .dependsOn(discoveryxFunctest, discoveryxPlay, discoveryxServer, discoveryxClient, discoveryxCommon)
+  .enablePlugins(AkkaParadoxPlugin)
+  .dependsOn(discoveryxFunctest, discoveryxClientPlayWs, discoveryxServer, discoveryxClient, discoveryxCommon)
   .settings(
     resolvers += Resolver.jcenterRepo,
     skip in publish := true,
-//    Compile / paradoxMaterialTheme ~= {
-//      _.withLanguage(java.util.Locale.SIMPLIFIED_CHINESE)
-//        .withColor("indigo", "red")
-//        .withRepository(uri("https://github.com/akka-fusion/fusion-discoveryx"))
-//        .withSocial(
-//          uri("http://akka-fusion.github.io/akka-fusion/"),
-//          uri("https://github.com/akka-fusion"),
-//          uri("https://weibo.com/yangbajing"))
-//    },
     paradoxGroups := Map("Language" -> Seq("Scala")),
     sourceDirectory in Compile in paradoxTheme := sourceDirectory.value / "main" / "paradox" / "_template",
     paradoxProperties ++= Map(
         "project.name" -> "Fusion DiscoveryX",
         "canonical.base_url" -> "http://akka-fusion.github.io/akka-fusion/",
         "github.base_url" -> s"https://github.com/akka-fusion/fusion-discoveryx/tree/${version.value}",
-        "version" -> version.value,
         "scala.version" -> scalaVersion.value,
         "scala.binary_version" -> scalaBinaryVersion.value,
         "scaladoc.akka.base_url" -> s"http://doc.akka.io/api/$versionAkka",
-        "akka.version" -> versionAkka))
+        "play.ahc-ws-standalone.version" -> "2.1.2",
+        "akka.version" -> versionAkka,
+        "version" -> version.value))
 
 lazy val discoveryxFunctest = _project("discoveryx-functest")
   .enablePlugins(MultiJvmPlugin)
@@ -65,20 +65,19 @@ lazy val discoveryxFunctest = _project("discoveryx-functest")
     jvmOptions in MultiJvm := Seq("-Xmx512M"),
     libraryDependencies ++= Seq(_akkaMultiNodeTestkit % Test))
 
-lazy val discoveryxPlay =
-  _project("discoveryx-play")
+lazy val discoveryxClientPlayWs =
+  _project("discoveryx-client-play-ws")
     .dependsOn(discoveryxClient)
     .settings(Publishing.publishing: _*)
-    .settings(libraryDependencies ++= Seq(_playWS % Provided))
+    .settings(libraryDependencies ++= Seq(_playWS % Provided, _playWSStandalone))
 
 lazy val discoveryxServer = _project("discoveryx-server")
-  .enablePlugins(JavaAgent, AkkaGrpcPlugin, JavaAppPackaging) //, LauncherJarPlugin)
+  .enablePlugins(JavaAgent, AkkaGrpcPlugin, JavaAppPackaging)
   .dependsOn(discoveryxCommon)
   .settings(
     skip in publish := true,
     javaAgents += _alpnAgent % "runtime;test",
     akkaGrpcCodeGeneratorSettings += "server_power_apis",
-    //akkaGrpcGeneratedSources := Seq(AkkaGrpc.Server),
     mainClass in Compile := Some("fusion.discoveryx.server.FusionDiscoveryXMain"),
     maintainer := "yang.xunjing@qq.com",
     bashScriptExtraDefines ++= Seq(

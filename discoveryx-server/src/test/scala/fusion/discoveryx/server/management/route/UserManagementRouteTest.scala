@@ -25,7 +25,7 @@ import fusion.discoveryx.server.route.FusionRouteTest
 import fusion.discoveryx.server.util.ProtobufJson4s
 import org.scalatest.WordSpec
 
-class ManagementUserRouteTest extends WordSpec with FusionRouteTest {
+class UserManagementRouteTest extends WordSpec with FusionRouteTest {
   private val managementRoute = new ManagementRoute()(discoveryX.system)
 
   "UserRoute" must {

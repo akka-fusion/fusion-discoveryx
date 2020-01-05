@@ -14,10 +14,21 @@
  * limitations under the License.
  */
 
-package fusion.discoveryx.client.play
+package fusion.discoveryx.server.util
 
-import play.api.libs.ws.ahc.StandaloneAhcWSClient
+import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
+import akka.actor.typed.Behavior
+import akka.actor.typed.scaladsl.Behaviors
+import org.scalatest.WordSpecLike
 
-object DiscoveryXPlay {
-//  StandaloneAhcWSClient()
+object ActorTest {
+  def apply(): Behavior[String] = Behaviors.ignore
+}
+class ActorTest extends ScalaTestWithActorTestKit with WordSpecLike {
+  "ActorTest" must {
+    "ip-port" in {
+      val ref = spawn(ActorTest(), "127.0.0.1:2882")
+      println(ref)
+    }
+  }
 }

@@ -53,6 +53,8 @@ Version 0.1.0
   <ul>
     <li><a href="../design/concept.html" class="page">DiscoveryX 概念</a></li>
     <li><a href="../design/architecture.html" class="page">架构</a></li>
+    <li><a href="../design/config.html" class="page">配置管理设计</a></li>
+    <li><a href="../design/naming.html" class="page">服务注册、发现设计</a></li>
     <li><a href="../design/technology.html#技术实现" class="active page">技术实现</a>
     <ul>
       <li><a href="../design/technology.html#protocol" class="header">Protocol</a></li>
@@ -91,6 +93,8 @@ Version 0.1.0
   <ul>
     <li><a href="../design/concept.html" class="page">DiscoveryX 概念</a></li>
     <li><a href="../design/architecture.html" class="page">架构</a></li>
+    <li><a href="../design/config.html" class="page">配置管理设计</a></li>
+    <li><a href="../design/naming.html" class="page">服务注册、发现设计</a></li>
     <li><a href="../design/technology.html#技术实现" class="active page">技术实现</a>
     <ul>
       <li><a href="../design/technology.html#protocol" class="header">Protocol</a></li>
@@ -155,27 +159,47 @@ Version 0.1.0
 }</code></pre>
 <h3><a href="#protobuf" name="protobuf" class="anchor"><span class="anchor-link"></span></a>Protobuf</h3>
 <p>DiscoveryX 使用 Protobuf 来定义和序列化数据消息，服务需要的请求参数、响应结果通过Protobuf定义，它将被自动编译并生成相应的case class。</p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L143-L164" target="_blank" title="Go to snippet source"></a><code class="language-proto">message Instance {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L144-L186" target="_blank" title="Go to snippet source"></a><code class="language-proto"><br/>// 健康检查方式
+enum HealthyCheckMethod {
+    NOT_SET = 0;
+    CLIENT_REPORT = 1;
+    SERVER_SNIFF = 2;
+}
+
+enum HealthyCheckProtocol {
+    UNKNOWN = 0;
+    UDP = 1;
+    TCP = 2;
+    HTTP = 3;
+}
+
+message Instance {
     // unique id of this instance.
     string instance_id = 1;
-    // Service information of instance
-    string namespace = 2;
-    string service_name = 3;
-    string group_name = 4;
     // instance ip
-    string ip = 5;
+    string ip = 2;
     // instance port
-    int32 port = 6;
+    int32 port = 3;
     // instance weight
-    double weight = 7;
+    double weight = 4;
     // instance health status
-    bool healthy = 8;
+    bool healthy = 5;
     // If instance is enabled to accept request
-    bool enabled = 9;
+    bool enabled = 6;
     // If instance is ephemeral
-    bool ephemeral = 10;
+    bool ephemeral = 7;
     // user extended attributes
-    map&lt;string, string&gt; metadata = 11;
+    map&lt;string, string&gt; metadata = 8;
+    HealthyCheckMethod healthy_check_method = 9;
+    // Healthy check per N seconds
+    int32 healthy_check_interval = 10;
+    // Unhealthy check count
+    int32 unhealthy_check_count = 11;
+    // Healthy check protocl
+    HealthyCheckProtocol protocol = 12;
+    bool use_tls = 13;
+    // HTTP healthy check uri path.
+    string http_path = 14;
 }</code></pre>
 <h3><a href="#grpc-powerapi" name="grpc-powerapi" class="anchor"><span class="anchor-link"></span></a>gRPC PowerApi</h3>
 <p>Akka gRPC在生成服务时有两种选择：</p>
@@ -284,7 +308,7 @@ val grpcHandler: PartialFunction[HttpRequest, Future[HttpResponse]] = Management
 </code></pre>
 <h2><a href="#actor" name="actor" class="anchor"><span class="anchor-link"></span></a>Actor</h2>
 <h3><a href="#protobuf与typed-actor" name="protobuf与typed-actor" class="anchor"><span class="anchor-link"></span></a>Protobuf与Typed Actor</h3>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/naming.proto#L126-L138" target="_blank" title="Go to snippet source"></a><code class="language-proto">message NamingManagerCommand {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/naming.proto#L198-L210" target="_blank" title="Go to snippet source"></a><code class="language-proto">message NamingManagerCommand {
     option (scalapb.message).extends = &quot;fusion.discoveryx.server.naming.NamingManager.Command&quot;;
     option (scalapb.message).companion_extends = &quot;fusion.protobuf.ActorRefCompanion&quot;;
 
@@ -320,7 +344,7 @@ val grpcHandler: PartialFunction[HttpRequest, Future[HttpResponse]] = Management
   <li>减少需要通过 <code>option (scalapb.message).extends</code> 定义 protobuf 消息扩展某个接口的次数</li>
   <li>这样可以减少需要通过 <code>[(scalapb.field).type]</code> 自定义 <code>ActorRef[T]</code> 转换的次数。</li>
 </ol></div>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/naming.proto#L142-L150" target="_blank" title="Go to snippet source"></a><code class="language-proto">message NamingResponse {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/naming.proto#L214-L222" target="_blank" title="Go to snippet source"></a><code class="language-proto">message NamingResponse {
     int32 status = 1;
     string message = 2;
     oneof data {
@@ -419,7 +443,7 @@ processCreate(in).recover {
 <div class="small-12 column">
 <section class="nav-prev-next row">
 <div class="nav-prev small-6 column">
-<a href="../design/architecture.html"><i class="icon-prev"></i> <span class="link-prev">架构</span></a>
+<a href="../design/naming.html"><i class="icon-prev"></i> <span class="link-prev">服务注册、发现设计</span></a>
 </div>
 <div class="nav-next small-6 column clearfix">
 <a class="float-right" href="../api/index.html">API <i class="icon-next"></i></a>
@@ -436,7 +460,7 @@ processCreate(in).recover {
 <section class="copyright">
 <div>discoveryx-docs is Open Source and available under the Apache 2 License.</div>
 <p class="legal">
-&copy; 2019-2019 <a href="https://akka-fusion.github.com/" target="_blank">Akka Fusion</a> |
+&copy; 2019-2020 <a href="https://akka-fusion.github.com/" target="_blank">Akka Fusion</a> |
 <a href="https://akka-fusion.github.com/fusion-discoveryx/" target="_blank">Fusion DiscoveryX</a> |
 <a href="https://akka-fusion.github.com/fusion-schedulerx/" target="_blank">Fusion SchedulerX</a>
 </p>

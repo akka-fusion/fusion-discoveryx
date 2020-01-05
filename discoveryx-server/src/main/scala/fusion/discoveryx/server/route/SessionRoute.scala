@@ -19,11 +19,12 @@ package fusion.discoveryx.server.route
 import akka.actor.typed.{ ActorRef, ActorSystem }
 import akka.cluster.sharding.typed.ShardingEnvelope
 import akka.grpc.scaladsl.MetadataImpl
+import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.{ AuthorizationFailedRejection, Directive0, Directive1 }
+import akka.http.scaladsl.server.{ Directive0, Directive1 }
 import akka.util.Timeout
 import fusion.discoveryx.server.management.UserEntity
-import fusion.discoveryx.server.protocol.TokenAccount
+import fusion.discoveryx.server.protocol.{ TokenAccount, UserResponse }
 import fusion.discoveryx.server.util.{ CheckUserSessionHelper, SessionUtils }
 import helloscala.common.IntStatus
 
@@ -33,8 +34,16 @@ trait SessionRoute {
   def createValidationSession(userEntity: ActorRef[ShardingEnvelope[UserEntity.Command]])(
       implicit system: ActorSystem[_],
       timeout: Timeout): Directive0 =
-    createGetSessionUser(userEntity).flatMap { either =>
-      if (either.isRight) pass else reject(AuthorizationFailedRejection)
+    createGetSessionUser(userEntity).flatMap {
+      case Right(_) =>
+        pass
+      case Left(_) =>
+        import fusion.discoveryx.server.util.ProtobufJsonSupport._
+        complete((StatusCodes.Unauthorized, UserResponse(IntStatus.UNAUTHORIZED)))
+//        reject(
+//          AuthenticationFailedRejection(
+//            AuthenticationFailedRejection.CredentialsRejected,
+//            HttpChallenges.oAuth2(Constants.SESSION_TOKEN_NAME)))
     }
 
   def createGetSessionUser(userEntity: ActorRef[ShardingEnvelope[UserEntity.Command]])(

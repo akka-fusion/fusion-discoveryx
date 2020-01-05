@@ -16,31 +16,87 @@
 
 package fusion.discoveryx
 
-import fusion.discoveryx.model.{ Instance, InstanceRegister }
-import helloscala.common.util.{ DigestUtils, StringUtils }
+import fusion.discoveryx.common.Protocols
+import fusion.discoveryx.model.{ HealthyCheckMethod, Instance, InstanceModify, InstanceRegister }
+import helloscala.common.exception.HSBadRequestException
+import helloscala.common.util.StringUtils
+
+import scala.util.control.NonFatal
 
 object DiscoveryXUtils {
-  def makeInstanceId(namespace: String, serviceName: String, ip: String, port: Int): String = {
-    require(StringUtils.isNoneBlank(namespace), s"namespace invalid, is: $namespace")
-    require(StringUtils.isNoneBlank(serviceName), s"serviceName invalid, is: $serviceName")
-    require(StringUtils.isNoneBlank(ip), s"ip invalid, is: $ip")
-    require(port > 0, s"port invalid: is: $port")
-    DigestUtils.sha1Hex(namespace + serviceName + ip + port)
+  val VALID_NAMES: Set[Char] = Set('.', '-', '_', ':') ++ ('0' to '9') ++ ('a' to 'z') ++ ('A' to 'Z')
+
+  def checkString(v: String, field: String): Either[String, String] = {
+    if (StringUtils.isEmpty(v)) Left(s"'$field' cannot be empty.")
+    else if (v.forall(VALID_NAMES)) Right(v)
+    else Left(s"'$field' allows only English letters, numbers, dots, underscores, underscores and colons.")
   }
 
-  def toInstance(in: InstanceRegister): Instance = {
-    Instance(
-      makeInstanceId(in.namespace, in.serviceName, in.ip, in.port),
-      in.namespace,
-      in.serviceName,
-      in.groupName,
-      in.ip,
-      in.port,
-      in.weight,
-      in.health,
-      in.enable,
-      in.ephemeral,
-      in.metadata)
+  @inline def requireString(v: String, field: String): String = checkString(v, field) match {
+    case Left(value)  => throw HSBadRequestException(value)
+    case Right(value) => value
+  }
+
+  private def makeInstanceId(ip: String, port: Int): String = {
+    requireString(ip, "ip")
+    require(port > 0, s"'port' must be greater than 0, current value is $port.")
+    //DigestUtils.sha1Hex(namespace + serviceName + ip + port)
+    s"$ip:$port"
+  }
+
+  def toInstance(in: InstanceRegister): Either[String, Instance] =
+    try {
+      requireString(in.namespace, "namespace")
+      requireString(in.serviceName, "serviceName")
+      val inst = Instance(
+        makeInstanceId(in.ip, in.port),
+        in.ip,
+        in.port,
+        in.weight,
+        in.health,
+        in.enable,
+        in.ephemeral,
+        in.metadata,
+        in.healthyCheckMethod,
+        in.healthyCheckInterval,
+        in.unhealthyCheckCount,
+        in.protocol,
+        in.useTls,
+        in.httpPath)
+      Right(formatInstance(inst))
+    } catch {
+      case NonFatal(e) => Left(e.getLocalizedMessage)
+    }
+
+  private def formatInstance(inst: Instance): Instance =
+    inst.copy(
+      healthyCheckMethod =
+        if (inst.healthyCheckMethod == HealthyCheckMethod.NOT_SET) HealthyCheckMethod.CLIENT_REPORT
+        else inst.healthyCheckMethod,
+      unhealthyCheckCount = if (inst.unhealthyCheckCount < 1) 1 else inst.unhealthyCheckCount,
+      protocol = Protocols.formatProtocol(inst.protocol),
+      httpPath =
+        if (StringUtils.isEmpty(inst.httpPath)) "/"
+        else if (inst.httpPath.head != '/') s"/${inst.httpPath}"
+        else inst.httpPath)
+
+  def instanceModify(old: Instance, in: InstanceModify): Instance = {
+    old.copy(
+      ip = in.ip.getOrElse(old.ip),
+      port = in.port.getOrElse(old.port),
+      weight = in.weight.getOrElse(old.weight),
+      healthy = in.health.getOrElse(old.healthy),
+      enabled = in.enable.getOrElse(old.enabled),
+      metadata = if (in.replaceMetadata) in.metadata else old.metadata ++ in.metadata,
+      healthyCheckMethod =
+        if (in.healthyCheckMethod == HealthyCheckMethod.NOT_SET || in.healthyCheckMethod.isUnrecognized)
+          old.healthyCheckMethod
+        else in.healthyCheckMethod,
+      healthyCheckInterval = in.healthyCheckInterval.getOrElse(old.healthyCheckInterval),
+      unhealthyCheckCount = in.unhealthyCheckCount.getOrElse(old.unhealthyCheckCount),
+      protocol = if (in.protocol.isUnknown || in.protocol.isUnrecognized) old.protocol else in.protocol,
+      useTls = in.useTls.getOrElse(old.useTls),
+      httpPath = in.httpPath.getOrElse(old.httpPath))
   }
 
   def userHome: Option[String] = sys.env.get("HOME") orElse sys.props.get("user.home")
