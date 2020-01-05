@@ -42,7 +42,7 @@
 Version 0.1.0
 </div>
 <div class="nav-header-groups">
-<select class="supergroup" name="Language"><option class="group" value="group-scala">Scala</option></select>
+<select class="supergroup" name="Language"><option class="group" value="group-scala">Scala</option><option class="group" value="group-java">Java</option></select>
 </div>
 </header>
 <nav class="nav-toc">
@@ -78,7 +78,7 @@ Version 0.1.0
 Version 0.1.0
 </div>
 <div class="nav-header-groups">
-<select class="supergroup" name="Language"><option class="group" value="group-scala">Scala</option></select>
+<select class="supergroup" name="Language"><option class="group" value="group-scala">Scala</option><option class="group" value="group-java">Java</option></select>
 </div>
 </header>
 <nav class="site-nav sticky-sidebar-contents">
@@ -124,7 +124,7 @@ Version 0.1.0
 &lt;/dependency&gt;</code></pre></dd></dl>
 <h2><a href="#服务发现" name="服务发现" class="anchor"><span class="anchor-link"></span></a>服务发现</h2>
 <p>Akka通过 <a href="https://doc.akka.io/docs/akka/current/discovery/index.html">akka-discovery</a> 提供了默认的服务发现功能，DiscoveryX Client提供了对其的支持。我们只需要配置<code>akka.discovery</code>设置使用<code>fusion-discoveryx</code>使用 DiscoveryX Client 来为 akka-discovery 提供服务发现功能。</p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-client/src/main/resources/reference.conf#L85-L93" target="_blank" title="Go to snippet source"></a><code class="language-conf">akka.discovery {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-client/src/main/resources/reference.conf#L88-L96" target="_blank" title="Go to snippet source"></a><code class="language-conf">akka.discovery {
   method = fusion-discoveryx
 
   fusion-discoveryx {

@@ -43,7 +43,7 @@ lazy val discoveryxDocs = _project("discoveryx-docs")
   .settings(
     resolvers += Resolver.jcenterRepo,
     skip in publish := true,
-    paradoxGroups := Map("Language" -> Seq("Scala")),
+    paradoxGroups := Map("Language" -> Seq("Scala", "Java")),
     sourceDirectory in Compile in paradoxTheme := sourceDirectory.value / "main" / "paradox" / "_template",
     paradoxProperties ++= Map(
         "project.name" -> "Fusion DiscoveryX",
