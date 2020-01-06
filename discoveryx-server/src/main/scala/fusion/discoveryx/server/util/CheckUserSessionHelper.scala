@@ -24,7 +24,7 @@ import akka.http.scaladsl.model.headers.Cookie
 import akka.util.Timeout
 import com.typesafe.scalalogging.StrictLogging
 import fusion.discoveryx.common.Constants
-import fusion.discoveryx.server.management.UserEntity
+import fusion.discoveryx.server.user.UserEntity
 import fusion.discoveryx.server.protocol.UserCommand.Cmd
 import fusion.discoveryx.server.protocol.{ CheckSession, TokenAccount, UserCommand, UserResponse }
 import helloscala.common.IntStatus

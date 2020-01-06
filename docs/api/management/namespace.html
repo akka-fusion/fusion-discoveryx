@@ -2,11 +2,11 @@
 <html class="no-js" lang="en">
 
 <head>
-<title>系统管理 &bull; Fusion DiscoveryX</title>
+<title>NamespaceManagerService &bull; Fusion DiscoveryX</title>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <meta name="description" content="discoveryx-docs"/>
-<link rel="canonical" href="https://akka-fusion.github.io/fusion-discoveryx/api/management/manage.html"/>
+<link rel="canonical" href="https://akka-fusion.github.io/fusion-discoveryx/api/management/namespace.html"/>
 <script type="text/javascript" src="../../lib/jquery/jquery.min.js"></script>
 <script type="text/javascript" src="../../lib/foundation/dist/js/foundation.min.js"></script>
 <link rel="stylesheet" type="text/css" href="../../lib/normalize.css/normalize.css"/>
@@ -56,18 +56,17 @@ Version 0.1.0
     <li><a href="../../api/open/index.html" class="page">开放API</a></li>
     <li><a href="../../api/management/index.html" class="page">管理API</a>
     <ul>
-      <li><a href="../../api/management/index.html#目录" class="header">目录</a></li>
-      <li><a href="../../api/management/config.html" class="page">Config配置管理</a></li>
-      <li><a href="../../api/management/naming.html" class="page">Naming服务管理</a></li>
-      <li><a href="../../api/management/manage.html#系统管理" class="active page">系统管理</a>
+      <li><a href="../../api/management/namespace.html#namespacemanagerservice" class="active page">NamespaceManagerService</a>
       <ul>
-        <li><a href="../../api/management/manage.html#listnamespace" class="header">ListNamespace</a></li>
-        <li><a href="../../api/management/manage.html#createnamespace" class="header">CreateNamespace</a></li>
-        <li><a href="../../api/management/manage.html#modifynamespace" class="header">ModifyNamespace</a></li>
-        <li><a href="../../api/management/manage.html#removenamespace" class="header">RemoveNamespace</a></li>
+        <li><a href="../../api/management/namespace.html#listnamespace" class="header">ListNamespace</a></li>
+        <li><a href="../../api/management/namespace.html#createnamespace" class="header">CreateNamespace</a></li>
+        <li><a href="../../api/management/namespace.html#modifynamespace" class="header">ModifyNamespace</a></li>
+        <li><a href="../../api/management/namespace.html#removenamespace" class="header">RemoveNamespace</a></li>
       </ul></li>
-      <li><a href="../../api/management/user.html" class="page">用户管理</a></li>
-      <li><a href="../../api/management/grpc.html" class="page">gRPC服务描述定义文件</a></li>
+      <li><a href="../../api/management/config.html" class="page">ConfigManagerService</a></li>
+      <li><a href="../../api/management/naming.html" class="page">NamingManagerService</a></li>
+      <li><a href="../../api/management/user.html" class="page">UserService</a></li>
+      <li><a href="../../api/management/grpc.html" class="page">gRPC Service Descriptor</a></li>
     </ul></li>
     <li><a href="../../api/json.html" class="page">JSON 说明</a></li>
   </ul></li>
@@ -102,18 +101,17 @@ Version 0.1.0
     <li><a href="../../api/open/index.html" class="page">开放API</a></li>
     <li><a href="../../api/management/index.html" class="page">管理API</a>
     <ul>
-      <li><a href="../../api/management/index.html#目录" class="header">目录</a></li>
-      <li><a href="../../api/management/config.html" class="page">Config配置管理</a></li>
-      <li><a href="../../api/management/naming.html" class="page">Naming服务管理</a></li>
-      <li><a href="../../api/management/manage.html#系统管理" class="active page">系统管理</a>
+      <li><a href="../../api/management/namespace.html#namespacemanagerservice" class="active page">NamespaceManagerService</a>
       <ul>
-        <li><a href="../../api/management/manage.html#listnamespace" class="header">ListNamespace</a></li>
-        <li><a href="../../api/management/manage.html#createnamespace" class="header">CreateNamespace</a></li>
-        <li><a href="../../api/management/manage.html#modifynamespace" class="header">ModifyNamespace</a></li>
-        <li><a href="../../api/management/manage.html#removenamespace" class="header">RemoveNamespace</a></li>
+        <li><a href="../../api/management/namespace.html#listnamespace" class="header">ListNamespace</a></li>
+        <li><a href="../../api/management/namespace.html#createnamespace" class="header">CreateNamespace</a></li>
+        <li><a href="../../api/management/namespace.html#modifynamespace" class="header">ModifyNamespace</a></li>
+        <li><a href="../../api/management/namespace.html#removenamespace" class="header">RemoveNamespace</a></li>
       </ul></li>
-      <li><a href="../../api/management/user.html" class="page">用户管理</a></li>
-      <li><a href="../../api/management/grpc.html" class="page">gRPC服务描述定义文件</a></li>
+      <li><a href="../../api/management/config.html" class="page">ConfigManagerService</a></li>
+      <li><a href="../../api/management/naming.html" class="page">NamingManagerService</a></li>
+      <li><a href="../../api/management/user.html" class="page">UserService</a></li>
+      <li><a href="../../api/management/grpc.html" class="page">gRPC Service Descriptor</a></li>
     </ul></li>
     <li><a href="../../api/json.html" class="page">JSON 说明</a></li>
   </ul></li>
@@ -131,7 +129,7 @@ Version 0.1.0
 <section class="site-content small-12 column">
 <article class="page-content row">
 <div class="small-12 column" id="docs">
-<h1><a href="#系统管理" name="系统管理" class="anchor"><span class="anchor-link"></span></a>系统管理</h1>
+<h1><a href="#namespacemanagerservice" name="namespacemanagerservice" class="anchor"><span class="anchor-link"></span></a>NamespaceManagerService</h1>
 <ul>
   <li>gRPC服务地址：<code>/fusion.discoveryx.grpc.NamingService</code></li>
   <li>REST URL前缀：<code>/fusion/discoveryx/console/management</code></li>
@@ -143,12 +141,12 @@ Version 0.1.0
 rpc ListNamespace (fusion.discoveryx.server.protocol.ListNamespace) returns (fusion.discoveryx.server.protocol.ManagementResponse) {
 }</code></pre>
 <p><strong>请求</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/management.proto#L40-L43" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ListNamespace {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/namespace.proto#L40-L43" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ListNamespace {
     int32 page = 1;
     int32 size = 2;
 }</code></pre>
 <p><strong>响应</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/management.proto#L109-L116" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ManagementResponse {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/namespace.proto#L109-L116" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ManagementResponse {
     int32 status = 1;
     string message = 2;
     oneof data {
@@ -157,16 +155,16 @@ rpc ListNamespace (fusion.discoveryx.server.protocol.ListNamespace) returns (fus
     }
 }</code></pre>
 <p><code>oneof</code>字段<code>listed</code>将返回匹配的namespace列表：</p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/management.proto#L66-L71" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ListedNamespace {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/namespace.proto#L66-L71" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ListedNamespace {
     repeated Namespace namespaces = 1;
     int32 page = 2;
     int32 size = 3;
     int32 total_elements = 4;
 }</code></pre>
 <h4><a href="#namespace" name="namespace" class="anchor"><span class="anchor-link"></span></a>Namespace</h4>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/management.proto#L14-L28" target="_blank" title="Go to snippet source"></a><code class="language-proto">// 命名空间
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/namespace.proto#L14-L28" target="_blank" title="Go to snippet source"></a><code class="language-proto">// 命名空间
 message Namespace {
-    option (scalapb.message).extends = &quot;fusion.discoveryx.server.management.Management.Event&quot;;
+    option (scalapb.message).extends = &quot;fusion.discoveryx.server.namespace.NamespaceManager.Event&quot;;
 
     // ID
     string namespace = 1;
@@ -185,13 +183,13 @@ message Namespace {
 rpc CreateNamespace (fusion.discoveryx.server.protocol.CreateNamespace) returns (fusion.discoveryx.server.protocol.ManagementResponse) {
 }</code></pre>
 <p><strong>请求</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/management.proto#L32-L36" target="_blank" title="Go to snippet source"></a><code class="language-proto">message CreateNamespace {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/namespace.proto#L32-L36" target="_blank" title="Go to snippet source"></a><code class="language-proto">message CreateNamespace {
     string name = 1;
     // 描述
     string description = 2;
 }</code></pre>
 <p><strong>响应</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/management.proto#L109-L116" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ManagementResponse {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/namespace.proto#L109-L116" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ManagementResponse {
     int32 status = 1;
     string message = 2;
     oneof data {
@@ -200,9 +198,9 @@ rpc CreateNamespace (fusion.discoveryx.server.protocol.CreateNamespace) returns 
     }
 }</code></pre>
 <p><code>oneof</code>字段<code>namespace</code>将返回创建的namespace：</p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/management.proto#L14-L28" target="_blank" title="Go to snippet source"></a><code class="language-proto">// 命名空间
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/namespace.proto#L14-L28" target="_blank" title="Go to snippet source"></a><code class="language-proto">// 命名空间
 message Namespace {
-    option (scalapb.message).extends = &quot;fusion.discoveryx.server.management.Management.Event&quot;;
+    option (scalapb.message).extends = &quot;fusion.discoveryx.server.namespace.NamespaceManager.Event&quot;;
 
     // ID
     string namespace = 1;
@@ -221,8 +219,8 @@ message Namespace {
 rpc ModifyNamespace (fusion.discoveryx.server.protocol.ModifyNamespace) returns (fusion.discoveryx.server.protocol.ManagementResponse) {
 }</code></pre>
 <p><strong>请求</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/management.proto#L55-L62" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ModifyNamespace {
-    option (scalapb.message).extends = &quot;fusion.discoveryx.server.management.Management.Event&quot;;
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/namespace.proto#L55-L62" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ModifyNamespace {
+    option (scalapb.message).extends = &quot;fusion.discoveryx.server.namespace.NamespaceManager.Event&quot;;
 
     string namespace = 1;
     google.protobuf.StringValue name = 2;
@@ -230,7 +228,7 @@ rpc ModifyNamespace (fusion.discoveryx.server.protocol.ModifyNamespace) returns 
     google.protobuf.StringValue description = 3;
 }</code></pre>
 <p><strong>响应</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/management.proto#L109-L116" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ManagementResponse {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/namespace.proto#L109-L116" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ManagementResponse {
     int32 status = 1;
     string message = 2;
     oneof data {
@@ -239,9 +237,9 @@ rpc ModifyNamespace (fusion.discoveryx.server.protocol.ModifyNamespace) returns 
     }
 }</code></pre>
 <p><code>oneof</code>字段<code>namespace</code>将返回修改后的namespace：</p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/management.proto#L14-L28" target="_blank" title="Go to snippet source"></a><code class="language-proto">// 命名空间
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/namespace.proto#L14-L28" target="_blank" title="Go to snippet source"></a><code class="language-proto">// 命名空间
 message Namespace {
-    option (scalapb.message).extends = &quot;fusion.discoveryx.server.management.Management.Event&quot;;
+    option (scalapb.message).extends = &quot;fusion.discoveryx.server.namespace.NamespaceManager.Event&quot;;
 
     // ID
     string namespace = 1;
@@ -261,13 +259,13 @@ message Namespace {
 rpc RemoveNamespace (fusion.discoveryx.server.protocol.RemoveNamespace) returns (fusion.discoveryx.server.protocol.ManagementResponse) {
 }</code></pre>
 <p><strong>请求</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/management.proto#L47-L51" target="_blank" title="Go to snippet source"></a><code class="language-proto">message RemoveNamespace {
-    option (scalapb.message).extends = &quot;fusion.discoveryx.server.management.Management.Event&quot;;
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/namespace.proto#L47-L51" target="_blank" title="Go to snippet source"></a><code class="language-proto">message RemoveNamespace {
+    option (scalapb.message).extends = &quot;fusion.discoveryx.server.namespace.NamespaceManager.Event&quot;;
 
     string namespace = 1;
 }</code></pre>
 <p><strong>响应</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/management.proto#L109-L116" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ManagementResponse {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/namespace.proto#L109-L116" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ManagementResponse {
     int32 status = 1;
     string message = 2;
     oneof data {
@@ -281,16 +279,16 @@ rpc RemoveNamespace (fusion.discoveryx.server.protocol.RemoveNamespace) returns 
 <div class="small-12 column">
 <section class="nav-prev-next row">
 <div class="nav-prev small-6 column">
-<a href="../../api/management/naming.html"><i class="icon-prev"></i> <span class="link-prev">Naming服务管理</span></a>
+<a href="../../api/management/index.html"><i class="icon-prev"></i> <span class="link-prev">管理API</span></a>
 </div>
 <div class="nav-next small-6 column clearfix">
-<a class="float-right" href="../../api/management/user.html">用户管理 <i class="icon-next"></i></a>
+<a class="float-right" href="../../api/management/config.html">ConfigManagerService <i class="icon-next"></i></a>
 </div>
 </section>
 </div>
 </div>
 <div class="source-github row">
-在此文档中发现错误？该页面的源代码可以在 <a href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-docs/src/main/paradox/api/management/manage.md" target="_blank">这里</a> 找到。欢迎随时编辑并提交Pull Request。
+在此文档中发现错误？该页面的源代码可以在 <a href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-docs/src/main/paradox/api/management/namespace.md" target="_blank">这里</a> 找到。欢迎随时编辑并提交Pull Request。
 </div>
 
 <footer class="page-footer row clearfix">
@@ -299,10 +297,12 @@ rpc RemoveNamespace (fusion.discoveryx.server.protocol.RemoveNamespace) returns 
 <div>discoveryx-docs is Open Source and available under the Apache 2 License.</div>
 <p class="legal">
 &copy; 2019-2020 <a href="https://akka-fusion.github.com/" target="_blank">Akka Fusion</a> |
-<a href="https://akka-fusion.github.com/fusion-discoveryx/" target="_blank">Fusion DiscoveryX</a> |
-<a href="https://akka-fusion.github.com/fusion-schedulerx/" target="_blank">Fusion SchedulerX</a>
+<a href="https://akka-fusion.github.io/fusion-discoveryx/" target="_blank">Fusion DiscoveryX</a> |
+<a href="https://akka-fusion.github.io/fusion-schedulerx/" target="_blank">Fusion SchedulerX</a>
 </p>
 </section>
+
+
 </footer>
 </section>
 </main>

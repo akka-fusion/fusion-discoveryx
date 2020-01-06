@@ -4,7 +4,8 @@ $if(page.property_is.("project.license").("Apache-2.0"))$
 $endif$
     <p class="legal">
         &copy; 2019-$page.properties.("date.year")$ <a href="https://akka-fusion.github.com/" target="_blank">Akka Fusion</a> |
-        <a href="https://akka-fusion.github.com/fusion-discoveryx/" target="_blank">Fusion DiscoveryX</a> |
-        <a href="https://akka-fusion.github.com/fusion-schedulerx/" target="_blank">Fusion SchedulerX</a>
+        <a href="https://akka-fusion.github.io/fusion-discoveryx/" target="_blank">Fusion DiscoveryX</a> |
+        <a href="https://akka-fusion.github.io/fusion-schedulerx/" target="_blank">Fusion SchedulerX</a>
     </p>
 </section>
+

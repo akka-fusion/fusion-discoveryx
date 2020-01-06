@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package fusion.discoveryx.server.management
+package fusion.discoveryx.server.namespace
 
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ ActorRef, Behavior }

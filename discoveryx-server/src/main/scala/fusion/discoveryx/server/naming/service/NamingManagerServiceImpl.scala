@@ -22,7 +22,7 @@ import akka.cluster.sharding.typed.ShardingEnvelope
 import akka.util.Timeout
 import fusion.discoveryx.model.{ InstanceModify, InstanceRemove, NamingReply }
 import fusion.discoveryx.server.grpc.NamingManagerService
-import fusion.discoveryx.server.management.NamespaceRef.{ ExistNamespace, NamespaceExists }
+import fusion.discoveryx.server.namespace.NamespaceRef.{ ExistNamespace, NamespaceExists }
 import fusion.discoveryx.server.naming.{ NamingManager, NamingService }
 import fusion.discoveryx.server.protocol.NamingManagerCommand.Cmd
 import fusion.discoveryx.server.protocol._

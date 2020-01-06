@@ -29,7 +29,7 @@ import com.typesafe.scalalogging.StrictLogging
 import fusion.discoveryx.common.Headers
 import fusion.discoveryx.grpc.NamingServicePowerApi
 import fusion.discoveryx.model._
-import fusion.discoveryx.server.management.NamespaceRef.ExistNamespace
+import fusion.discoveryx.server.namespace.NamespaceRef.ExistNamespace
 import fusion.discoveryx.server.naming.NamingService
 import fusion.discoveryx.server.protocol._
 import helloscala.common.IntStatus

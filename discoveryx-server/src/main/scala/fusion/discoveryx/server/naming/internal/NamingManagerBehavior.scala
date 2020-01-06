@@ -25,7 +25,7 @@ import akka.persistence.typed.scaladsl.{ Effect, EventSourcedBehavior }
 import akka.stream.scaladsl.{ Sink, Source }
 import akka.util.Timeout
 import fusion.discoveryx.model.{ InstanceQuery, NamingReply }
-import fusion.discoveryx.server.management.Management
+import fusion.discoveryx.server.namespace.NamespaceManager
 import fusion.discoveryx.server.naming.NamingManager._
 import fusion.discoveryx.server.naming.{ NamingService, NamingSettings }
 import fusion.discoveryx.server.protocol.NamingManagerCommand.Cmd
@@ -40,7 +40,7 @@ import scala.util.{ Failure, Success }
 private[naming] class NamingManagerBehavior(namespace: String, context: ActorContext[Command]) {
   import context.executionContext
   private val namingSettings = NamingSettings(context.system)
-  private val managementRef = Management.init(context.system)
+  private val managementRef = NamespaceManager.init(context.system)
   private val namingService = NamingService.init(context.system)
 
   def eventSourcedBehavior(): EventSourcedBehavior[Command, Event, NamingManagerState] =
@@ -58,7 +58,8 @@ private[naming] class NamingManagerBehavior(namespace: String, context: ActorCon
   private def commandHandler(state: NamingManagerState, command: Command): Effect[Event, NamingManagerState] =
     command match {
       case NamingManagerCommand(replyTo, cmd) => onManagerCommand(state, cmd, replyTo)
-      case cmd: Event                         => Effect.persist(cmd)
+      case in: ServiceCreatedEvent            => Effect.persist(in)
+      case in: ServiceRemovedEvent            => Effect.persist(in)
       case in: RemoveNamingManager            => Effect.persist(in).thenStop()
       case DummyNamingManager()               => Effect.none
     }

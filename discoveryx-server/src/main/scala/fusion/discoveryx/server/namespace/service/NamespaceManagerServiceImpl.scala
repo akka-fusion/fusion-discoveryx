@@ -14,21 +14,21 @@
  * limitations under the License.
  */
 
-package fusion.discoveryx.server.management.service
+package fusion.discoveryx.server.namespace.service
 
 import akka.actor.typed.scaladsl.AskPattern._
 import akka.actor.typed.{ ActorRef, ActorSystem }
 import akka.util.Timeout
-import fusion.discoveryx.server.grpc.ManagementService
-import fusion.discoveryx.server.management.Management
+import fusion.discoveryx.server.grpc.NamespaceManagerService
+import fusion.discoveryx.server.namespace.NamespaceManager
 import fusion.discoveryx.server.protocol.ManagementCommand.Cmd
 import fusion.discoveryx.server.protocol._
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-class ManagementServiceImpl(managementRef: ActorRef[Management.Command])(implicit system: ActorSystem[_])
-    extends ManagementService {
+class NamespaceManagerServiceImpl(managementRef: ActorRef[NamespaceManager.Command])(implicit system: ActorSystem[_])
+    extends NamespaceManagerService {
   implicit private val timeout: Timeout = 5.seconds
 
   /**

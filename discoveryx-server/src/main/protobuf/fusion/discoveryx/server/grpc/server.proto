@@ -5,7 +5,7 @@ import "scalapb/scalapb.proto";
 import "fusion/discoveryx/model/discoveryx.proto";
 import "fusion/discoveryx/server/protocol/config.proto";
 import "fusion/discoveryx/server/protocol/naming.proto";
-import "fusion/discoveryx/server/protocol/management.proto";
+import "fusion/discoveryx/server/protocol/namespace.proto";
 import "fusion/discoveryx/server/protocol/user.proto";
 
 option (scalapb.options) = {
@@ -66,7 +66,7 @@ service NamingManagerService {
 
 }
 
-service ManagementService {
+service NamespaceManagerService {
     // #ListNamespace
     // 创建命名空间
     rpc ListNamespace (fusion.discoveryx.server.protocol.ListNamespace) returns (fusion.discoveryx.server.protocol.ManagementResponse) {

@@ -28,8 +28,8 @@ import fusion.core.extension.FusionCore
 import fusion.discoveryx.grpc.NamingServicePowerApiHandler
 import fusion.discoveryx.model.{ InstanceModify, InstanceQuery, InstanceRegister, InstanceRemove }
 import fusion.discoveryx.server.grpc.NamingManagerServiceHandler
-import fusion.discoveryx.server.management.NamespaceRef.ExistNamespace
-import fusion.discoveryx.server.management.UserEntity
+import fusion.discoveryx.server.namespace.NamespaceRef.ExistNamespace
+import fusion.discoveryx.server.user.UserEntity
 import fusion.discoveryx.server.naming.service.{ NamingManagerServiceImpl, NamingServiceImpl }
 import fusion.discoveryx.server.protocol._
 import fusion.discoveryx.server.route.{ SessionRoute, pathPost }

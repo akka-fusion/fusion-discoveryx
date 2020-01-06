@@ -17,17 +17,17 @@
 package fusion.discoveryx.server.config
 
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
+import akka.fusion.testkit.FusionActorTestKit
 import fusion.discoveryx.server.config.service.ConfigManagerServiceImpl
-import fusion.discoveryx.server.management.NamespaceRef.ExistNamespace
-import fusion.discoveryx.server.management.{ Management, NamespaceRef }
-import fusion.discoveryx.server.management.Management
+import fusion.discoveryx.server.namespace.NamespaceRef.ExistNamespace
+import fusion.discoveryx.server.namespace.{ NamespaceManager, NamespaceRef }
 import fusion.discoveryx.server.protocol.ListConfig
 import fusion.discoveryx.server.util.ProtobufJson4s
 import helloscala.common.IntStatus
 import org.scalatest.WordSpecLike
 
-class ConfigManagerServiceTest extends ScalaTestWithActorTestKit with WordSpecLike {
-  Management.init(system)
+class ConfigManagerServiceTest extends ScalaTestWithActorTestKit(FusionActorTestKit()) with WordSpecLike {
+  NamespaceManager.init(system)
   private val namespaceRef = spawn(NamespaceRef()).narrow[ExistNamespace]
   private val configManagerService = new ConfigManagerServiceImpl(namespaceRef)
 

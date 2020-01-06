@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package fusion.discoveryx.server.management
+package fusion.discoveryx.server.user
 
 import akka.actor.typed.scaladsl.{ ActorContext, Behaviors, TimerScheduler }
 import akka.actor.typed.{ ActorRef, ActorSystem, Behavior }
@@ -22,12 +22,14 @@ import akka.cluster.sharding.typed.{ ClusterShardingSettings, ShardingEnvelope }
 import akka.cluster.sharding.typed.scaladsl.{ ClusterSharding, Entity, EntityContext, EntityTypeKey }
 import akka.persistence.typed.PersistenceId
 import akka.persistence.typed.scaladsl.{ Effect, EventSourcedBehavior }
+import fusion.discoveryx.server.ManagementSettings
 import fusion.discoveryx.server.protocol.UserCommand.Cmd
 import fusion.discoveryx.server.protocol.UserResponse.Data
 import fusion.discoveryx.server.protocol._
 import fusion.discoveryx.server.util.SessionUtils
 import helloscala.common.IntStatus
 import helloscala.common.util.StringUtils
+
 import scala.concurrent.duration._
 
 object UserEntity {
@@ -56,7 +58,7 @@ object UserEntity {
             .eventSourcedBehavior()))
 }
 
-import fusion.discoveryx.server.management.UserEntity._
+import fusion.discoveryx.server.user.UserEntity._
 class UserEntity private (
     persistenceId: PersistenceId,
     timers: TimerScheduler[Command],

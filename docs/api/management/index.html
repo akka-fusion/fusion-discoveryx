@@ -56,12 +56,11 @@ Version 0.1.0
     <li><a href="../../api/open/index.html" class="page">开放API</a></li>
     <li><a href="../../api/management/index.html#管理api" class="active page">管理API</a>
     <ul>
-      <li><a href="../../api/management/index.html#目录" class="header">目录</a></li>
-      <li><a href="../../api/management/config.html" class="page">Config配置管理</a></li>
-      <li><a href="../../api/management/naming.html" class="page">Naming服务管理</a></li>
-      <li><a href="../../api/management/manage.html" class="page">系统管理</a></li>
-      <li><a href="../../api/management/user.html" class="page">用户管理</a></li>
-      <li><a href="../../api/management/grpc.html" class="page">gRPC服务描述定义文件</a></li>
+      <li><a href="../../api/management/namespace.html" class="page">NamespaceManagerService</a></li>
+      <li><a href="../../api/management/config.html" class="page">ConfigManagerService</a></li>
+      <li><a href="../../api/management/naming.html" class="page">NamingManagerService</a></li>
+      <li><a href="../../api/management/user.html" class="page">UserService</a></li>
+      <li><a href="../../api/management/grpc.html" class="page">gRPC Service Descriptor</a></li>
     </ul></li>
     <li><a href="../../api/json.html" class="page">JSON 说明</a></li>
   </ul></li>
@@ -96,12 +95,11 @@ Version 0.1.0
     <li><a href="../../api/open/index.html" class="page">开放API</a></li>
     <li><a href="../../api/management/index.html#管理api" class="active page">管理API</a>
     <ul>
-      <li><a href="../../api/management/index.html#目录" class="header">目录</a></li>
-      <li><a href="../../api/management/config.html" class="page">Config配置管理</a></li>
-      <li><a href="../../api/management/naming.html" class="page">Naming服务管理</a></li>
-      <li><a href="../../api/management/manage.html" class="page">系统管理</a></li>
-      <li><a href="../../api/management/user.html" class="page">用户管理</a></li>
-      <li><a href="../../api/management/grpc.html" class="page">gRPC服务描述定义文件</a></li>
+      <li><a href="../../api/management/namespace.html" class="page">NamespaceManagerService</a></li>
+      <li><a href="../../api/management/config.html" class="page">ConfigManagerService</a></li>
+      <li><a href="../../api/management/naming.html" class="page">NamingManagerService</a></li>
+      <li><a href="../../api/management/user.html" class="page">UserService</a></li>
+      <li><a href="../../api/management/grpc.html" class="page">gRPC Service Descriptor</a></li>
     </ul></li>
     <li><a href="../../api/json.html" class="page">JSON 说明</a></li>
   </ul></li>
@@ -120,18 +118,27 @@ Version 0.1.0
 <article class="page-content row">
 <div class="small-12 column" id="docs">
 <h1><a href="#管理api" name="管理api" class="anchor"><span class="anchor-link"></span></a>管理API</h1>
-<p>管理API为Fusion DiscoveryX提供了Web控制台使用的访问接口，提供了命名空间管理、配置管理、名称服务管理、用户管理等接口。</p>
-<h2><a href="#目录" name="目录" class="anchor"><span class="anchor-link"></span></a>目录</h2>
+<p>管理 API 为 Fusion DiscoveryX 提供了 Web 控制台使用的访问接口，提供了命名空间管理、配置管理、名称服务管理、用户管理等接口。</p>
 <div class="toc ">
 <ul>
-  <li><a href="../../api/management/config.html" class="page">Config配置管理</a>
+  <li><a href="../../api/management/namespace.html" class="page">NamespaceManagerService</a>
+  <ul>
+    <li><a href="../../api/management/namespace.html#listnamespace" class="header">ListNamespace</a>
+    <ul>
+      <li><a href="../../api/management/namespace.html#namespace" class="header">Namespace</a></li>
+    </ul></li>
+    <li><a href="../../api/management/namespace.html#createnamespace" class="header">CreateNamespace</a></li>
+    <li><a href="../../api/management/namespace.html#modifynamespace" class="header">ModifyNamespace</a></li>
+    <li><a href="../../api/management/namespace.html#removenamespace" class="header">RemoveNamespace</a></li>
+  </ul></li>
+  <li><a href="../../api/management/config.html" class="page">ConfigManagerService</a>
   <ul>
     <li><a href="../../api/management/config.html#listconfig" class="header">ListConfig</a></li>
     <li><a href="../../api/management/config.html#getconfig" class="header">GetConfig</a></li>
     <li><a href="../../api/management/config.html#publishconfig" class="header">PublishConfig</a></li>
     <li><a href="../../api/management/config.html#removeconfig" class="header">RemoveConfig</a></li>
   </ul></li>
-  <li><a href="../../api/management/naming.html" class="page">Naming服务管理</a>
+  <li><a href="../../api/management/naming.html" class="page">NamingManagerService</a>
   <ul>
     <li><a href="../../api/management/naming.html#listservice" class="header">ListService</a></li>
     <li><a href="../../api/management/naming.html#getservice" class="header">GetService</a></li>
@@ -141,17 +148,7 @@ Version 0.1.0
     <li><a href="../../api/management/naming.html#removeinstance" class="header">RemoveInstance</a></li>
     <li><a href="../../api/management/naming.html#modifyinstance" class="header">ModifyInstance</a></li>
   </ul></li>
-  <li><a href="../../api/management/manage.html" class="page">系统管理</a>
-  <ul>
-    <li><a href="../../api/management/manage.html#listnamespace" class="header">ListNamespace</a>
-    <ul>
-      <li><a href="../../api/management/manage.html#namespace" class="header">Namespace</a></li>
-    </ul></li>
-    <li><a href="../../api/management/manage.html#createnamespace" class="header">CreateNamespace</a></li>
-    <li><a href="../../api/management/manage.html#modifynamespace" class="header">ModifyNamespace</a></li>
-    <li><a href="../../api/management/manage.html#removenamespace" class="header">RemoveNamespace</a></li>
-  </ul></li>
-  <li><a href="../../api/management/user.html" class="page">用户管理</a>
+  <li><a href="../../api/management/user.html" class="page">UserService</a>
   <ul>
     <li><a href="../../api/management/user.html#login" class="header">Login</a></li>
     <li><a href="../../api/management/user.html#logout" class="header">Logout</a></li>
@@ -164,7 +161,7 @@ Version 0.1.0
     <li><a href="../../api/management/user.html#modifyuser" class="header">ModifyUser</a></li>
     <li><a href="../../api/management/user.html#removeuser" class="header">RemoveUser</a></li>
   </ul></li>
-  <li><a href="../../api/management/grpc.html" class="page">gRPC服务描述定义文件</a></li>
+  <li><a href="../../api/management/grpc.html" class="page">gRPC Service Descriptor</a></li>
 </ul>
 </div>
 </div>
@@ -173,10 +170,10 @@ Version 0.1.0
 <div class="small-12 column">
 <section class="nav-prev-next row">
 <div class="nav-prev small-6 column">
-<a href="../../api/open/grpc.html"><i class="icon-prev"></i> <span class="link-prev">gRPC服务描述定义文件</span></a>
+<a href="../../api/open/grpc.html"><i class="icon-prev"></i> <span class="link-prev">gRPC Service Descriptor</span></a>
 </div>
 <div class="nav-next small-6 column clearfix">
-<a class="float-right" href="../../api/management/config.html">Config配置管理 <i class="icon-next"></i></a>
+<a class="float-right" href="../../api/management/namespace.html">NamespaceManagerService <i class="icon-next"></i></a>
 </div>
 </section>
 </div>
@@ -191,10 +188,12 @@ Version 0.1.0
 <div>discoveryx-docs is Open Source and available under the Apache 2 License.</div>
 <p class="legal">
 &copy; 2019-2020 <a href="https://akka-fusion.github.com/" target="_blank">Akka Fusion</a> |
-<a href="https://akka-fusion.github.com/fusion-discoveryx/" target="_blank">Fusion DiscoveryX</a> |
-<a href="https://akka-fusion.github.com/fusion-schedulerx/" target="_blank">Fusion SchedulerX</a>
+<a href="https://akka-fusion.github.io/fusion-discoveryx/" target="_blank">Fusion DiscoveryX</a> |
+<a href="https://akka-fusion.github.io/fusion-schedulerx/" target="_blank">Fusion SchedulerX</a>
 </p>
 </section>
+
+
 </footer>
 </section>
 </main>

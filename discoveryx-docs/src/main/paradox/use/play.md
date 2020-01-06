@@ -58,12 +58,12 @@ import akka.util.ByteString
 
 import scala.concurrent.ExecutionContext
 
-// 直接流入
+// 直接注入
 class MainForImmediately @Inject() (
   ws: DiscoveryXPlayWSClient,
   val controllerComponents: ControllerComponents) extends BaseController {}
 
-// 通过 @Named
+// 通过 @Named 注入
 class MainForNamed @Inject() (
   @Named("discoveryx") ws: WSClient, 
   val controllerComponents: ControllerComponents) extends BaseController {}
@@ -73,6 +73,9 @@ class MainForNamed @Inject() (
   @DiscoveryXPlay ws: WSClient, 
   val controllerComponents: ControllerComponents) extends BaseController {}
 ```
+
+之后就可以在代码中通过 `ws` 来访问HTTP了：
+
 ```play
 val request: WSRequest = ws.url(url)
 ```

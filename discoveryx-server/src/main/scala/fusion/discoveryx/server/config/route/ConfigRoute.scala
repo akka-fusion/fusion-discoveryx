@@ -28,7 +28,8 @@ import fusion.discoveryx.grpc.ConfigServiceHandler
 import fusion.discoveryx.model.{ ConfigGet, ConfigItem, ConfigRemove }
 import fusion.discoveryx.server.config.service.{ ConfigManagerServiceImpl, ConfigServiceImpl }
 import fusion.discoveryx.server.grpc.ConfigManagerServiceHandler
-import fusion.discoveryx.server.management.{ NamespaceRef, UserEntity }
+import fusion.discoveryx.server.user.UserEntity
+import fusion.discoveryx.server.namespace.NamespaceRef
 import fusion.discoveryx.server.protocol.ListConfig
 import fusion.discoveryx.server.route.{ SessionRoute, pathPost }
 

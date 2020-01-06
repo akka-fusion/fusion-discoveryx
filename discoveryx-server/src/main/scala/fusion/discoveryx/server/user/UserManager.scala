@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package fusion.discoveryx.server.management
+package fusion.discoveryx.server.user
 
 import akka.actor.typed.scaladsl.AskPattern._
 import akka.actor.typed.scaladsl.{ ActorContext, Behaviors }
@@ -25,6 +25,7 @@ import akka.persistence.typed.PersistenceId
 import akka.persistence.typed.scaladsl.{ Effect, EventSourcedBehavior }
 import akka.stream.scaladsl.{ Sink, Source }
 import akka.util.Timeout
+import fusion.discoveryx.server.ManagementSettings
 import fusion.discoveryx.server.protocol.UserManagerCommand.Cmd
 import fusion.discoveryx.server.protocol.UserResponse.Data
 import fusion.discoveryx.server.protocol._
@@ -46,12 +47,12 @@ object UserManager {
     Behaviors.setup(context => new UserManager(context).eventSourcedBehavior())
 }
 
-import fusion.discoveryx.server.management.UserManager._
+import fusion.discoveryx.server.user.UserManager._
 class UserManager(context: ActorContext[UserEntity.Command]) {
   private implicit val system = context.system
   private implicit val timeout: Timeout = 5.seconds
-  private val settings = ManagementSettings(system)
-  private val userEntity = UserEntity.init(system)
+  private val settings = ManagementSettings(context.system)
+  private val userEntity = UserEntity.init(context.system)
 
   def eventSourcedBehavior(): EventSourcedBehavior[UserEntity.Command, Event, UserManagerState] =
     EventSourcedBehavior[UserEntity.Command, Event, UserManagerState](

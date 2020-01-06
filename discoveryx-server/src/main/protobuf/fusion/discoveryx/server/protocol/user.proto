@@ -53,7 +53,7 @@ message Login {
 // #Login
 
 message LoginEvent {
-    option (scalapb.message).extends = "fusion.discoveryx.server.management.UserEntity.Event";
+    option (scalapb.message).extends = "fusion.discoveryx.server.user.UserEntity.Event";
 
     Login login = 1 [(scalapb.field).no_box = true];
     string token = 2;
@@ -85,7 +85,7 @@ message GetUser {
 
 // #CreateUser
 message CreateUser {
-    option (scalapb.message).extends = "fusion.discoveryx.server.management.UserEntity.Event";
+    option (scalapb.message).extends = "fusion.discoveryx.server.user.UserEntity.Event";
 
     string account = 1;
     string password = 2;
@@ -96,7 +96,7 @@ message CreateUser {
 
 // #RemoveUser
 message RemoveUser {
-    option (scalapb.message).extends = "fusion.discoveryx.server.management.UserEntity.Event";
+    option (scalapb.message).extends = "fusion.discoveryx.server.user.UserEntity.Event";
 
     string account = 1;
 }
@@ -104,7 +104,7 @@ message RemoveUser {
 
 // #ModifyUser
 message ModifyUser {
-    option (scalapb.message).extends = "fusion.discoveryx.server.management.UserEntity.Event";
+    option (scalapb.message).extends = "fusion.discoveryx.server.user.UserEntity.Event";
 
     string account = 1;
     google.protobuf.StringValue name = 2;
@@ -120,13 +120,13 @@ message UserState {
 }
 
 message CleanSession {
-    option (scalapb.message).extends = "fusion.discoveryx.server.management.UserEntity.Command";
-    option (scalapb.message).extends = "fusion.discoveryx.server.management.UserEntity.Event";
+    option (scalapb.message).extends = "fusion.discoveryx.server.user.UserEntity.Command";
+    option (scalapb.message).extends = "fusion.discoveryx.server.user.UserEntity.Event";
     string token = 1;
 }
 
 message CheckSession {
-    option (scalapb.message).extends = "fusion.discoveryx.server.management.UserEntity.Event";
+    option (scalapb.message).extends = "fusion.discoveryx.server.user.UserEntity.Event";
     string token = 1;
 }
 
@@ -142,7 +142,7 @@ message TokenAccount {
 }
 
 message UserCommand {
-    option (scalapb.message).extends = "fusion.discoveryx.server.management.UserEntity.Command";
+    option (scalapb.message).extends = "fusion.discoveryx.server.user.UserEntity.Command";
     option (scalapb.message).companion_extends = "fusion.protobuf.ActorRefCompanion";
 
     string reply_to = 1 [(scalapb.field).type = "akka.actor.typed.ActorRef[UserResponse]"];
@@ -181,21 +181,21 @@ message UserManagerState {
 }
 
 message CreatedUserAccount {
-    option (scalapb.message).extends = "fusion.discoveryx.server.management.UserEntity.Command";
-    option (scalapb.message).extends = "fusion.discoveryx.server.management.UserManager.Event";
+    option (scalapb.message).extends = "fusion.discoveryx.server.user.UserEntity.Command";
+    option (scalapb.message).extends = "fusion.discoveryx.server.user.UserManager.Event";
 
     string accounts = 1;
 }
 
 message RemovedUserAccount {
-    option (scalapb.message).extends = "fusion.discoveryx.server.management.UserEntity.Command";
-    option (scalapb.message).extends = "fusion.discoveryx.server.management.UserManager.Event";
+    option (scalapb.message).extends = "fusion.discoveryx.server.user.UserEntity.Command";
+    option (scalapb.message).extends = "fusion.discoveryx.server.user.UserManager.Event";
 
     string account = 1;
 }
 
 message UserManagerCommand {
-    option (scalapb.message).extends = "fusion.discoveryx.server.management.UserManager.Command";
+    option (scalapb.message).extends = "fusion.discoveryx.server.user.UserManager.Command";
     option (scalapb.message).companion_extends = "fusion.protobuf.ActorRefCompanion";
 
     string reply_to = 1 [(scalapb.field).type = "akka.actor.typed.ActorRef[UserResponse]"];

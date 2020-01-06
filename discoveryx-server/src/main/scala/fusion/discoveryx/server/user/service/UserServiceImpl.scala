@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package fusion.discoveryx.server.management.service
+package fusion.discoveryx.server.user.service
 
 import akka.actor.typed.scaladsl.AskPattern._
 import akka.actor.typed.{ ActorRef, ActorSystem }
 import akka.cluster.sharding.typed.ShardingEnvelope
 import akka.util.Timeout
 import fusion.discoveryx.server.grpc.UserService
-import fusion.discoveryx.server.management.UserEntity
+import fusion.discoveryx.server.user.UserEntity
 import fusion.discoveryx.server.protocol.UserCommand.Cmd
 import fusion.discoveryx.server.protocol._
 import fusion.discoveryx.server.util.SessionUtils

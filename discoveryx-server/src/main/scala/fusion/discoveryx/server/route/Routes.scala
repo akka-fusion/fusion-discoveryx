@@ -25,7 +25,8 @@ import com.typesafe.scalalogging.StrictLogging
 import fusion.discoveryx.common.Constants
 import fusion.discoveryx.server.DiscoveryX
 import fusion.discoveryx.server.config.route.ConfigRoute
-import fusion.discoveryx.server.management.route.ManagementRoute
+import fusion.discoveryx.server.namespace.route.NamespaceRoute
+import fusion.discoveryx.server.user.route.UserRoute
 import fusion.discoveryx.server.naming.route.NamingRoute
 
 import scala.concurrent.Future
@@ -40,11 +41,13 @@ class Routes(discoveryX: DiscoveryX) extends StrictLogging {
   def init(): Routes = {
     logger.debug(s"Cluster roles: $roles.")
     if (roles(Constants.MANAGEMENT)) {
-      val m = new ManagementRoute()
-      consoleRoutes ::= m.consoleRoute
-      consoleRoutes ::= m.userRoute
-      consoleRoutes ::= m.signRoute
-      grpcHandlers :::= m.grpcHandler
+      val u = new UserRoute()
+      val n = new NamespaceRoute()
+      consoleRoutes ::= u.consoleRoute
+      consoleRoutes ::= u.signRoute
+      consoleRoutes ::= n.consoleRoute
+      grpcHandlers :::= u.grpcHandler
+      grpcHandlers :::= n.grpcHandler
     }
     if (roles(Constants.CONFIG)) {
       val c = new ConfigRoute(discoveryX.namespaceRef)

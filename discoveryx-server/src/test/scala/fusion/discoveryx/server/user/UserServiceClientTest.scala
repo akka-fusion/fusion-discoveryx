@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package fusion.discoveryx.server.management
+package fusion.discoveryx.server.user
 
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import akka.grpc.GrpcClientSettings

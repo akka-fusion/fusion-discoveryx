@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package fusion.discoveryx.server.management.route
+package fusion.discoveryx.server.user.route
 
 import java.time.Instant
 import java.time.temporal.ChronoUnit
@@ -23,64 +23,36 @@ import akka.actor.typed.ActorSystem
 import akka.http.scaladsl.model.headers.HttpCookie
 import akka.http.scaladsl.model.{ DateTime, HttpRequest, HttpResponse }
 import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.{ Directive0, Route }
+import akka.http.scaladsl.server.Route
 import akka.stream.SystemMaterializer
 import akka.util.Timeout
 import fusion.core.extension.FusionCore
 import fusion.discoveryx.common.Constants
-import fusion.discoveryx.server.grpc.{ ManagementServiceHandler, UserServiceHandler }
-import fusion.discoveryx.server.management.service.{ ManagementServiceImpl, UserServiceImpl }
-import fusion.discoveryx.server.management.{ Management, UserEntity, UserManager }
+import fusion.discoveryx.server.grpc.UserServiceHandler
 import fusion.discoveryx.server.protocol._
 import fusion.discoveryx.server.route.{ SessionRoute, pathPost }
+import fusion.discoveryx.server.user.service.UserServiceImpl
+import fusion.discoveryx.server.user.{ UserEntity, UserManager }
 import helloscala.common.IntStatus
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-class ManagementRoute()(implicit system: ActorSystem[_]) extends SessionRoute {
+class UserRoute()(implicit system: ActorSystem[_]) extends SessionRoute {
   private implicit val timeout: Timeout = 5.seconds
-  private val managementRef = Management.init(system)
   private val userEntity = UserEntity.init(system)
-  private val userManager = UserManager.init(system)
-  private val managementService = new ManagementServiceImpl(managementRef)
-  private val userService = new UserServiceImpl(userEntity, userManager)
-  private val validationSession: Directive0 = createValidationSession(userEntity)
+  private val userService = new UserServiceImpl(userEntity, UserManager.init(system))
+  private val validationSession = createValidationSession(userEntity)
 
   val grpcHandler: List[PartialFunction[HttpRequest, Future[HttpResponse]]] = {
     implicit val mat = SystemMaterializer(system).materializer
     implicit val classicSystem = FusionCore(system).classicSystem
-    ManagementServiceHandler.partial(managementService) :: UserServiceHandler.partial(userService) :: Nil
+    UserServiceHandler.partial(userService) :: Nil
   }
 
   import fusion.discoveryx.server.util.ProtobufJsonSupport._
 
-  def consoleRoute: Route = pathPrefix("management") {
-    validationSession {
-      pathPost("ListNamespace") {
-        entity(as[ListNamespace]) { in =>
-          complete(managementService.listNamespace(in))
-        }
-      } ~
-      pathPost("CreateNamespace") {
-        entity(as[CreateNamespace]) { in =>
-          complete(managementService.createNamespace(in))
-        }
-      } ~
-      pathPost("RemoveNamespace") {
-        entity(as[RemoveNamespace]) { in =>
-          complete(managementService.removeNamespace(in))
-        }
-      } ~
-      pathPost("ModifyNamespace") {
-        entity(as[ModifyNamespace]) { in =>
-          complete(managementService.modifyNamespace(in))
-        }
-      }
-    }
-  }
-
-  def userRoute: Route = pathPrefix("user") {
+  def consoleRoute: Route = pathPrefix("user") {
     validationSession {
       pathPost("ListUser") {
         entity(as[ListUser]) { in =>

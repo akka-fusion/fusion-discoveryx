@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package fusion.discoveryx.server.management.service
+package fusion.discoveryx.server.user.service
 
 import akka.actor.testkit.typed.scaladsl.{ ActorTestKit, ScalaTestWithActorTestKit }
 import com.typesafe.config.ConfigFactory
 import fusion.common.config.FusionConfigFactory
 import fusion.discoveryx.common.Constants
-import fusion.discoveryx.server.management.{ UserEntity, UserManager }
+import fusion.discoveryx.server.user.{ UserEntity, UserManager }
 import fusion.discoveryx.server.protocol.{ CreateUser, Login, UserRole }
 import fusion.discoveryx.server.util.ProtobufJson4s
 import helloscala.common.IntStatus

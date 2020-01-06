@@ -200,12 +200,12 @@ import akka.util.ByteString
 
 import scala.concurrent.ExecutionContext
 
-// 直接流入
+// 直接注入
 class MainForImmediately @Inject() (
   ws: DiscoveryXPlayWSClient,
   val controllerComponents: ControllerComponents) extends BaseController {}
 
-// 通过 @Named
+// 通过 @Named 注入
 class MainForNamed @Inject() (
   @Named(&quot;discoveryx&quot;) ws: WSClient, 
   val controllerComponents: ControllerComponents) extends BaseController {}
@@ -215,6 +215,7 @@ class MainForNamed @Inject() (
   @DiscoveryXPlay ws: WSClient, 
   val controllerComponents: ControllerComponents) extends BaseController {}
 </code></pre>
+<p>之后就可以在代码中通过 <code>ws</code> 来访问HTTP了：</p>
 <pre class="prettyprint"><code class="language-play">val request: WSRequest = ws.url(url)
 </code></pre>
 </div>
@@ -241,10 +242,12 @@ class MainForNamed @Inject() (
 <div>discoveryx-docs is Open Source and available under the Apache 2 License.</div>
 <p class="legal">
 &copy; 2019-2020 <a href="https://akka-fusion.github.com/" target="_blank">Akka Fusion</a> |
-<a href="https://akka-fusion.github.com/fusion-discoveryx/" target="_blank">Fusion DiscoveryX</a> |
-<a href="https://akka-fusion.github.com/fusion-schedulerx/" target="_blank">Fusion SchedulerX</a>
+<a href="https://akka-fusion.github.io/fusion-discoveryx/" target="_blank">Fusion DiscoveryX</a> |
+<a href="https://akka-fusion.github.io/fusion-schedulerx/" target="_blank">Fusion SchedulerX</a>
 </p>
 </section>
+
+
 </footer>
 </section>
 </main>

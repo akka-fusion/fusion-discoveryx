@@ -21,7 +21,7 @@ import java.util.concurrent.TimeoutException
 import akka.actor.typed.{ ActorRef, Scheduler }
 import akka.cluster.sharding.typed.ShardingEnvelope
 import fusion.discoveryx.model.NamingReply
-import fusion.discoveryx.server.management.NamespaceRef.{ ExistNamespace, NamespaceExists }
+import fusion.discoveryx.server.namespace.NamespaceRef.{ ExistNamespace, NamespaceExists }
 import fusion.discoveryx.server.naming.NamingService
 import fusion.discoveryx.server.protocol.NamingReplyCommand
 import helloscala.common.IntStatus

@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-package fusion.discoveryx.server.management
+package fusion.discoveryx.server
 
 import akka.actor.typed.ActorSystem
 import com.typesafe.config.Config
 import fusion.discoveryx.common.Constants
-import fusion.discoveryx.server.{ BaseSettings, RetentionCriteriaSettings }
 import helloscala.common.Configuration
 
 import scala.concurrent.duration.FiniteDuration

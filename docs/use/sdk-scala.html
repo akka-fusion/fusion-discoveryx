@@ -140,7 +140,9 @@ Version 0.1.0
     host = &quot;127.0.0.1&quot;
     port = 48000
   }
-}</code></pre>
+}</code></pre><div class="callout note "><div class="callout-title">Note</div>
+<p>gRPC服务全限定名在HOCON配置里需要使用英文双引号括起来，因为HOCON默认使用英文点号来区分配置层级。</p>
+<p>测试时可以把<code>use-tls</code>参数设置为<code>false</code>，但在生产环境中建议使用默认值<code>true</code>。</p></div>
 <h3><a href="#自动注册服务" name="自动注册服务" class="anchor"><span class="anchor-link"></span></a>自动注册服务</h3>
 <p>若需要把服务自动注册到 DiscoveryX Server，需要配置 <code>discoveryx.client.naming.auto-registration = true</code> 。同时，还需要设置<code>namespace</code>、<code>service-name</code>、<code>ip</code>、<code>port</code>，其中<code>ip</code>可通过自动检测获取（当不指定或设置为空字符串时，若发现自动检测到的IP地址不正确请手动指定）。</p>
 <pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-client/src/main/resources/reference.conf#L2-L65" target="_blank" title="Go to snippet source"></a><code class="language-conf">discoveryx.client {
@@ -229,10 +231,12 @@ Version 0.1.0
 <div>discoveryx-docs is Open Source and available under the Apache 2 License.</div>
 <p class="legal">
 &copy; 2019-2020 <a href="https://akka-fusion.github.com/" target="_blank">Akka Fusion</a> |
-<a href="https://akka-fusion.github.com/fusion-discoveryx/" target="_blank">Fusion DiscoveryX</a> |
-<a href="https://akka-fusion.github.com/fusion-schedulerx/" target="_blank">Fusion SchedulerX</a>
+<a href="https://akka-fusion.github.io/fusion-discoveryx/" target="_blank">Fusion DiscoveryX</a> |
+<a href="https://akka-fusion.github.io/fusion-schedulerx/" target="_blank">Fusion SchedulerX</a>
 </p>
 </section>
+
+
 </footer>
 </section>
 </main>

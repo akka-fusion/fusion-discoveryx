@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package fusion.discoveryx.server.management.route
+package fusion.discoveryx.server.user.route
 
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model.headers.RawHeader
 import com.typesafe.scalalogging.StrictLogging
 import fusion.discoveryx.common.Constants
-import fusion.discoveryx.server.management.{ UserEntity, UserManager }
-import fusion.discoveryx.server.management.service.UserServiceImpl
+import fusion.discoveryx.server.user.{ UserEntity, UserManager }
+import fusion.discoveryx.server.user.service.UserServiceImpl
 import fusion.discoveryx.server.protocol.{ CreateNamespace, ListNamespace, Login, ManagementResponse }
 import fusion.discoveryx.server.route.FusionRouteTest
 import fusion.discoveryx.server.util.ProtobufJson4s
@@ -29,7 +29,7 @@ import org.scalatest.WordSpec
 
 class NamespaceManagementRouteTest extends WordSpec with FusionRouteTest with StrictLogging {
   private var sessionToken = ""
-  private val route = new ManagementRoute()(discoveryX.system)
+  private val route = new UserRoute()(discoveryX.system)
 
   "Namspace" must {
     import fusion.discoveryx.server.util.ProtobufJsonSupport._

@@ -27,8 +27,8 @@ import akka.util.Timeout
 import fusion.discoveryx.grpc.ConfigService
 import fusion.discoveryx.model._
 import fusion.discoveryx.server.config.ConfigEntity
-import fusion.discoveryx.server.management.NamespaceRef
-import fusion.discoveryx.server.management.NamespaceRef.{ ExistNamespace, NamespaceExists }
+import fusion.discoveryx.server.namespace.NamespaceRef
+import fusion.discoveryx.server.namespace.NamespaceRef.{ ExistNamespace, NamespaceExists }
 import fusion.discoveryx.server.protocol._
 import helloscala.common.IntStatus
 import helloscala.common.exception.HSInternalErrorException

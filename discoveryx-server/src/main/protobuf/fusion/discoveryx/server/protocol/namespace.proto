@@ -13,7 +13,7 @@ option (scalapb.options) = {
 // #Namespace
 // 命名空间
 message Namespace {
-    option (scalapb.message).extends = "fusion.discoveryx.server.management.Management.Event";
+    option (scalapb.message).extends = "fusion.discoveryx.server.namespace.NamespaceManager.Event";
 
     // ID
     string namespace = 1;
@@ -45,7 +45,7 @@ message ListNamespace {
 
 // #RemoveNamespace
 message RemoveNamespace {
-    option (scalapb.message).extends = "fusion.discoveryx.server.management.Management.Event";
+    option (scalapb.message).extends = "fusion.discoveryx.server.namespace.NamespaceManager.Event";
 
     string namespace = 1;
 }
@@ -53,7 +53,7 @@ message RemoveNamespace {
 
 // #ModifyNamespace
 message ModifyNamespace {
-    option (scalapb.message).extends = "fusion.discoveryx.server.management.Management.Event";
+    option (scalapb.message).extends = "fusion.discoveryx.server.namespace.NamespaceManager.Event";
 
     string namespace = 1;
     google.protobuf.StringValue name = 2;
@@ -76,23 +76,23 @@ message GetNamespace {
 }
 
 message ConfigSizeChangedEvent {
-    option (scalapb.message).extends = "fusion.discoveryx.server.management.Management.Command";
-    option (scalapb.message).extends = "fusion.discoveryx.server.management.Management.Event";
+    option (scalapb.message).extends = "fusion.discoveryx.server.namespace.NamespaceManager.Command";
+    option (scalapb.message).extends = "fusion.discoveryx.server.namespace.NamespaceManager.Event";
 
     string namespace = 1;
     int32 config_count = 2;
 }
 
 message ServiceSizeChangedEvent {
-    option (scalapb.message).extends = "fusion.discoveryx.server.management.Management.Command";
-    option (scalapb.message).extends = "fusion.discoveryx.server.management.Management.Event";
+    option (scalapb.message).extends = "fusion.discoveryx.server.namespace.NamespaceManager.Command";
+    option (scalapb.message).extends = "fusion.discoveryx.server.namespace.NamespaceManager.Event";
 
     string namespace = 1;
     int32 service_count = 2;
 }
 
 message ManagementCommand {
-    option (scalapb.message).extends = "fusion.discoveryx.server.management.Management.Command";
+    option (scalapb.message).extends = "fusion.discoveryx.server.namespace.NamespaceManager.Command";
     option (scalapb.message).companion_extends = "fusion.protobuf.ActorRefCompanion";
 
     string reply_to = 1 [(scalapb.field).type = "akka.actor.typed.ActorRef[ManagementResponse]"];

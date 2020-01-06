@@ -27,7 +27,7 @@ import akka.util.Timeout
 import fusion.discoveryx.model._
 import fusion.discoveryx.server.config.ConfigManager._
 import fusion.discoveryx.server.config.{ ConfigEntity, ConfigSettings }
-import fusion.discoveryx.server.management.Management
+import fusion.discoveryx.server.namespace.NamespaceManager
 import fusion.discoveryx.server.protocol.ConfigManagerCommand.Cmd
 import fusion.discoveryx.server.protocol.ConfigResponse.Data
 import fusion.discoveryx.server.protocol._
@@ -41,7 +41,7 @@ private[config] class ConfigManagerBehavior(namespace: String, context: ActorCon
   import context.executionContext
   private val settings = ConfigSettings(context.system)
   private val configEntity = ConfigEntity.init(context.system)
-  private val managementRef = Management.init(context.system)
+  private val managementRef = NamespaceManager.init(context.system)
 
   def eventSourcedBehavior(): EventSourcedBehavior[Command, Event, ConfigManagerState] =
     EventSourcedBehavior(

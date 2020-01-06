@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package fusion.discoveryx.server.management
+package fusion.discoveryx.server.namespace
 
 import akka.actor.typed.scaladsl.{ ActorContext, Behaviors }
 import akka.actor.typed.{ ActorRef, ActorSystem, Behavior }
@@ -25,6 +25,7 @@ import akka.cluster.sharding.typed.ShardingEnvelope
 import akka.cluster.typed.{ ClusterSingleton, SingletonActor }
 import akka.persistence.typed.scaladsl.{ Effect, EventSourcedBehavior }
 import akka.persistence.typed.{ PersistenceId, RecoveryCompleted }
+import fusion.discoveryx.server.ManagementSettings
 import fusion.discoveryx.server.config.ConfigManager
 import fusion.discoveryx.server.naming.NamingManager
 import fusion.discoveryx.server.protocol.ManagementCommand.Cmd
@@ -35,7 +36,7 @@ import helloscala.common.util.Utils
 
 import scala.concurrent.duration._
 
-object Management {
+object NamespaceManager {
   trait Command
   trait Event
 
@@ -45,11 +46,12 @@ object Management {
     ClusterSingleton(system).init(SingletonActor(apply(), "Management"))
 
   private def apply(): Behavior[Command] =
-    Behaviors.setup(context => new Management(context).eventSourcedBehavior(PersistenceId("Management", "management")))
+    Behaviors.setup(context =>
+      new NamespaceManager(context).eventSourcedBehavior(PersistenceId("Management", "management")))
 }
 
-import fusion.discoveryx.server.management.Management._
-class Management private (context: ActorContext[Command]) {
+import fusion.discoveryx.server.namespace.NamespaceManager._
+class NamespaceManager private (context: ActorContext[Command]) {
   private val settings = ManagementSettings(context.system)
   private val configManager = ConfigManager.init(context.system)
   private val namingManager = NamingManager.init(context.system)

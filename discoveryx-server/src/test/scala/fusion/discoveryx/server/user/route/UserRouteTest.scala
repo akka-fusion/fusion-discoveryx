@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package fusion.discoveryx.server.management.route
+package fusion.discoveryx.server.user.route
 
 import akka.http.scaladsl.marshalling.ToEntityMarshaller
 import akka.http.scaladsl.model.headers.Cookie
@@ -25,8 +25,8 @@ import fusion.discoveryx.server.route.FusionRouteTest
 import fusion.discoveryx.server.util.ProtobufJson4s
 import org.scalatest.WordSpec
 
-class UserManagementRouteTest extends WordSpec with FusionRouteTest {
-  private val managementRoute = new ManagementRoute()(discoveryX.system)
+class UserRouteTest extends WordSpec with FusionRouteTest {
+  private val userRoute = new UserRoute()(discoveryX.system)
 
   "UserRoute" must {
     import fusion.discoveryx.server.util.ProtobufJsonSupport._
@@ -40,7 +40,7 @@ class UserManagementRouteTest extends WordSpec with FusionRouteTest {
 
     "Login" in {
       val in = Login(account, password)
-      Post("/sign/Login", in) ~> managementRoute.signRoute ~> check {
+      Post("/sign/Login", in) ~> userRoute.signRoute ~> check {
         status should be(StatusCodes.OK)
         val resp = responseAs[UserResponse]
         println(ProtobufJson4s.toJsonPrettyString(resp))
@@ -51,7 +51,7 @@ class UserManagementRouteTest extends WordSpec with FusionRouteTest {
 
     "ListUser" in {
       val in = ListUser()
-      sendPost("/user/ListUser", in) ~> managementRoute.userRoute ~> check {
+      sendPost("/user/ListUser", in) ~> userRoute.consoleRoute ~> check {
         println(response)
         status should be(StatusCodes.OK)
       }
