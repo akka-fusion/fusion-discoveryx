@@ -100,8 +100,8 @@ message ConfigChangeListen {
 // #ConfigChanged
 message ConfigChanged {
     fusion.discoveryx.model.ConfigItem config = 1;
-    int32 version = 2;
-    ChangeType change_type = 3;
+    ChangeType change_type = 2;
+    int32 version = 3;
 }
 // #ConfigChanged
 

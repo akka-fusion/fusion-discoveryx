@@ -58,7 +58,7 @@ class ConfigServiceImpl(namespaceRef: ActorRef[NamespaceRef.ExistNamespace])(imp
     val entityId = ConfigEntity.makeEntityId(in.namespace, in.dataId)
     val (ref, source) = ActorSource
       .actorRef[ConfigEntity.Event](
-        { case _: ListenerCompletedEvent => },
+        { case _: ConfigListenerCompletedEvent => },
         changed => throw HSInternalErrorException(s"Throw error: $changed."),
         2,
         OverflowStrategy.dropHead)
@@ -69,7 +69,7 @@ class ConfigServiceImpl(namespaceRef: ActorRef[NamespaceRef.ExistNamespace])(imp
         case event: ChangedConfigEvent => event :: Nil
         case _                         => Nil
       }
-      .map(event => ConfigChanged(event.config, changeType = event.`type`))
+      .map(event => ConfigChanged(event.config, event.changeType))
   }
 
   @inline private def askConfig(namespace: String, dataId: String, cmd: ConfigEntityCommand.Cmd): Future[ConfigReply] =

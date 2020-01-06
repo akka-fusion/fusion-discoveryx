@@ -159,7 +159,7 @@ Version 0.1.0
 }</code></pre>
 <h3><a href="#protobuf" name="protobuf" class="anchor"><span class="anchor-link"></span></a>Protobuf</h3>
 <p>DiscoveryX 使用 Protobuf 来定义和序列化数据消息，服务需要的请求参数、响应结果通过Protobuf定义，它将被自动编译并生成相应的case class。</p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L144-L186" target="_blank" title="Go to snippet source"></a><code class="language-proto"><br/>// 健康检查方式
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L144-L188" target="_blank" title="Go to snippet source"></a><code class="language-proto"><br/>// 健康检查方式
 enum HealthyCheckMethod {
     NOT_SET = 0;
     CLIENT_REPORT = 1;
@@ -190,13 +190,15 @@ message Instance {
     bool ephemeral = 7;
     // user extended attributes
     map&lt;string, string&gt; metadata = 8;
+    // Healthy check method, the default value is HealthyCheckMethod.CLIENT_REPORT
     HealthyCheckMethod healthy_check_method = 9;
     // Healthy check per N seconds
     int32 healthy_check_interval = 10;
     // Unhealthy check count
     int32 unhealthy_check_count = 11;
-    // Healthy check protocl
+    // Healthy check protocol
     HealthyCheckProtocol protocol = 12;
+    // Whether TLS(HTTPS) is used for gRPC connection, the default value is false.
     bool use_tls = 13;
     // HTTP healthy check uri path.
     string http_path = 14;

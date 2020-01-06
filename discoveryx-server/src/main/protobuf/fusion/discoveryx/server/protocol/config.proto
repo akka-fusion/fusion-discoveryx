@@ -87,13 +87,13 @@ message ConfigResponse {
 }
 // #ConfigResponse
 
-message ConfigManagerDataIdAddEvent {
+message ConfigAddedEvent {
     option (scalapb.message).extends = "fusion.discoveryx.server.config.ConfigManager.Command";
     option (scalapb.message).extends = "fusion.discoveryx.server.config.ConfigManager.Event";
     string data_id = 1;
 }
 
-message ConfigManagerDataIdRemoveEvent {
+message ConfigRemovedEvent {
     option (scalapb.message).extends = "fusion.discoveryx.server.config.ConfigManager.Command";
     option (scalapb.message).extends = "fusion.discoveryx.server.config.ConfigManager.Event";
     string data_id = 1;
@@ -126,13 +126,16 @@ message RemoveAndStopConfigEntity {
 // ConfigEntity Events
 ////////////////////////////////////////////////////////////////////////////////
 
+// #ChangedConfigEvent
 message ChangedConfigEvent {
     option (scalapb.message).extends = "fusion.discoveryx.server.config.ConfigEntity.Event";
-    fusion.discoveryx.model.ConfigItem config = 1;
-    fusion.discoveryx.model.ChangeType type = 2;
-}
 
-message ListenerCompletedEvent {
+    fusion.discoveryx.model.ConfigItem config = 1;
+    fusion.discoveryx.model.ChangeType change_type = 2;
+}
+// #ChangedConfigEvent
+
+message ConfigListenerCompletedEvent {
     option (scalapb.message).extends = "fusion.discoveryx.server.config.ConfigEntity.Event";
 }
 

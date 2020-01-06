@@ -148,7 +148,7 @@ Version 0.1.0
   <li>REST URI：<code>POST /fusion/discoveryx/console/sign/Login</code></li>
 </ul>
 <p><strong>gRPC</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/grpc/server.proto#L83-L84" target="_blank" title="Go to snippet source"></a><code class="language-proto">rpc Login (fusion.discoveryx.server.protocol.Login) returns (fusion.discoveryx.server.protocol.UserResponse) {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/grpc/server.proto#L97-L98" target="_blank" title="Go to snippet source"></a><code class="language-proto">rpc Login (fusion.discoveryx.server.protocol.Login) returns (fusion.discoveryx.server.protocol.UserResponse) {
 }</code></pre>
 <p><strong>请求</strong></p>
 <pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/user.proto#L49-L52" target="_blank" title="Go to snippet source"></a><code class="language-proto">message Login {
@@ -177,7 +177,7 @@ Version 0.1.0
   <li>REST URI：<code>POST /fusion/discoveryx/console/sign/Logout</code></li>
 </ul>
 <p><strong>gRPC</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/grpc/server.proto#L88-L89" target="_blank" title="Go to snippet source"></a><code class="language-proto">rpc Logout (fusion.discoveryx.server.protocol.Logout) returns (fusion.discoveryx.server.protocol.UserResponse) {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/grpc/server.proto#L102-L103" target="_blank" title="Go to snippet source"></a><code class="language-proto">rpc Logout (fusion.discoveryx.server.protocol.Logout) returns (fusion.discoveryx.server.protocol.UserResponse) {
 }</code></pre>
 <p><strong>请求</strong></p>
 <pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/user.proto#L71-L73" target="_blank" title="Go to snippet source"></a><code class="language-proto">message Logout {
@@ -200,7 +200,7 @@ Version 0.1.0
   <li><strong>REST URI</strong>：<code>POST|GET /fusion/discoveryx/console/sign/</code> or <code>POST|GET /fusion/discoveryx/console/sign/CurrentSessionUser</code></li>
 </ul>
 <p><strong>gRPC</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/grpc/server.proto#L93-L94" target="_blank" title="Go to snippet source"></a><code class="language-proto">rpc CurrentSessionUser (fusion.discoveryx.server.protocol.CurrentSessionUser) returns (fusion.discoveryx.server.protocol.UserResponse) {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/grpc/server.proto#L107-L108" target="_blank" title="Go to snippet source"></a><code class="language-proto">rpc CurrentSessionUser (fusion.discoveryx.server.protocol.CurrentSessionUser) returns (fusion.discoveryx.server.protocol.UserResponse) {
 }</code></pre>
 <p><strong>请求</strong></p>
 <pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/user.proto#L134-L136" target="_blank" title="Go to snippet source"></a><code class="language-proto">message CurrentSessionUser {
@@ -232,7 +232,7 @@ message User {
 }</code></pre>
 <h2><a href="#listuser" name="listuser" class="anchor"><span class="anchor-link"></span></a>ListUser</h2>
 <p><strong>gRPC</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/grpc/server.proto#L118-L119" target="_blank" title="Go to snippet source"></a><code class="language-proto">rpc ListUser (fusion.discoveryx.server.protocol.ListUser) returns (fusion.discoveryx.server.protocol.UserResponse) {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/grpc/server.proto#L132-L133" target="_blank" title="Go to snippet source"></a><code class="language-proto">rpc ListUser (fusion.discoveryx.server.protocol.ListUser) returns (fusion.discoveryx.server.protocol.UserResponse) {
 }</code></pre>
 <p><strong>请求</strong></p>
 <pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/user.proto#L27-L32" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ListUser {
@@ -261,7 +261,7 @@ message User {
 }</code></pre>
 <h2><a href="#createuser" name="createuser" class="anchor"><span class="anchor-link"></span></a>CreateUser</h2>
 <p><strong>gRPC</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/grpc/server.proto#L103-L104" target="_blank" title="Go to snippet source"></a><code class="language-proto">rpc CreateUser (fusion.discoveryx.server.protocol.CreateUser) returns (fusion.discoveryx.server.protocol.UserResponse) {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/grpc/server.proto#L117-L118" target="_blank" title="Go to snippet source"></a><code class="language-proto">rpc CreateUser (fusion.discoveryx.server.protocol.CreateUser) returns (fusion.discoveryx.server.protocol.UserResponse) {
 }</code></pre>
 <p><strong>请求</strong></p>
 <pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/user.proto#L87-L94" target="_blank" title="Go to snippet source"></a><code class="language-proto">message CreateUser {
@@ -286,7 +286,7 @@ message User {
 <p><code>oneof</code>字段<code>user</code>将返回已创建的用户</p>
 <h2><a href="#modifyuser" name="modifyuser" class="anchor"><span class="anchor-link"></span></a>ModifyUser</h2>
 <p><strong>gRPC</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/grpc/server.proto#L108-L109" target="_blank" title="Go to snippet source"></a><code class="language-proto">rpc ModifyUser (fusion.discoveryx.server.protocol.ModifyUser) returns (fusion.discoveryx.server.protocol.UserResponse) {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/grpc/server.proto#L122-L123" target="_blank" title="Go to snippet source"></a><code class="language-proto">rpc ModifyUser (fusion.discoveryx.server.protocol.ModifyUser) returns (fusion.discoveryx.server.protocol.UserResponse) {
 }</code></pre>
 <p><strong>请求</strong></p>
 <pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/user.proto#L106-L113" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ModifyUser {
@@ -311,7 +311,7 @@ message User {
 <p><code>oneof</code>字段<code>user</code>将返回已修改后的用户</p>
 <h2><a href="#removeuser" name="removeuser" class="anchor"><span class="anchor-link"></span></a>RemoveUser</h2>
 <p><strong>gRPC</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/grpc/server.proto#L113-L114" target="_blank" title="Go to snippet source"></a><code class="language-proto">rpc RemoveUser (fusion.discoveryx.server.protocol.RemoveUser) returns (fusion.discoveryx.server.protocol.UserResponse) {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/grpc/server.proto#L127-L128" target="_blank" title="Go to snippet source"></a><code class="language-proto">rpc RemoveUser (fusion.discoveryx.server.protocol.RemoveUser) returns (fusion.discoveryx.server.protocol.UserResponse) {
 }</code></pre>
 <p><strong>请求</strong></p>
 <pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/user.proto#L98-L102" target="_blank" title="Go to snippet source"></a><code class="language-proto">message RemoveUser {

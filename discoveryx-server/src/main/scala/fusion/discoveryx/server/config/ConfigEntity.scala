@@ -113,12 +113,12 @@ class ConfigEntity private (
       Effect.stop()
 
     case _: RemoveAndStopConfigEntity =>
-      Effect.persist(ChangedConfigEvent(`type` = ChangeType.CHANGE_REMOVE)).thenStop()
+      Effect.persist(ChangedConfigEvent(changeType = ChangeType.CHANGE_REMOVE)).thenStop()
   }
 
   private def processRemove(replyTo: ActorRef[ConfigReply]): Effect[ChangedConfigEvent, ConfigState] =
     Effect
-      .persist[ChangedConfigEvent, ConfigState](ChangedConfigEvent(`type` = ChangeType.CHANGE_REMOVE))
+      .persist[ChangedConfigEvent, ConfigState](ChangedConfigEvent(changeType = ChangeType.CHANGE_REMOVE))
       .thenRun {
         case state if state.configItem.isEmpty => replyTo ! ConfigReply(IntStatus.OK)
         case _                                 => replyTo ! ConfigReply(IntStatus.INTERNAL_ERROR)
@@ -172,15 +172,18 @@ class ConfigEntity private (
 
   def eventHandler(state: ConfigState, evt: ChangedConfigEvent): ConfigState = {
     context.log.debug(s"eventHandler($state, $evt)")
+    evt.changeType match {
+      case ChangeType.CHANGE_REMOVE =>
+        configManager ! ShardingEnvelope(namespace, ConfigRemovedEvent(dataId))
+      case ChangeType.CHANGE_ADD =>
+        configManager ! ShardingEnvelope(namespace, ConfigAddedEvent(dataId))
+      case _ => // do nothing
+    }
+
     listeners.foreach { ref =>
       ref ! evt
-      evt.`type` match {
-        case ChangeType.CHANGE_REMOVE =>
-          ref ! ListenerCompletedEvent()
-          configManager ! ShardingEnvelope(namespace, ConfigManagerDataIdRemoveEvent(dataId))
-        case ChangeType.CHANGE_ADD =>
-          configManager ! ShardingEnvelope(namespace, ConfigManagerDataIdAddEvent(dataId))
-        case _ => // do nothing
+      if (evt.changeType.isChangeAdd) {
+        ref ! ConfigListenerCompletedEvent()
       }
     }
     ConfigState(configItem = evt.config)

@@ -143,7 +143,7 @@ Version 0.1.0
 rpc ListConfig (fusion.discoveryx.server.protocol.ListConfig) returns (fusion.discoveryx.server.protocol.ConfigResponse) {
 }</code></pre>
 <p><strong>请求</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/config.proto#L71-L80" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ListConfig {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/config.proto#L53-L62" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ListConfig {
     string namespace = 1;
     // 支持模糊查询
     google.protobuf.StringValue data_id = 2;
@@ -154,7 +154,7 @@ rpc ListConfig (fusion.discoveryx.server.protocol.ListConfig) returns (fusion.di
     repeated string tags = 6;
 }</code></pre>
 <p><strong>响应</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/config.proto#L98-L105" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ConfigResponse {
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/config.proto#L80-L87" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ConfigResponse {
     int32 status = 1;
     string message = 2;
     oneof data {

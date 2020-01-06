@@ -54,12 +54,12 @@ private[config] class ConfigManagerBehavior(namespace: String, context: ActorCon
     }
 
   private def eventHandler(state: ConfigManagerState, event: Event): ConfigManagerState = event match {
-    case ConfigManagerDataIdAddEvent(newDataId) =>
+    case ConfigAddedEvent(newDataId) =>
       val dataIds = if (state.dataIds.contains(newDataId)) state.dataIds else state.dataIds :+ newDataId
       managementRef ! ConfigSizeChangedEvent(namespace, dataIds.size)
       state.copy(dataIds = dataIds)
 
-    case ConfigManagerDataIdRemoveEvent(dataId) =>
+    case ConfigRemovedEvent(dataId) =>
       val dataIds = state.dataIds.filterNot(_ == dataId)
       managementRef ! ConfigSizeChangedEvent(namespace, dataIds.size)
       state.copy(dataIds = dataIds)
@@ -81,8 +81,8 @@ private[config] class ConfigManagerBehavior(namespace: String, context: ActorCon
     command match {
       case ConfigManagerCommand(replyTo, cmd)               => processManagerCommand(state, replyTo, cmd)
       case InternalConfigManagerResponse(replyTo, response) => processReplyToResponse(state, replyTo, response)
-      case in: ConfigManagerDataIdAddEvent                  => Effect.persist(in)
-      case in: ConfigManagerDataIdRemoveEvent               => Effect.persist(in)
+      case in: ConfigAddedEvent                             => Effect.persist(in)
+      case in: ConfigRemovedEvent                           => Effect.persist(in)
       case DummyConfigManager()                             => Effect.none
       case StopConfigManager()                              => Effect.stop()
       case in: RemoveConfigManager                          => Effect.persist(in).thenStop()
@@ -105,7 +105,7 @@ private[config] class ConfigManagerBehavior(namespace: String, context: ActorCon
           ConfigEntityCommand.Cmd.Publish(cmd),
           _.config
             .map { item =>
-              context.self ! ConfigManagerDataIdAddEvent(item.dataId)
+              context.self ! ConfigAddedEvent(item.dataId)
               Data.Config(item)
             }
             .getOrElse(Data.Empty))

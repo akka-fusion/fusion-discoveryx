@@ -119,13 +119,13 @@ message NamingManagerState {
     repeated string service_names = 1;
 }
 
-message ServiceCreated {
+message ServiceCreatedEvent {
     option (scalapb.message).extends = "fusion.discoveryx.server.naming.NamingManager.Command";
     option (scalapb.message).extends = "fusion.discoveryx.server.naming.NamingManager.Event";
     string service_name = 1;
 }
 
-message ServiceRemoved {
+message ServiceRemovedEvent {
     option (scalapb.message).extends = "fusion.discoveryx.server.naming.NamingManager.Command";
     option (scalapb.message).extends = "fusion.discoveryx.server.naming.NamingManager.Event";
     string service_name = 1;

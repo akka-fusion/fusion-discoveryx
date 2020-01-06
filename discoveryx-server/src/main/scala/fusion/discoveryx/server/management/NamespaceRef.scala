@@ -25,10 +25,11 @@ import akka.cluster.ddata.{ ORSet, ORSetKey }
  * 需要 Singleton actor Management() 已启动
  */
 object NamespaceRef {
-  trait Command
+  sealed trait Command
   final case class ExistNamespace(namespace: String, replyTo: ActorRef[NamespaceExists]) extends Command
-  final case class NamespaceExists(exists: Boolean)
   private final case class InternalNamespaceExists(exists: Boolean, replyTo: ActorRef[NamespaceExists]) extends Command
+
+  final case class NamespaceExists(exists: Boolean)
 
   val Key: ORSetKey[String] = ORSetKey("Namespace")
   val NAME = "Namespace"

@@ -25,6 +25,7 @@ import akka.persistence.typed.scaladsl.{ Effect, EventSourcedBehavior }
 import akka.stream.scaladsl.{ Sink, Source }
 import akka.util.Timeout
 import fusion.discoveryx.model.{ InstanceQuery, NamingReply }
+import fusion.discoveryx.server.management.Management
 import fusion.discoveryx.server.naming.NamingManager._
 import fusion.discoveryx.server.naming.{ NamingService, NamingSettings }
 import fusion.discoveryx.server.protocol.NamingManagerCommand.Cmd
@@ -39,7 +40,8 @@ import scala.util.{ Failure, Success }
 private[naming] class NamingManagerBehavior(namespace: String, context: ActorContext[Command]) {
   import context.executionContext
   private val namingSettings = NamingSettings(context.system)
-  private val namingServiceRegion = NamingService.init(context.system)
+  private val managementRef = Management.init(context.system)
+  private val namingService = NamingService.init(context.system)
 
   def eventSourcedBehavior(): EventSourcedBehavior[Command, Event, NamingManagerState] =
     EventSourcedBehavior(
@@ -62,18 +64,21 @@ private[naming] class NamingManagerBehavior(namespace: String, context: ActorCon
     }
 
   private def eventHandler(state: NamingManagerState, event: Event): NamingManagerState = event match {
-    case ServiceCreated(serviceName) =>
+    case ServiceCreatedEvent(serviceName) =>
       val serviceNames =
         if (!state.serviceNames.contains(serviceName)) state.serviceNames :+ serviceName
         else state.serviceNames
+      managementRef ! ServiceSizeChangedEvent(namespace, serviceNames.size)
       state.copy(serviceNames = serviceNames)
 
-    case ServiceRemoved(serviceName) =>
+    case ServiceRemovedEvent(serviceName) =>
       val serviceNames = state.serviceNames.filterNot(_ == serviceName)
+      managementRef ! ServiceSizeChangedEvent(namespace, serviceNames.size)
       state.copy(serviceNames = serviceNames)
 
     case RemoveNamingManager() =>
       removeAllService(state)
+      managementRef ! ServiceSizeChangedEvent(namespace)
       NamingManagerState.defaultInstance
   }
 
@@ -82,7 +87,7 @@ private[naming] class NamingManagerBehavior(namespace: String, context: ActorCon
       serviceName <- state.serviceNames
       entityId <- NamingService.makeEntityId(namespace, serviceName)
     } {
-      namingServiceRegion ! ShardingEnvelope(entityId, StopServiceInstance())
+      namingService ! ShardingEnvelope(entityId, StopServiceInstance())
     }
   }
 
@@ -91,7 +96,7 @@ private[naming] class NamingManagerBehavior(namespace: String, context: ActorCon
       serviceName <- state.serviceNames
       entityId <- NamingService.makeEntityId(namespace, serviceName)
     } {
-      namingServiceRegion ! ShardingEnvelope(entityId, RemoveServiceInstance())
+      namingService ! ShardingEnvelope(entityId, RemoveServiceInstance())
     }
   }
 
@@ -166,7 +171,7 @@ private[naming] class NamingManagerBehavior(namespace: String, context: ActorCon
         .mapAsync(math.max(8, size)) { entityId =>
           val cmd = NamingReplyCommand.Cmd.Query(
             InstanceQuery(serviceName = in.serviceName, groupName = in.groupName, allHealthy = in.allHealthy))
-          namingServiceRegion.ask[NamingReply](ref => ShardingEnvelope(entityId, NamingReplyCommand(ref, cmd)))
+          namingService.ask[NamingReply](ref => ShardingEnvelope(entityId, NamingReplyCommand(ref, cmd)))
         }
         .collect { case NamingReply(IntStatus.OK, _, NamingReply.Data.ServiceInfo(value)) => value }
         .drop(offset)
@@ -190,13 +195,12 @@ private[naming] class NamingManagerBehavior(namespace: String, context: ActorCon
       onSuccess: NamingReply => NamingResponse.Data): Future[NamingResponse] =
     NamingService.makeEntityId(namespace, serviceName) match {
       case Right(entityId) =>
-        namingServiceRegion.ask[NamingReply](ref => ShardingEnvelope(entityId, NamingReplyCommand(ref, cmd))).map {
-          value =>
-            context.log.debug(s"Send to NamingService return: $value")
-            NamingResponse(
-              value.status,
-              value.message,
-              data = if (IntStatus.isSuccess(value.status)) onSuccess(value) else NamingResponse.Data.Empty)
+        namingService.ask[NamingReply](ref => ShardingEnvelope(entityId, NamingReplyCommand(ref, cmd))).map { value =>
+          context.log.debug(s"Send to NamingService return: $value")
+          NamingResponse(
+            value.status,
+            value.message,
+            data = if (IntStatus.isSuccess(value.status)) onSuccess(value) else NamingResponse.Data.Empty)
         }
       case Left(errMsg) =>
         Future.successful(NamingResponse(IntStatus.BAD_REQUEST, errMsg))

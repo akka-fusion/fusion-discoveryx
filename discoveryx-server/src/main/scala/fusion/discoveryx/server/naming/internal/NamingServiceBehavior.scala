@@ -49,7 +49,7 @@ private[naming] class NamingServiceBehavior(
   private var unusedIdx = 0
   private var listeners: Map[ActorRef[Event], ServiceListener] = Map()
 
-  NamingManager.init(context.system) ! ShardingEnvelope(namespace, ServiceCreated(serviceName))
+  NamingManager.init(context.system) ! ShardingEnvelope(namespace, ServiceCreatedEvent(serviceName))
   context.log.info(s"NamingService started: $namespace@$serviceName")
 
   def eventSourcedBehavior(persistenceId: PersistenceId): EventSourcedBehavior[Command, Event, NamingServiceState] =
@@ -167,7 +167,7 @@ private[naming] class NamingServiceBehavior(
     for ((ref, _) <- listeners) {
       ref ! ServiceEventStop()
     }
-    NamingManager.init(context.system) ! ShardingEnvelope(namespace, ServiceRemoved(serviceName))
+    NamingManager.init(context.system) ! ShardingEnvelope(namespace, ServiceRemovedEvent(serviceName))
   }
 
   private def processInstancesQueried(
