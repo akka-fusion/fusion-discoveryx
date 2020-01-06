@@ -30,7 +30,7 @@ import fusion.discoveryx.model.{ InstanceModify, InstanceQuery, InstanceRegister
 import fusion.discoveryx.server.grpc.NamingManagerServiceHandler
 import fusion.discoveryx.server.management.NamespaceRef.ExistNamespace
 import fusion.discoveryx.server.management.UserEntity
-import fusion.discoveryx.server.naming.{ NamingManagerServiceImpl, NamingServiceImpl }
+import fusion.discoveryx.server.naming.service.{ NamingManagerServiceImpl, NamingServiceImpl }
 import fusion.discoveryx.server.protocol._
 import fusion.discoveryx.server.route.{ SessionRoute, pathPost }
 
@@ -78,7 +78,9 @@ class NamingRoute(namespaceRef: ActorRef[ExistNamespace])(implicit system: Actor
         entity(as[ModifyService]) { in =>
           complete(namingManagerService.modifyService(in))
         }
-      }
+      } ~
+      modifyInstanceRoute ~
+      removeInstanceRoute
     }
   }
 
@@ -89,25 +91,23 @@ class NamingRoute(namespaceRef: ActorRef[ExistNamespace])(implicit system: Actor
       }
     } ~
     pathPost("RegisterInstance") {
-      validationSession {
-        entity(as[InstanceRegister]) { in =>
-          complete(namingService.registerInstance(in, new MetadataImpl()))
-        }
+      entity(as[InstanceRegister]) { in =>
+        complete(namingService.registerInstance(in, new MetadataImpl()))
       }
     } ~
-    pathPost("ModifyInstance") {
-      validationSession {
-        entity(as[InstanceModify]) { in =>
-          complete(namingService.modifyInstance(in, new MetadataImpl()))
-        }
-      }
-    } ~
-    pathPost("RemoveInstance") {
-      validationSession {
-        entity(as[InstanceRemove]) { in =>
-          complete(namingService.removeInstance(in, new MetadataImpl()))
-        }
-      }
+    modifyInstanceRoute ~
+    removeInstanceRoute
+  }
+
+  private def modifyInstanceRoute: Route = pathPost("ModifyInstance") {
+    entity(as[InstanceModify]) { in =>
+      complete(namingService.modifyInstance(in, new MetadataImpl()))
+    }
+  }
+
+  private def removeInstanceRoute: Route = pathPost("RemoveInstance") {
+    entity(as[InstanceRemove]) { in =>
+      complete(namingService.removeInstance(in, new MetadataImpl()))
     }
   }
 }

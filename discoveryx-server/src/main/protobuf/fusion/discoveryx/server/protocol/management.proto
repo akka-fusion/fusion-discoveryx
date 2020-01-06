@@ -23,6 +23,8 @@ message Namespace {
     string description = 3;
     // 配置数
     int32 config_count = 4;
+    // 服务数量
+    int32 service_count = 5;
 }
 // #Namespace
 

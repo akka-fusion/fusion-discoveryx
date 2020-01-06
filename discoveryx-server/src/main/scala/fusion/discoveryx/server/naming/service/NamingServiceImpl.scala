@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-package fusion.discoveryx.server.naming
-
-import java.util.concurrent.TimeoutException
+package fusion.discoveryx.server.naming.service
 
 import akka.NotUsed
 import akka.actor.typed.scaladsl.AskPattern._
@@ -31,7 +29,8 @@ import com.typesafe.scalalogging.StrictLogging
 import fusion.discoveryx.common.Headers
 import fusion.discoveryx.grpc.NamingServicePowerApi
 import fusion.discoveryx.model._
-import fusion.discoveryx.server.management.NamespaceRef.{ ExistNamespace, NamespaceExists }
+import fusion.discoveryx.server.management.NamespaceRef.ExistNamespace
+import fusion.discoveryx.server.naming.NamingService
 import fusion.discoveryx.server.protocol._
 import helloscala.common.IntStatus
 import helloscala.common.exception.{ HSBadRequestException, HSInternalErrorException }
@@ -40,12 +39,13 @@ import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.control.NonFatal
 
-class NamingServiceImpl(namespaceRef: ActorRef[ExistNamespace])(implicit system: ActorSystem[_])
+class NamingServiceImpl(val namespaceRef: ActorRef[ExistNamespace])(implicit system: ActorSystem[_])
     extends NamingServicePowerApi
+    with NamingServiceHelper
     with StrictLogging {
   import system.executionContext
   implicit private val timeout: Timeout = 5.seconds
-  private val serviceInstanceRegion = NamingService.init(system)
+  override val serviceInstanceRegion: ActorRef[ShardingEnvelope[NamingService.Command]] = NamingService.init(system)
 
   /**
    * 查询服务状态
@@ -137,21 +137,4 @@ class NamingServiceImpl(namespaceRef: ActorRef[ExistNamespace])(implicit system:
     }
   }
   // #heartbeat
-
-  private def askNaming(namespace: String, serviceName: String, cmd: NamingReplyCommand.Cmd): Future[NamingReply] = {
-    namespaceRef.ask[NamespaceExists](replyTo => ExistNamespace(namespace, replyTo)).flatMap {
-      case NamespaceExists(true) =>
-        NamingService.makeEntityId(namespace, serviceName) match {
-          case Right(entityId) =>
-            serviceInstanceRegion
-              .ask[NamingReply](replyTo => ShardingEnvelope(entityId, NamingReplyCommand(replyTo, cmd)))
-              .recover {
-                case _: TimeoutException => NamingReply(IntStatus.GATEWAY_TIMEOUT)
-              }
-          case Left(errMsg) => Future.successful(NamingReply(IntStatus.INTERNAL_ERROR, errMsg))
-        }
-      case _ =>
-        Future.successful(NamingReply(IntStatus.NOT_FOUND, s"Namespace '$namespace' not exists."))
-    }
-  }
 }

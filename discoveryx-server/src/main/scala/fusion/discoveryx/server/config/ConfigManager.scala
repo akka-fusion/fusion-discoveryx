@@ -74,7 +74,9 @@ class ConfigManager private (namespace: String, context: ActorContext[Command]) 
         case InternalRemoveKey(key) =>
           saveConfigKeys(configKeys.filterNot(_ == key))
           Behaviors.same
-        case _: StopConfigManager =>
+        case DummyConfigManager() =>
+          Behaviors.same
+        case StopConfigManager() =>
           Behaviors.stopped
       }
       .receiveSignal {

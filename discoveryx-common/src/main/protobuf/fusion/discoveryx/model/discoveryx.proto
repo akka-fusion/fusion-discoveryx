@@ -173,13 +173,15 @@ message Instance {
     bool ephemeral = 7;
     // user extended attributes
     map<string, string> metadata = 8;
+    // Healthy check method, the default value is HealthyCheckMethod.CLIENT_REPORT
     HealthyCheckMethod healthy_check_method = 9;
     // Healthy check per N seconds
     int32 healthy_check_interval = 10;
     // Unhealthy check count
     int32 unhealthy_check_count = 11;
-    // Healthy check protocl
+    // Healthy check protocol
     HealthyCheckProtocol protocol = 12;
+    // Whether TLS(HTTPS) is used for gRPC connection, the default value is false.
     bool use_tls = 13;
     // HTTP healthy check uri path.
     string http_path = 14;
@@ -188,21 +190,27 @@ message Instance {
 
 // #InstanceRegister
 message InstanceRegister {
+    // Instance namespace.
     string namespace = 1;
+    // Instance serviceName.
     string service_name = 2;
+    // The instance group name needs to be the same as service group name, otherwise the service group name will be overwritten.
     string group_name = 3;
+    // Instance local ip.
     string ip = 4;
+    // Instance local port.
     int32 port = 5;
-    // instance weight
+    // Instance query weight, the default value is 1.0.
     double weight = 6;
-    // instance health status. If set to true, it will be available immediately. Otherwise, it will be available after the first heartbeat detection is successful.
+    // instance health status. If set to true, it will be available immediately. Otherwise, it will be available after the first heartbeat detection is successful. The default value is false.
     bool health = 7;
-    // If instance is enabled to accept request
+    // If instance is enabled to accept request, the default value is false.
     bool enable = 8;
-    // If instance is ephemeral
+    // If instance is ephemeral, the default value is false.
     bool ephemeral = 9;
     // user extended attributes
     map<string, string> metadata = 10;
+    // Healthy check method, the default value is HealthyCheckMethod.CLIENT_REPORT
     HealthyCheckMethod healthy_check_method = 11;
     // Healthy check per N seconds
     int32 healthy_check_interval = 12;
@@ -210,6 +218,7 @@ message InstanceRegister {
     int32 unhealthy_check_count = 13;
     // Healthy check protocol
     HealthyCheckProtocol protocol = 14;
+    // Whether TLS(HTTPS) is used for gRPC connection, the default value is false.
     bool use_tls = 15;
     // HTTP healthy check uri path.
     string http_path = 16;

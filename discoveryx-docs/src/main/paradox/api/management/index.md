@@ -1,6 +1,6 @@
 # 管理API
 
-管理API为Fusion DiscoveryX提供了Web控制台使用的访问接口
+管理API为Fusion DiscoveryX提供了Web控制台使用的访问接口，提供了命名空间管理、配置管理、名称服务管理、用户管理等接口。
 
 ## 目录
 

@@ -50,6 +50,20 @@ service NamingManagerService {
     rpc RemoveService (fusion.discoveryx.server.protocol.RemoveService) returns (fusion.discoveryx.server.protocol.NamingResponse) {
     }
     // #RemoveService
+
+
+    // #ModifyInstance
+    // 修改实例
+    rpc ModifyInstance (fusion.discoveryx.model.InstanceModify) returns (fusion.discoveryx.model.NamingReply) {
+    }
+    // #ModifyInstance
+
+    // #RemoveInstance
+    // 删除实例
+    rpc RemoveInstance (fusion.discoveryx.model.InstanceRemove) returns (fusion.discoveryx.model.NamingReply) {
+    }
+    // #RemoveInstance
+
 }
 
 service ManagementService {

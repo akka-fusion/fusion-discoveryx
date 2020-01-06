@@ -39,7 +39,7 @@ object SessionUtils {
   def tokenFromCookie(cookie: Cookie): Option[String] =
     cookie.cookies.find(_.name == Constants.SESSION_TOKEN_NAME).map(_.value)
 
-  def decodeToken(token: String): String = new String(URLDecoder.decode(token, StandardCharsets.UTF_8))
+  def decodeToken(token: String): String = new String(URLDecoder.decode(token, StandardCharsets.UTF_8.toString))
 
   def parseAccount(originalToken: String): Either[String, TokenAccount] =
     try {
@@ -56,6 +56,6 @@ object SessionUtils {
     val bytes = Array.ofDim[Byte](40)
     ThreadLocalRandom.current().nextBytes(bytes)
     val token = DigestUtils.md5Hex(bytes)
-    URLEncoder.encode(s"$account|$token", StandardCharsets.UTF_8)
+    URLEncoder.encode(s"$account|$token", StandardCharsets.UTF_8.toString)
   }
 }

@@ -73,5 +73,5 @@ final class NamingClientSettings private (val c: Configuration) {
   val useTls: Boolean = c.getOrElse("use-tls", false)
   val httpPath: String = c.getOrElse("http-path", "")
   val queryTimeout: FiniteDuration = c.getOrElse("query-timeout", 5.seconds)
-  override def toString: String = c.underlying.root().render()
+  override def toString: String = c.underlying.root().toString()
 }

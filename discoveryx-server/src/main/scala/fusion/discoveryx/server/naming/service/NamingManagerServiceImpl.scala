@@ -14,14 +14,16 @@
  * limitations under the License.
  */
 
-package fusion.discoveryx.server.naming
+package fusion.discoveryx.server.naming.service
 
 import akka.actor.typed.scaladsl.AskPattern._
 import akka.actor.typed.{ ActorRef, ActorSystem }
 import akka.cluster.sharding.typed.ShardingEnvelope
 import akka.util.Timeout
+import fusion.discoveryx.model.{ InstanceModify, InstanceRemove, NamingReply }
 import fusion.discoveryx.server.grpc.NamingManagerService
 import fusion.discoveryx.server.management.NamespaceRef.{ ExistNamespace, NamespaceExists }
+import fusion.discoveryx.server.naming.{ NamingManager, NamingService }
 import fusion.discoveryx.server.protocol.NamingManagerCommand.Cmd
 import fusion.discoveryx.server.protocol._
 import helloscala.common.IntStatus
@@ -29,10 +31,13 @@ import helloscala.common.IntStatus
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-class NamingManagerServiceImpl(namespaceRef: ActorRef[ExistNamespace])(implicit system: ActorSystem[_])
-    extends NamingManagerService {
+class NamingManagerServiceImpl(val namespaceRef: ActorRef[ExistNamespace])(implicit system: ActorSystem[_])
+    extends NamingManagerService
+    with NamingServiceHelper {
+  import system.executionContext
   private implicit val timeout: Timeout = 10.seconds
-  private val namingManager: ActorRef[ShardingEnvelope[NamingManager.Command]] = NamingManager.init(system)
+  override val serviceInstanceRegion = NamingService.init(system)
+  private val namingManager = NamingManager.init(system)
 
   /**
    * #ListService
@@ -66,6 +71,20 @@ class NamingManagerServiceImpl(namespaceRef: ActorRef[ExistNamespace])(implicit 
    */
   override def removeService(in: RemoveService): Future[NamingResponse] =
     askManager(in.namespace, Cmd.RemoveService(in))
+
+  /**
+   * #ModifyInstance
+   * 修改实例
+   */
+  override def modifyInstance(in: InstanceModify): Future[NamingReply] =
+    askNaming(in.namespace, in.serviceName, NamingReplyCommand.Cmd.Modify(in))
+
+  /**
+   * #RemoveInstance
+   * 删除实例
+   */
+  override def removeInstance(in: InstanceRemove): Future[NamingReply] =
+    askNaming(in.namespace, in.serviceName, NamingReplyCommand.Cmd.Remove(in))
 
   @inline private def askManager(namespace: String, cmd: NamingManagerCommand.Cmd): Future[NamingResponse] =
     namespaceRef

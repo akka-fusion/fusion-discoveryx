@@ -55,12 +55,13 @@ import fusion.discoveryx.server.management.Management._
 class Management private (context: ActorContext[Command]) {
   private implicit val system = context.system
   private val settings = ManagementSettings(context.system)
-  private val configManager: ActorRef[ShardingEnvelope[ConfigManager.Command]] = ConfigManager.init(system)
+  private val configManagerRegion = ConfigManager.init(system)
+  private val namingManagerRegion = NamingManager.init(context.system)
   private val readJournal = DiscoveryPersistenceQuery(system).readJournal
 
   // 通过 DistributedData 向所有节点发送当前有校 namespace 集合
   private val distributedData = DistributedData(system)
-  implicit val node = distributedData.selfUniqueAddress
+  private implicit val node = distributedData.selfUniqueAddress
   private val messageAdapter: ActorRef[UpdateResponse[ORSet[String]]] =
     context.messageAdapter(resp => InternalUpdateResponse(resp))
 
@@ -78,7 +79,7 @@ class Management private (context: ActorContext[Command]) {
     .filter(_.nonEmpty)
     .runForeach { list =>
       for ((namespace, keys) <- list.groupBy(_.namespace)) {
-        configManager ! ShardingEnvelope(namespace, InternalConfigKeys(keys))
+        configManagerRegion ! ShardingEnvelope(namespace, InternalConfigKeys(keys))
       }
     }
 
@@ -100,7 +101,7 @@ class Management private (context: ActorContext[Command]) {
             val cmd =
               if (event.`type` == ChangeType.CHANGE_REMOVE) InternalRemoveKey(configKey)
               else InternalConfigKeys(configKey :: Nil)
-            configManager ! ShardingEnvelope(configKey.namespace, cmd)
+            configManagerRegion ! ShardingEnvelope(configKey.namespace, cmd)
           case _ => // do nothing
         }
     }
@@ -131,9 +132,17 @@ class Management private (context: ActorContext[Command]) {
       .receiveSignal {
         case (state, RecoveryCompleted) =>
           context.log.debug(s"RecoveryCompleted, state: $state")
+          initNamespaces(state)
           storeNamespaceDistributedData(set => state.namespaces.foldLeft(set)((data, ns) => data :+ ns.namespace))
       }
       .withRetention(settings.retentionCriteria)
+
+  private def initNamespaces(state: ManagementState): Unit = {
+    for (namespace <- state.namespaces) {
+      namingManagerRegion ! ShardingEnvelope(namespace.namespace, DummyNamingManager())
+      configManagerRegion ! ShardingEnvelope(namespace.namespace, DummyConfigManager())
+    }
+  }
 
   private def storeNamespaceDistributedData(func: ORSet[String] => ORSet[String]): Unit = {
     distributedData.replicator ! Replicator.Update(
@@ -161,8 +170,8 @@ class Management private (context: ActorContext[Command]) {
     if (oldState.namespaces.exists(_.namespace == in.namespace)) {
       Effect.persist(in).thenReply(replyTo) { _ =>
         storeNamespaceDistributedData(set => set.remove(in.namespace))
-        NamingManager.init(context.system) ! ShardingEnvelope(in.namespace, StopNamingManager())
-        configManager ! ShardingEnvelope(in.namespace, StopConfigManager())
+        namingManagerRegion ! ShardingEnvelope(in.namespace, RemoveNamingManager())
+        configManagerRegion ! ShardingEnvelope(in.namespace, RemoveConfigManager())
         ManagementResponse(IntStatus.OK)
       }
     } else {
