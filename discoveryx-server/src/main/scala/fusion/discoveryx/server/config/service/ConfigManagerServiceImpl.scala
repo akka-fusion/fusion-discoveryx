@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-package fusion.discoveryx.server.config
+package fusion.discoveryx.server.config.service
 
 import akka.actor.typed.scaladsl.AskPattern._
 import akka.actor.typed.{ ActorRef, ActorSystem }
 import akka.cluster.sharding.typed.ShardingEnvelope
 import akka.util.Timeout
 import com.typesafe.scalalogging.StrictLogging
+import fusion.discoveryx.server.config.ConfigManager
 import fusion.discoveryx.server.grpc.ConfigManagerService
 import fusion.discoveryx.server.management.NamespaceRef
 import fusion.discoveryx.server.management.NamespaceRef.{ ExistNamespace, NamespaceExists }

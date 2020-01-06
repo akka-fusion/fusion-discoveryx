@@ -23,12 +23,9 @@ import akka.cluster.ddata.typed.scaladsl.Replicator.UpdateResponse
 import akka.cluster.ddata.typed.scaladsl.{ DistributedData, Replicator }
 import akka.cluster.sharding.typed.ShardingEnvelope
 import akka.cluster.typed.{ ClusterSingleton, SingletonActor }
-import akka.persistence.query.Offset
 import akka.persistence.typed.scaladsl.{ Effect, EventSourcedBehavior }
 import akka.persistence.typed.{ PersistenceId, RecoveryCompleted }
-import fusion.discoveryx.model.ChangeType
-import fusion.discoveryx.server.DiscoveryPersistenceQuery
-import fusion.discoveryx.server.config.{ ConfigEntity, ConfigManager }
+import fusion.discoveryx.server.config.ConfigManager
 import fusion.discoveryx.server.naming.NamingManager
 import fusion.discoveryx.server.protocol.ManagementCommand.Cmd
 import fusion.discoveryx.server.protocol.ManagementResponse.Data
@@ -53,58 +50,15 @@ object Management {
 
 import fusion.discoveryx.server.management.Management._
 class Management private (context: ActorContext[Command]) {
-  private implicit val system = context.system
   private val settings = ManagementSettings(context.system)
-  private val configManagerRegion = ConfigManager.init(system)
-  private val namingManagerRegion = NamingManager.init(context.system)
-  private val readJournal = DiscoveryPersistenceQuery(system).readJournal
+  private val configManager = ConfigManager.init(context.system)
+  private val namingManager = NamingManager.init(context.system)
 
   // 通过 DistributedData 向所有节点发送当前有校 namespace 集合
-  private val distributedData = DistributedData(system)
+  private val distributedData = DistributedData(context.system)
   private implicit val node = distributedData.selfUniqueAddress
   private val messageAdapter: ActorRef[UpdateResponse[ORSet[String]]] =
     context.messageAdapter(resp => InternalUpdateResponse(resp))
-
-  // 初始化所有ConfigManager，并让ConfigManager拥有所有自己的dataId的记录
-  readJournal
-    .currentPersistenceIds()
-    .mapConcat { persistenceId =>
-      persistenceId.split("\\" + PersistenceId.DefaultSeparator) match {
-        case Array(typeName, ConfigEntity.ConfigKey(configKey)) if typeName == ConfigEntity.TypeKey.name =>
-          configKey :: Nil
-        case _ => Nil
-      }
-    }
-    .groupedWithin(2048, 1.seconds)
-    .filter(_.nonEmpty)
-    .runForeach { list =>
-      for ((namespace, keys) <- list.groupBy(_.namespace)) {
-        configManagerRegion ! ShardingEnvelope(namespace, InternalConfigKeys(keys))
-      }
-    }
-
-  // 监听 ConfigEntity Event 流
-  readJournal
-    .eventsByTag(ConfigEntity.TypeKey.name, Offset.noOffset)
-    .mapConcat { envelop =>
-      envelop.persistenceId.split("\\" + PersistenceId.DefaultSeparator) match {
-        case Array(typeName, ConfigEntity.ConfigKey(configKey)) if typeName == ConfigEntity.TypeKey.name =>
-          (configKey, envelop) :: Nil
-        case _ => Nil
-      }
-    }
-    .runForeach {
-      case (configKey, envelope) =>
-        envelope.event match {
-          case event: ChangedConfigEvent =>
-            // 向 ConfigManager 发送 ConfigKey 变化消息
-            val cmd =
-              if (event.`type` == ChangeType.CHANGE_REMOVE) InternalRemoveKey(configKey)
-              else InternalConfigKeys(configKey :: Nil)
-            configManagerRegion ! ShardingEnvelope(configKey.namespace, cmd)
-          case _ => // do nothing
-        }
-    }
 
   def eventSourcedBehavior(persistenceId: PersistenceId): EventSourcedBehavior[Command, Event, ManagementState] =
     EventSourcedBehavior[Command, Event, ManagementState](
@@ -121,8 +75,8 @@ class Management private (context: ActorContext[Command]) {
               case Cmd.Get(in)    => processGet(oldState, replyTo, in)
               case Cmd.Empty      => Effect.reply(replyTo)(ManagementResponse(IntStatus.BAD_REQUEST, "Invalid command."))
             }
-          case evt: ConfigSizeChangeEvent =>
-            if (oldState.namespaces.exists(_.namespace == evt.namespace)) Effect.persist(evt) else Effect.none
+          case evt: ConfigSizeChangedEvent  => Effect.persist(evt)
+          case evt: ServiceSizeChangedEvent => Effect.persist(evt)
           case InternalUpdateResponse(resp) =>
             context.log.debug(s"ORSet response: $resp.")
             Effect.none
@@ -139,8 +93,8 @@ class Management private (context: ActorContext[Command]) {
 
   private def initNamespaces(state: ManagementState): Unit = {
     for (namespace <- state.namespaces) {
-      namingManagerRegion ! ShardingEnvelope(namespace.namespace, DummyNamingManager())
-      configManagerRegion ! ShardingEnvelope(namespace.namespace, DummyConfigManager())
+      namingManager ! ShardingEnvelope(namespace.namespace, DummyNamingManager())
+      configManager ! ShardingEnvelope(namespace.namespace, DummyConfigManager())
     }
   }
 
@@ -170,8 +124,8 @@ class Management private (context: ActorContext[Command]) {
     if (oldState.namespaces.exists(_.namespace == in.namespace)) {
       Effect.persist(in).thenReply(replyTo) { _ =>
         storeNamespaceDistributedData(set => set.remove(in.namespace))
-        namingManagerRegion ! ShardingEnvelope(in.namespace, RemoveNamingManager())
-        configManagerRegion ! ShardingEnvelope(in.namespace, RemoveConfigManager())
+        namingManager ! ShardingEnvelope(in.namespace, RemoveNamingManager())
+        configManager ! ShardingEnvelope(in.namespace, RemoveConfigManager())
         ManagementResponse(IntStatus.OK)
       }
     } else {
@@ -223,17 +177,23 @@ class Management private (context: ActorContext[Command]) {
   }
 
   private def eventHandler(state: ManagementState, event: Event): ManagementState = event match {
-    case in: ModifyNamespace => eventHandleModify(in, state)
-    case in: Namespace       => eventHandleCreate(in, state)
-    case in: RemoveNamespace => eventHandleRemove(state, in)
-    case in: ConfigSizeChangeEvent =>
-      val idx = state.namespaces.indexWhere(_.namespace == in.namespace)
-      if (idx < 0) {
-        state
-      } else {
-        val namespaces = state.namespaces.updated(idx, state.namespaces(idx).copy(configCount = in.configCount))
+    case in: ModifyNamespace         => eventHandleModify(in, state)
+    case in: Namespace               => eventHandleCreate(in, state)
+    case in: RemoveNamespace         => eventHandleRemove(state, in)
+    case in: ConfigSizeChangedEvent  => eventHandleSize(state, in.namespace, _.copy(configCount = in.configCount))
+    case in: ServiceSizeChangedEvent => eventHandleSize(state, in.namespace, _.copy(serviceCount = in.serviceCount))
+  }
+
+  private def eventHandleSize(
+      state: ManagementState,
+      namespace: String,
+      update: Namespace => Namespace): ManagementState = {
+    state.namespaces.indexWhere(_.namespace == namespace) match {
+      case idx if idx < 0 => state
+      case idx =>
+        val namespaces = state.namespaces.updated(idx, update(state.namespaces(idx)))
         state.copy(namespaces = namespaces)
-      }
+    }
   }
 
   private def eventHandleRemove(state: ManagementState, in: RemoveNamespace): ManagementState = {

@@ -75,12 +75,20 @@ message GetNamespace {
     string namespace = 1;
 }
 
-message ConfigSizeChangeEvent {
+message ConfigSizeChangedEvent {
     option (scalapb.message).extends = "fusion.discoveryx.server.management.Management.Command";
     option (scalapb.message).extends = "fusion.discoveryx.server.management.Management.Event";
 
     string namespace = 1;
     int32 config_count = 2;
+}
+
+message ServiceSizeChangedEvent {
+    option (scalapb.message).extends = "fusion.discoveryx.server.management.Management.Command";
+    option (scalapb.message).extends = "fusion.discoveryx.server.management.Management.Event";
+
+    string namespace = 1;
+    int32 service_count = 2;
 }
 
 message ManagementCommand {

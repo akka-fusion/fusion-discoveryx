@@ -10,10 +10,14 @@ option (scalapb.options) = {
   collection_type: "scala.collection.immutable.Seq"
 };
 
-message ConfigKey {
-    option (scalapb.message).extends = "fusion.discoveryx.server.config.ConfigEntity.Command";
-    string namespace = 1;
-    string data_id = 2;
+//message ConfigKey {
+//    option (scalapb.message).extends = "fusion.discoveryx.server.config.ConfigEntity.Command";
+//    string namespace = 1;
+//    string data_id = 2;
+//}
+
+message ConfigManagerState {
+    repeated string data_ids = 1;
 }
 
 message ConfigPassiveStop {
@@ -39,28 +43,6 @@ message ConfigEntityCommand {
         fusion.discoveryx.model.ConfigRemove remove = 4;
         fusion.discoveryx.model.ConfigQuery query = 5;
     }
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// ConfigEntity Events
-////////////////////////////////////////////////////////////////////////////////
-
-message ChangedConfigEvent {
-    option (scalapb.message).extends = "fusion.discoveryx.server.config.ConfigEntity.Event";
-    fusion.discoveryx.model.ConfigItem config = 1;
-    fusion.discoveryx.model.ChangeType type = 2;
-}
-
-message RemovedConfigEvent {
-    option (scalapb.message).extends = "fusion.discoveryx.server.config.ConfigEntity.Event";
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// ConfigState
-////////////////////////////////////////////////////////////////////////////////
-
-message ConfigState {
-    fusion.discoveryx.model.ConfigItem configItem = 1;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -105,14 +87,16 @@ message ConfigResponse {
 }
 // #ConfigResponse
 
-message InternalConfigKeys {
+message ConfigManagerDataIdAddEvent {
     option (scalapb.message).extends = "fusion.discoveryx.server.config.ConfigManager.Command";
-    repeated ConfigKey configKeys = 1;
+    option (scalapb.message).extends = "fusion.discoveryx.server.config.ConfigManager.Event";
+    string data_id = 1;
 }
 
-message InternalRemoveKey {
+message ConfigManagerDataIdRemoveEvent {
     option (scalapb.message).extends = "fusion.discoveryx.server.config.ConfigManager.Command";
-    ConfigKey configKey = 1 [(scalapb.field).no_box = true];
+    option (scalapb.message).extends = "fusion.discoveryx.server.config.ConfigManager.Event";
+    string data_id = 1;
 }
 
 message DummyConfigManager {
@@ -123,8 +107,39 @@ message StopConfigManager {
 }
 message RemoveConfigManager {
     option (scalapb.message).extends = "fusion.discoveryx.server.config.ConfigManager.Command";
+    option (scalapb.message).extends = "fusion.discoveryx.server.config.ConfigManager.Event";
+}
+
+message InternalConfigManagerResponse {
+    option (scalapb.message).extends = "fusion.discoveryx.server.config.ConfigManager.Command";
+    option (scalapb.message).companion_extends = "fusion.protobuf.ActorRefCompanion";
+
+    string reply_to = 1 [(scalapb.field).type = "akka.actor.typed.ActorRef[ConfigResponse]"];
+    ConfigResponse repsonse = 2 [(scalapb.field).no_box = true];
 }
 
 message RemoveAndStopConfigEntity {
     option (scalapb.message).extends = "fusion.discoveryx.server.config.ConfigEntity.Command";
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// ConfigEntity Events
+////////////////////////////////////////////////////////////////////////////////
+
+message ChangedConfigEvent {
+    option (scalapb.message).extends = "fusion.discoveryx.server.config.ConfigEntity.Event";
+    fusion.discoveryx.model.ConfigItem config = 1;
+    fusion.discoveryx.model.ChangeType type = 2;
+}
+
+message ListenerCompletedEvent {
+    option (scalapb.message).extends = "fusion.discoveryx.server.config.ConfigEntity.Event";
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// ConfigState
+////////////////////////////////////////////////////////////////////////////////
+
+message ConfigState {
+    fusion.discoveryx.model.ConfigItem configItem = 1;
 }

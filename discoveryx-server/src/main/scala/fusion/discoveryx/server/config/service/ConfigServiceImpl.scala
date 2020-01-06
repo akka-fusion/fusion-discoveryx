@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package fusion.discoveryx.server.config
+package fusion.discoveryx.server.config.service
 
 import akka.NotUsed
 import akka.actor.typed.scaladsl.AskPattern._
@@ -26,6 +26,7 @@ import akka.stream.typed.scaladsl.ActorSource
 import akka.util.Timeout
 import fusion.discoveryx.grpc.ConfigService
 import fusion.discoveryx.model._
+import fusion.discoveryx.server.config.ConfigEntity
 import fusion.discoveryx.server.management.NamespaceRef
 import fusion.discoveryx.server.management.NamespaceRef.{ ExistNamespace, NamespaceExists }
 import fusion.discoveryx.server.protocol._
@@ -57,7 +58,7 @@ class ConfigServiceImpl(namespaceRef: ActorRef[NamespaceRef.ExistNamespace])(imp
     val entityId = ConfigEntity.makeEntityId(in.namespace, in.dataId)
     val (ref, source) = ActorSource
       .actorRef[ConfigEntity.Event](
-        { case _: RemovedConfigEvent => },
+        { case _: ListenerCompletedEvent => },
         changed => throw HSInternalErrorException(s"Throw error: $changed."),
         2,
         OverflowStrategy.dropHead)

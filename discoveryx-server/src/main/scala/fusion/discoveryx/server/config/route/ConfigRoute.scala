@@ -26,7 +26,7 @@ import akka.util.Timeout
 import fusion.core.extension.FusionCore
 import fusion.discoveryx.grpc.ConfigServiceHandler
 import fusion.discoveryx.model.{ ConfigGet, ConfigItem, ConfigRemove }
-import fusion.discoveryx.server.config.{ ConfigManagerServiceImpl, ConfigServiceImpl }
+import fusion.discoveryx.server.config.service.{ ConfigManagerServiceImpl, ConfigServiceImpl }
 import fusion.discoveryx.server.grpc.ConfigManagerServiceHandler
 import fusion.discoveryx.server.management.{ NamespaceRef, UserEntity }
 import fusion.discoveryx.server.protocol.ListConfig
