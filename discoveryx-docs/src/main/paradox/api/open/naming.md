@@ -1,4 +1,4 @@
-# Naming（服务发现）
+# NamingService
 
 - gRPC服务地址：`/fusion.discoveryx.grpc.NamingService`
 - REST URL前缀：`/fusion/discoveryx/v1/naming`

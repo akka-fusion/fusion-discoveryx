@@ -21,8 +21,9 @@ import akka.http.scaladsl.model.headers.RawHeader
 import com.typesafe.scalalogging.StrictLogging
 import fusion.discoveryx.common.Constants
 import fusion.discoveryx.model.{ Instance, InstanceModify, InstanceRegister, InstanceRemove }
-import fusion.discoveryx.server.management.{ Management, UserEntity, UserManager }
-import fusion.discoveryx.server.management.service.UserServiceImpl
+import fusion.discoveryx.server.user.{ UserEntity, UserManager }
+import fusion.discoveryx.server.user.service.UserServiceImpl
+import fusion.discoveryx.server.namespace.NamespaceManager
 import fusion.discoveryx.server.protocol.{ GetService, ListService, Login, NamingResponse }
 import fusion.discoveryx.server.route.FusionRouteTest
 import fusion.discoveryx.server.util.ProtobufJson4s
@@ -107,7 +108,7 @@ class NamingManagementRouteTest extends WordSpec with FusionRouteTest with Stric
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
-    Management.init(discoveryX.system)
+    NamespaceManager.init(discoveryX.system)
     initSessionToken()
   }
 

@@ -42,7 +42,7 @@
 Version 0.1.0
 </div>
 <div class="nav-header-groups">
-<select class="supergroup" name="Language"><option class="group" value="group-scala">Scala</option></select>
+<select class="supergroup" name="Language"><option class="group" value="group-scala">Scala</option><option class="group" value="group-java">Java</option></select>
 </div>
 </header>
 <nav class="nav-toc">
@@ -67,7 +67,7 @@ Version 0.1.0
 Version 0.1.0
 </div>
 <div class="nav-header-groups">
-<select class="supergroup" name="Language"><option class="group" value="group-scala">Scala</option></select>
+<select class="supergroup" name="Language"><option class="group" value="group-scala">Scala</option><option class="group" value="group-java">Java</option></select>
 </div>
 </header>
 <nav class="site-nav sticky-sidebar-contents">
@@ -95,7 +95,13 @@ Version 0.1.0
 <p>Fusion DiscoveryX（之后简称 DiscoveryX）是一款服务注册与发现管理系统，致力于帮助您发现、配置及管理微服务。基于Akka生态开发。</p>
 <p>产品文档：<a href="https://akka-fusion.github.io/fusion-discoveryx/">https://akka-fusion.github.io/fusion-discoveryx/</a></p>
 <p><em>码云镜像：<a href="https://akka-fusion.gitee.io/fusion-discoveryx/">https://akka-fusion.gitee.io/fusion-discoveryx/</a></em></p>
-<p>在线演示Demo：<a href="http://discoveryx.helloscala.com/"><a href="http://discoveryx.helloscala.com/">http://discoveryx.helloscala.com/</a></a> 。</p>
+<p>在线演示Demo：<a href="http://helloscala.com:48000/"><a href="http://helloscala.com:48000/">http://helloscala.com:48000/</a></a> 。</p><div class="callout note "><div class="callout-title">Note</div>
+<p><em>gRPC需要HTTP 2，akka-http支持不使用tls访问HTTP 2。这里直接使用端口访问。</em></p>
+<p>在线演示Demo账号：</p>
+<ul>
+  <li>SN: discoveryx</li>
+  <li>PW: discoveryx</li>
+</ul></div>
 <div class="toc ">
 <ul>
   <li><a href="intro.html" class="page">介绍</a>
@@ -114,7 +120,7 @@ Version 0.1.0
   </ul></li>
   <li><a href="design/index.html" class="page">设计</a>
   <ul>
-    <li><a href="design/concept.html" class="page">DiscoveryX 概念</a></li>
+    <li><a href="design/concept.html" class="page">Fusion DiscoveryX 概念</a></li>
     <li><a href="design/architecture.html" class="page">架构</a></li>
     <li><a href="design/config.html" class="page">配置管理设计</a></li>
     <li><a href="design/naming.html" class="page">服务注册、发现设计</a></li>
@@ -160,10 +166,12 @@ Version 0.1.0
 <div>discoveryx-docs is Open Source and available under the Apache 2 License.</div>
 <p class="legal">
 &copy; 2019-2020 <a href="https://akka-fusion.github.com/" target="_blank">Akka Fusion</a> |
-<a href="https://akka-fusion.github.com/fusion-discoveryx/" target="_blank">Fusion DiscoveryX</a> |
-<a href="https://akka-fusion.github.com/fusion-schedulerx/" target="_blank">Fusion SchedulerX</a>
+<a href="https://akka-fusion.github.io/fusion-discoveryx/" target="_blank">Fusion DiscoveryX</a> |
+<a href="https://akka-fusion.github.io/fusion-schedulerx/" target="_blank">Fusion SchedulerX</a>
 </p>
 </section>
+
+
 </footer>
 </section>
 </main>

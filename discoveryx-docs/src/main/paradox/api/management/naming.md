@@ -1,4 +1,4 @@
-# Naming服务管理
+# NamingManagerService
 
 - gRPC服务地址：`/fusion.discoveryx.server.grpc.NamingManagerService`
 - REST URL前缀：`/fusion/discoveryx/console/naming`
@@ -96,8 +96,32 @@ REST URL路径由 **REST URL前缀** + 服务名组织，均使用 **POST** 方�
 
 ## RemoveInstance
 
-见 @ref[RemoveInstance 删除实例](../open/naming.md#removeinstance) 。
+**gRPC**
+
+@@snip [gRPC](../../../../../../discoveryx-server/src/main/protobuf/fusion/discoveryx/server/grpc/server.proto) { #RemoveInstance }
+
+**请求**
+
+@@snip [model](../../../../../../discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto) { #InstanceRemove }
+
+**响应**
+
+删除实例没有`oneof`字段返回。
+
+@@snip [model](../../../../../../discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto) { #NamingReply }
 
 ## ModifyInstance
 
-见 @ref[ModifyInstance 编辑实例](../open/naming.md#modifyinstance) 。
+**gRPC**
+
+@@snip [gRPC](../../../../../../discoveryx-server/src/main/protobuf/fusion/discoveryx/server/grpc/server.proto) { #ModifyInstance }
+
+**请求**
+
+@@snip [model](../../../../../../discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto) { #InstanceModify }
+
+**响应**
+
+@@snip [model](../../../../../../discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto) { #NamingReply }
+
+`oneof`的`instance`字段将返回修改后的实例信息。

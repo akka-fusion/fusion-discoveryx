@@ -22,7 +22,7 @@ import fusion.discoveryx.common.Constants
 import fusion.discoveryx.model.{ HealthyCheckMethod, HealthyCheckProtocol }
 import helloscala.common.Configuration
 
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration._
 import scala.jdk.DurationConverters._
 
 object NamingClientSettings {
@@ -72,5 +72,6 @@ final class NamingClientSettings private (val c: Configuration) {
     .getOrElse(HealthyCheckProtocol.HTTP)
   val useTls: Boolean = c.getOrElse("use-tls", false)
   val httpPath: String = c.getOrElse("http-path", "")
-  override def toString: String = c.underlying.root().render()
+  val queryTimeout: FiniteDuration = c.getOrElse("query-timeout", 5.seconds)
+  override def toString: String = c.underlying.root().toString()
 }

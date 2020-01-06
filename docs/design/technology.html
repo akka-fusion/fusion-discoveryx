@@ -42,7 +42,7 @@
 Version 0.1.0
 </div>
 <div class="nav-header-groups">
-<select class="supergroup" name="Language"><option class="group" value="group-scala">Scala</option></select>
+<select class="supergroup" name="Language"><option class="group" value="group-scala">Scala</option><option class="group" value="group-java">Java</option></select>
 </div>
 </header>
 <nav class="nav-toc">
@@ -51,7 +51,7 @@ Version 0.1.0
   <li><a href="../use/index.html" class="page">使用</a></li>
   <li><a href="../design/index.html" class="page">设计</a>
   <ul>
-    <li><a href="../design/concept.html" class="page">DiscoveryX 概念</a></li>
+    <li><a href="../design/concept.html" class="page">Fusion DiscoveryX 概念</a></li>
     <li><a href="../design/architecture.html" class="page">架构</a></li>
     <li><a href="../design/config.html" class="page">配置管理设计</a></li>
     <li><a href="../design/naming.html" class="page">服务注册、发现设计</a></li>
@@ -81,7 +81,7 @@ Version 0.1.0
 Version 0.1.0
 </div>
 <div class="nav-header-groups">
-<select class="supergroup" name="Language"><option class="group" value="group-scala">Scala</option></select>
+<select class="supergroup" name="Language"><option class="group" value="group-scala">Scala</option><option class="group" value="group-java">Java</option></select>
 </div>
 </header>
 <nav class="site-nav sticky-sidebar-contents">
@@ -91,7 +91,7 @@ Version 0.1.0
   <li><a href="../use/index.html" class="page">使用</a></li>
   <li><a href="../design/index.html" class="page">设计</a>
   <ul>
-    <li><a href="../design/concept.html" class="page">DiscoveryX 概念</a></li>
+    <li><a href="../design/concept.html" class="page">Fusion DiscoveryX 概念</a></li>
     <li><a href="../design/architecture.html" class="page">架构</a></li>
     <li><a href="../design/config.html" class="page">配置管理设计</a></li>
     <li><a href="../design/naming.html" class="page">服务注册、发现设计</a></li>
@@ -159,7 +159,7 @@ Version 0.1.0
 }</code></pre>
 <h3><a href="#protobuf" name="protobuf" class="anchor"><span class="anchor-link"></span></a>Protobuf</h3>
 <p>DiscoveryX 使用 Protobuf 来定义和序列化数据消息，服务需要的请求参数、响应结果通过Protobuf定义，它将被自动编译并生成相应的case class。</p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L144-L186" target="_blank" title="Go to snippet source"></a><code class="language-proto"><br/>// 健康检查方式
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L144-L188" target="_blank" title="Go to snippet source"></a><code class="language-proto"><br/>// 健康检查方式
 enum HealthyCheckMethod {
     NOT_SET = 0;
     CLIENT_REPORT = 1;
@@ -190,13 +190,15 @@ message Instance {
     bool ephemeral = 7;
     // user extended attributes
     map&lt;string, string&gt; metadata = 8;
+    // Healthy check method, the default value is HealthyCheckMethod.CLIENT_REPORT
     HealthyCheckMethod healthy_check_method = 9;
     // Healthy check per N seconds
     int32 healthy_check_interval = 10;
     // Unhealthy check count
     int32 unhealthy_check_count = 11;
-    // Healthy check protocl
+    // Healthy check protocol
     HealthyCheckProtocol protocol = 12;
+    // Whether TLS(HTTPS) is used for gRPC connection, the default value is false.
     bool use_tls = 13;
     // HTTP healthy check uri path.
     string http_path = 14;
@@ -461,10 +463,12 @@ processCreate(in).recover {
 <div>discoveryx-docs is Open Source and available under the Apache 2 License.</div>
 <p class="legal">
 &copy; 2019-2020 <a href="https://akka-fusion.github.com/" target="_blank">Akka Fusion</a> |
-<a href="https://akka-fusion.github.com/fusion-discoveryx/" target="_blank">Fusion DiscoveryX</a> |
-<a href="https://akka-fusion.github.com/fusion-schedulerx/" target="_blank">Fusion SchedulerX</a>
+<a href="https://akka-fusion.github.io/fusion-discoveryx/" target="_blank">Fusion DiscoveryX</a> |
+<a href="https://akka-fusion.github.io/fusion-schedulerx/" target="_blank">Fusion SchedulerX</a>
 </p>
 </section>
+
+
 </footer>
 </section>
 </main>

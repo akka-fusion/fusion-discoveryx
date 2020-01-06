@@ -21,8 +21,6 @@ import com.typesafe.config.ConfigFactory
 import fusion.discoveryx.model.InstanceQuery
 import org.scalatest.WordSpecLike
 
-import scala.concurrent.Future
-
 class DefaultNamingClientTest
     extends ScalaTestWithActorTestKit(ConfigFactory.load("application-local.conf"))
     with WordSpecLike {

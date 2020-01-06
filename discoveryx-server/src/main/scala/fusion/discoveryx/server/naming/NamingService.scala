@@ -58,16 +58,14 @@ object NamingService {
   def init(system: ActorSystem[_]): ActorRef[ShardingEnvelope[Command]] =
     ClusterSharding(system).init(
       Entity(NamingService.TypeKey)(entityContext => apply(entityContext))
-        .withSettings(ClusterShardingSettings(system).withPassivateIdleEntityAfter(2.hours)))
+        .withSettings(ClusterShardingSettings(system).withPassivateIdleEntityAfter(Duration.Zero)))
 
   private def apply(entityContext: EntityContext[Command]): Behavior[Command] = Behaviors.setup[Command] { context =>
-    val ServiceItem = ServiceKey
+    val serviceItem = ServiceKey
       .unapply(entityContext.entityId)
       .getOrElse(throw HSBadRequestException(
         s"${context.self} create child error. entityId invalid, need '[namespace] [serviceName]' format."))
-    Behaviors.withTimers(
-      timers =>
-        new NamingServiceBehavior(ServiceItem, timers, context)
-          .eventSourcedBehavior(PersistenceId.of(entityContext.entityTypeKey.name, entityContext.entityId)))
+    new NamingServiceBehavior(serviceItem.namespace, serviceItem.serviceName, context)
+      .eventSourcedBehavior(PersistenceId.of(entityContext.entityTypeKey.name, entityContext.entityId))
   }
 }

@@ -23,7 +23,7 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.{ Directive0, Directive1 }
 import akka.util.Timeout
-import fusion.discoveryx.server.management.UserEntity
+import fusion.discoveryx.server.user.UserEntity
 import fusion.discoveryx.server.protocol.{ TokenAccount, UserResponse }
 import fusion.discoveryx.server.util.{ CheckUserSessionHelper, SessionUtils }
 import helloscala.common.IntStatus

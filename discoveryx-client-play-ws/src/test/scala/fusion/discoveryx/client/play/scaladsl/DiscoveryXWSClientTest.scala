@@ -16,25 +16,38 @@
 
 package fusion.discoveryx.client.play.scaladsl
 
-import java.util.concurrent.TimeUnit
-
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import org.scalatest.WordSpecLike
-import play.api.libs.ws.ahc.StandaloneAhcWSClient
+import play.api.libs.ws.ahc.AhcWSClient
 
 class DiscoveryXWSClientTest extends ScalaTestWithActorTestKit with WordSpecLike {
-  private val client = DiscoveryXWSClient(StandaloneAhcWSClient())
   "StandaloneWSClient" must {
-    "timeout" in {
-      TimeUnit.SECONDS.sleep(2)
-    }
-    "url" in {
+    "create" in {
+      // #standaloneWSClient-create
+      val client = DiscoveryXWSClient.standaloneWSClient()
       val url = "http://fusion-schedulerx/cluster/health"
-      val req1 = client.url(url)
-      println(s"req1 url: ${req1.url}")
-      val req2 = client.url(url)
-      println(s"req2 url: ${req2.url}")
-      req1.url should not be req2.url
+      val req = client.url(url)
+      req.url should not be url
+      req.url should not contain "fusion-schedulerx"
+      // #standaloneWSClient-create
+    }
+  }
+
+  "WSClient" must {
+    "create" in {
+      val client = DiscoveryXWSClient.wsClient()
+      val url = "http://fusion-schedulerx/cluster/health"
+      val req = client.url(url)
+      req.url should not be url
+      req.url should not contain "fusion-schedulerx"
+    }
+
+    "wrapper" in {
+      val client = DiscoveryXWSClient.wsClient(AhcWSClient())
+      val url = "http://fusion-schedulerx/cluster/health"
+      val req = client.url(url)
+      req.url should not be url
+      req.url should not contain "fusion-schedulerx"
     }
   }
 }

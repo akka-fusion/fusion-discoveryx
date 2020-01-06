@@ -24,7 +24,7 @@ import fusion.common.config.FusionConfigFactory
 import fusion.common.{ FusionActorRefFactory, FusionProtocol }
 import fusion.discoveryx.DiscoveryXSettings
 import fusion.discoveryx.common.Constants
-import fusion.discoveryx.server.management.NamespaceRef
+import fusion.discoveryx.server.namespace.NamespaceRef
 
 class DiscoveryX(val settings: DiscoveryXSettings, val config: Config, val system: ActorSystem[FusionProtocol.Command])
     extends FusionActorRefFactory {

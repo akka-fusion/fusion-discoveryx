@@ -4,6 +4,8 @@
 
 Fusion DiscoveryX（之后简称 DiscoveryX）是一款服务注册与发现管理系统，致力于帮助您发现、配置及管理微服务。基于Akka生态开发。
 
+@@project-info{ projectId="fusion-discoveryx" }
+
 ## 特性
 
 - 配置管理
