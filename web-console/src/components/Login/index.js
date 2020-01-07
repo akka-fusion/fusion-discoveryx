@@ -8,11 +8,11 @@ import React, { Component } from 'react';
 import { inject, observer } from 'mobx-react';
 import { Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
-import { Form, Icon, Input, Button, Checkbox } from 'antd';
+import { Button, Checkbox, Form, Icon, Input } from 'antd';
 import Particles from 'particlesjs';
 import './index.less';
 import { browserRedirect } from '../../utils/constants';
-import { CONFIG_MANAGEMENT_LIST } from '../../router/constants';
+import { NAMESPACE_MANAGEMENT_LIST } from '../../router/constants';
 
 const { Item: FormItem, create } = Form;
 
@@ -59,7 +59,7 @@ export default class Login extends Component {
         this.setState({ loading: true });
         this.props.userStore
           .login(values)
-          .then(() => this.props.history.push(CONFIG_MANAGEMENT_LIST))
+          .then(() => this.props.history.push(NAMESPACE_MANAGEMENT_LIST))
           .finally(() => this.setState({ loading: false }));
       }
     });

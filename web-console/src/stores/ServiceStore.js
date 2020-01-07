@@ -89,6 +89,28 @@ export default class ServiceStore {
       error: { message: '编辑失败' },
     });
 
+  deleteInstance = data =>
+    request({
+      config: {
+        method: 'POST',
+        url: '/fusion/discoveryx/console/naming/RemoveInstance',
+        data,
+      },
+      success: { message: '删除成功' },
+      error: { message: '删除失败' },
+    });
+
+  updateInstance = data =>
+    request({
+      config: {
+        method: 'POST',
+        url: '/fusion/discoveryx/console/naming/ModifyInstance',
+        data,
+      },
+      success: { message: '编辑成功' },
+      error: { message: '编辑失败' },
+    });
+
   /**
    * ***************************** action *****************************
    * */
