@@ -1,5 +1,7 @@
 # Fusion DiscoveryX
 
+[![Build Status](https://travis-ci.org/akka-fusion/fusion-discoveryx.svg?branch=master)](https://travis-ci.org/akka-fusion/fusion-discoveryx)
+
 Fusion DiscoveryX（之后简称 DiscoveryX）是一款服务注册与发现管理系统，致力于帮助您发现、配置及管理微服务。基于Akka生态开发。
 
 产品文档：[https://akka-fusion.github.io/fusion-discoveryx/](https://akka-fusion.github.io/fusion-discoveryx/)
