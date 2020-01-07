@@ -30,12 +30,27 @@ git:
 
 branches:
   only:
+    - master
     - develop
 
 env:
   global:
-    - TRAVIS_JDK=8
+    - TRAVIS_JDK=11
 
-script:
-  - sbt -jvm-opts .travis-jvmopts ";discoveryx-docs/paradox ;test:compile ;test"
-#  - sbt -jvm-opts .travis-jvmopts ";++2.12.10 ;test:compile ;test"
+stages:
+  - test
+  - paradox
+  - test-java8
+
+jobs:
+  include:
+    - stage: test
+      script: scripts/travis-test-scala13.sh
+      name: "Test for Java 11"
+    - stage: paradox
+      script: scripts/travis-paradox.sh
+      name: "Generate paradox"
+    - stage: test-java8
+      script: scripts/travis-test-scala12.sh
+      env: TRAVIS_JDK=8
+      name: "Test for Java 8"
