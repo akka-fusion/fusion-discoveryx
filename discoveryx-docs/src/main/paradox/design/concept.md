@@ -1,4 +1,4 @@
-# DiscoveryX 概念
+# Fusion DiscoveryX 概念
 
 ## 命名空间（namespace）
 

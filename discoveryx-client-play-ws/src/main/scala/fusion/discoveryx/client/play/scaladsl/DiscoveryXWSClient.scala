@@ -18,25 +18,40 @@ package fusion.discoveryx.client.play.scaladsl
 
 import akka.actor.typed.ActorSystem
 import fusion.discoveryx.client.{ DefaultNamingClient, NamingClient }
+import play.api.libs.ws.ahc.{ AhcWSClient, StandaloneAhcWSClient }
 import play.api.libs.ws.{ StandaloneWSClient, StandaloneWSRequest, WSClient, WSRequest }
+import play.shaded.ahc.org.asynchttpclient.AsyncHttpClient
 
 import scala.concurrent.duration._
 import scala.concurrent.{ Await, Future }
 
 object DiscoveryXWSClient {
-  def apply(client: StandaloneWSClient)(implicit system: ActorSystem[_]): DiscoveryXStandaloneWSClient =
-    new DiscoveryXStandaloneWSClient(client)
+  // #standaloneWSClient
+  def standaloneWSClient()(implicit system: ActorSystem[_]): DiscoveryXStandaloneWSClient =
+    standaloneWSClient(StandaloneAhcWSClient())
 
-  def apply(client: WSClient)(system: ActorSystem[_]): DiscoveryXWSClient = new DiscoveryXWSClient(client)(system)
+  def standaloneWSClient(client: StandaloneWSClient)(implicit system: ActorSystem[_]): DiscoveryXStandaloneWSClient =
+    new DiscoveryXStandaloneWSClient(client)
+  // #standaloneWSClient
+
+  // #wsClient
+  def wsClient()(implicit system: ActorSystem[_]): DiscoveryXPlayWSClient = wsClient(AhcWSClient())
+
+  def wsClient(client: WSClient)(implicit system: ActorSystem[_]): DiscoveryXPlayWSClient =
+    new DiscoveryXPlayWSClient(client)(system)
+
+  def wsClient(asyncHttpClient: AsyncHttpClient)(implicit system: ActorSystem[_]): DiscoveryXPlayWSClient =
+    wsClient(new AhcWSClient(new StandaloneAhcWSClient(asyncHttpClient)))
+  // #wsClient
 }
 
-final class DiscoveryXWSClient(client: WSClient)(implicit system: ActorSystem[_]) extends WSClient {
+final class DiscoveryXPlayWSClient(client: WSClient)(implicit system: ActorSystem[_]) extends WSClient {
   import system.executionContext
   val namingClient: NamingClient = DefaultNamingClient(system)
 
   override def underlying[T]: T = client.underlying
 
-  override def url(uri: String): WSRequest = url(uri, 5.seconds)
+  override def url(uri: String): WSRequest = url(uri, namingClient.settings.queryTimeout)
 
   def url(uri: String, timeout: FiniteDuration): WSRequest = Await.result(asyncUrl(uri), timeout)
 
@@ -53,7 +68,7 @@ final class DiscoveryXStandaloneWSClient(client: StandaloneWSClient)(implicit sy
 
   override def underlying[T]: T = client.underlying
 
-  override def url(uri: String): StandaloneWSRequest = url(uri, 5.seconds)
+  override def url(uri: String): StandaloneWSRequest = url(uri, namingClient.settings.queryTimeout)
 
   def url(uri: String, timeout: FiniteDuration): StandaloneWSRequest = Await.result(asyncUrl(uri), timeout)
 

@@ -42,7 +42,7 @@
 Version 0.1.0
 </div>
 <div class="nav-header-groups">
-<select class="supergroup" name="Language"><option class="group" value="group-scala">Scala</option></select>
+<select class="supergroup" name="Language"><option class="group" value="group-scala">Scala</option><option class="group" value="group-java">Java</option></select>
 </div>
 </header>
 <nav class="nav-toc">
@@ -56,8 +56,7 @@ Version 0.1.0
     <li><a href="../use/play.html#在-play-中使用" class="active page">在 Play 中使用</a>
     <ul>
       <li><a href="../use/play.html#module-info" class="header">Module Info</a></li>
-      <li><a href="../use/play.html#scala-sdk与服务发现配置" class="header">Scala SDK与服务发现配置</a></li>
-      <li><a href="../use/play.html#play-ws" class="header">play-ws</a></li>
+      <li><a href="../use/play.html#sdk" class="header">SDK</a></li>
     </ul></li>
     <li><a href="../use/spring.html" class="page">在 Spring 中使用</a></li>
   </ul></li>
@@ -79,7 +78,7 @@ Version 0.1.0
 Version 0.1.0
 </div>
 <div class="nav-header-groups">
-<select class="supergroup" name="Language"><option class="group" value="group-scala">Scala</option></select>
+<select class="supergroup" name="Language"><option class="group" value="group-scala">Scala</option><option class="group" value="group-java">Java</option></select>
 </div>
 </header>
 <nav class="site-nav sticky-sidebar-contents">
@@ -94,8 +93,7 @@ Version 0.1.0
     <li><a href="../use/play.html#在-play-中使用" class="active page">在 Play 中使用</a>
     <ul>
       <li><a href="../use/play.html#module-info" class="header">Module Info</a></li>
-      <li><a href="../use/play.html#scala-sdk与服务发现配置" class="header">Scala SDK与服务发现配置</a></li>
-      <li><a href="../use/play.html#play-ws" class="header">play-ws</a></li>
+      <li><a href="../use/play.html#sdk" class="header">SDK</a></li>
     </ul></li>
     <li><a href="../use/spring.html" class="page">在 Spring 中使用</a></li>
   </ul></li>
@@ -123,10 +121,103 @@ Version 0.1.0
   &lt;groupId&gt;com.akka-fusion.fusion&lt;/groupId&gt;
   &lt;artifactId&gt;discoveryx-client-play-ws_2.13&lt;/artifactId&gt;
   &lt;version&gt;0.1.0&lt;/version&gt;
-&lt;/dependency&gt;</code></pre></dd></dl>
-<h2><a href="#scala-sdk与服务发现配置" name="scala-sdk与服务发现配置" class="anchor"><span class="anchor-link"></span></a>Scala SDK与服务发现配置</h2>
-<p><code>discoveryx-client-play-ws</code>基于<code>discoveryx-client</code>开发，有关Scala SDK与服务发现配置内容请参阅 <a href="sdk-scala.html">Scala SDK</a> 和 <a href="akka.html">在 Akka 中使用</a> 。 </p>
-<h2><a href="#play-ws" name="play-ws" class="anchor"><span class="anchor-link"></span></a>play-ws</h2>
+&lt;/dependency&gt;</code></pre></dd></dl><div class="callout note "><div class="callout-title">服务发现</div>
+<p><code>discoveryx-client-play-ws</code>基于<code>discoveryx-client</code>开发，有关Scala SDK与服务发现配置内容请参阅 <a href="sdk-scala.html">Scala SDK</a> 和 <a href="akka.html">在 Akka 中使用</a> 。 </p></div>
+<h2><a href="#sdk" name="sdk" class="anchor"><span class="anchor-link"></span></a>SDK</h2>
+<p>Fusion DiscoveryX 提供了 <code>DiscoveryXWSClient</code> 工具类来创建或包装一个<code>StandaloneWSClient</code>或<code>WSClient</code>。<code>DiscoveryXStandaloneWSClient</code>实现了<code>StandaloneWSClient</code>接口并重写了<code>url</code>函数，使其可以解析请求URL里面的<code>hostname</code>部分并将其转换成实际访问的<code>ip:port</code>地址。</p>
+<h3><a href="#standalonewsclient" name="standalonewsclient" class="anchor"><span class="anchor-link"></span></a>StandaloneWSClient</h3>
+<p>Play已将<code>WSClient</code>拆分独立出来，我们可以单独使用它。</p>
+<dl>
+  <dt>Scala</dt>
+  <dd>
+  <pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-client-play-ws/src/main/scala/fusion/discoveryx/client/play/scaladsl/DiscoveryXWSClient.scala#L30-L34" target="_blank" title="Go to snippet source"></a><code class="language-scala">def standaloneWSClient()(implicit system: ActorSystem[_]): DiscoveryXStandaloneWSClient =
+  standaloneWSClient(StandaloneAhcWSClient())
+
+def standaloneWSClient(client: StandaloneWSClient)(implicit system: ActorSystem[_]): DiscoveryXStandaloneWSClient =
+  new DiscoveryXStandaloneWSClient(client)</code></pre></dd>
+  <dt>Java</dt>
+  <dd>
+  <pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-client-play-ws/src/main/scala/fusion/discoveryx/client/play/javadsl/DiscoveryXWSClient.java#L30-L38" target="_blank" title="Go to snippet source"></a><code class="language-java">public static DiscoveryXStandaloneWSClient standaloneWSClient(StandaloneWSClient client, ActorSystem&lt;?&gt; system) {
+    return new DiscoveryXStandaloneWSClient(client, system);
+}
+
+public static DiscoveryXStandaloneWSClient standaloneWSClient(ActorSystem&lt;?&gt; system) {
+    return standaloneWSClient(StandaloneAhcWSClient.create(
+            AhcWSClientConfigFactory.forConfig(system.settings().config(), system.dynamicAccess().classLoader()),
+            SystemMaterializer.get(system).materializer()), system);
+}</code></pre></dd>
+</dl>
+<p>使用</p>
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-client-play-ws/src/test/scala/fusion/discoveryx/client/play/scaladsl/DiscoveryXWSClientTest.scala#L27-L31" target="_blank" title="Go to snippet source"></a><code class="language-scala">val client = DiscoveryXWSClient.standaloneWSClient()
+val url = &quot;http://fusion-schedulerx/cluster/health&quot;
+val req = client.url(url)
+req.url should not be url
+req.url should not contain &quot;fusion-schedulerx&quot;</code></pre>
+<h3><a href="#wsclient" name="wsclient" class="anchor"><span class="anchor-link"></span></a>WSClient</h3>
+<p>使用 Playframework 附带的 <code>WSClient</code> 时，调用 <code>StandaloneWSClient</code> 的 <code>wsClient</code> 函数新建或包装一个 <code>WSClient</code>。</p>
+<dl>
+  <dt>Scala</dt>
+  <dd>
+  <pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-client-play-ws/src/main/scala/fusion/discoveryx/client/play/scaladsl/DiscoveryXWSClient.scala#L38-L44" target="_blank" title="Go to snippet source"></a><code class="language-scala">def wsClient()(implicit system: ActorSystem[_]): DiscoveryXPlayWSClient = wsClient(AhcWSClient())
+
+def wsClient(client: WSClient)(implicit system: ActorSystem[_]): DiscoveryXPlayWSClient =
+  new DiscoveryXPlayWSClient(client)(system)
+
+def wsClient(asyncHttpClient: AsyncHttpClient)(implicit system: ActorSystem[_]): DiscoveryXPlayWSClient =
+  wsClient(new AhcWSClient(new StandaloneAhcWSClient(asyncHttpClient)))</code></pre></dd>
+  <dt>Java</dt>
+  <dd>
+  <pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-client-play-ws/src/main/scala/fusion/discoveryx/client/play/javadsl/DiscoveryXWSClient.java#L42-L57" target="_blank" title="Go to snippet source"></a><code class="language-java">public static DiscoveryXPlayWSClient wsClient(WSClient client, ActorSystem&lt;?&gt; system) {
+    return new DiscoveryXPlayWSClient(client, system);
+}
+
+public static DiscoveryXPlayWSClient wsClient(AsyncHttpClient asyncHttpClient, ActorSystem&lt;?&gt; system) {
+    return wsClient(new AhcWSClient(asyncHttpClient, SystemMaterializer.get(system).materializer()), system);
+}
+
+public static DiscoveryXPlayWSClient wsClient(ActorSystem&lt;?&gt; system) {
+    return wsClient(
+            AhcWSClient.create(
+                    AhcWSClientConfigFactory.forConfig(system.settings().config(), system.dynamicAccess().classLoader()),
+                    null,
+                    SystemMaterializer.get(system).materializer()),
+            system);
+}</code></pre></dd>
+</dl>
+<p>使用</p>
+<pre class="prettyprint"><code class="language-play">import javax.inject.Inject
+
+import fusion.discoveryx.client.play.scaladsl.DiscoveryXPlayWSClient
+import fusion.discoveryx.client.play.scaladsl.DiscoveryXPlay
+import scala.concurrent.Future
+import scala.concurrent.duration._
+import play.api.mvc._
+import play.api.libs.ws._
+import play.api.http.HttpEntity
+import akka.actor.ActorSystem
+import akka.stream.scaladsl._
+import akka.util.ByteString
+
+import scala.concurrent.ExecutionContext
+
+// 直接注入
+class MainForImmediately @Inject() (
+  ws: DiscoveryXPlayWSClient,
+  val controllerComponents: ControllerComponents) extends BaseController {}
+
+// 通过 @Named 注入
+class MainForNamed @Inject() (
+  @Named(&quot;discoveryx&quot;) ws: WSClient, 
+  val controllerComponents: ControllerComponents) extends BaseController {}
+
+// 通过附加注解
+class MainForNamed @Inject() (
+  @DiscoveryXPlay ws: WSClient, 
+  val controllerComponents: ControllerComponents) extends BaseController {}
+</code></pre>
+<p>之后就可以在代码中通过 <code>ws</code> 来访问HTTP了：</p>
+<pre class="prettyprint"><code class="language-play">val request: WSRequest = ws.url(url)
+</code></pre>
 </div>
 </article>
 <div class="row">
@@ -151,10 +242,12 @@ Version 0.1.0
 <div>discoveryx-docs is Open Source and available under the Apache 2 License.</div>
 <p class="legal">
 &copy; 2019-2020 <a href="https://akka-fusion.github.com/" target="_blank">Akka Fusion</a> |
-<a href="https://akka-fusion.github.com/fusion-discoveryx/" target="_blank">Fusion DiscoveryX</a> |
-<a href="https://akka-fusion.github.com/fusion-schedulerx/" target="_blank">Fusion SchedulerX</a>
+<a href="https://akka-fusion.github.io/fusion-discoveryx/" target="_blank">Fusion DiscoveryX</a> |
+<a href="https://akka-fusion.github.io/fusion-schedulerx/" target="_blank">Fusion SchedulerX</a>
 </p>
 </section>
+
+
 </footer>
 </section>
 </main>

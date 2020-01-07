@@ -37,14 +37,11 @@ object ConfigEntity {
   val TypeKey: EntityTypeKey[Command] = EntityTypeKey(NAME)
 
   object ConfigKey {
-    def unapply(entityId: String): Option[ConfigKey] = entityId.split(Constants.ENTITY_ID_SEPARATOR) match {
-      case Array(namespace, dataId) => Some(new ConfigKey(namespace, dataId))
+    def unapply(entityId: String): Option[(String, String)] = entityId.split(Constants.ENTITY_ID_SEPARATOR) match {
+      case Array(namespace, dataId) => Some((namespace, dataId))
       case _                        => None
     }
   }
-
-  @inline def makeEntityId(key: fusion.discoveryx.server.protocol.ConfigKey): String =
-    makeEntityId(key.namespace, key.dataId)
 
   @inline def makeEntityId(namespace: String, dataId: String) = s"$namespace${Constants.ENTITY_ID_SEPARATOR}$dataId"
 
@@ -55,11 +52,11 @@ object ConfigEntity {
   private def apply(entityContext: EntityContext[Command]): Behavior[Command] =
     Behaviors.setup(context =>
       ConfigEntity.ConfigKey.unapply(entityContext.entityId) match {
-        case Some(configKey) =>
+        case Some((namespace, dataId)) =>
           new ConfigEntity(
             PersistenceId(entityContext.entityTypeKey.name, entityContext.entityId),
-            configKey.namespace,
-            configKey.dataId,
+            namespace,
+            dataId,
             context).eventSourcedBehavior()
         case _ =>
           throw HSInternalErrorException(
@@ -74,6 +71,8 @@ class ConfigEntity private (
     dataId: String,
     context: ActorContext[Command]) {
   private var listeners = List.empty[ActorRef[ConfigEntity.Event]]
+  private val configManager = ConfigManager.init(context.system)
+
   context.log.info(s"Entity startup: persistenceId: $persistenceId")
 
   def eventSourcedBehavior(): EventSourcedBehavior[Command, ChangedConfigEvent, ConfigState] = {
@@ -114,12 +113,12 @@ class ConfigEntity private (
       Effect.stop()
 
     case _: RemoveAndStopConfigEntity =>
-      Effect.persist(ChangedConfigEvent(`type` = ChangeType.CHANGE_REMOVE)).thenStop()
+      Effect.persist(ChangedConfigEvent(changeType = ChangeType.CHANGE_REMOVE)).thenStop()
   }
 
   private def processRemove(replyTo: ActorRef[ConfigReply]): Effect[ChangedConfigEvent, ConfigState] =
     Effect
-      .persist[ChangedConfigEvent, ConfigState](ChangedConfigEvent(`type` = ChangeType.CHANGE_REMOVE))
+      .persist[ChangedConfigEvent, ConfigState](ChangedConfigEvent(changeType = ChangeType.CHANGE_REMOVE))
       .thenRun {
         case state if state.configItem.isEmpty => replyTo ! ConfigReply(IntStatus.OK)
         case _                                 => replyTo ! ConfigReply(IntStatus.INTERNAL_ERROR)
@@ -173,10 +172,18 @@ class ConfigEntity private (
 
   def eventHandler(state: ConfigState, evt: ChangedConfigEvent): ConfigState = {
     context.log.debug(s"eventHandler($state, $evt)")
+    evt.changeType match {
+      case ChangeType.CHANGE_REMOVE =>
+        configManager ! ShardingEnvelope(namespace, ConfigRemovedEvent(dataId))
+      case ChangeType.CHANGE_ADD =>
+        configManager ! ShardingEnvelope(namespace, ConfigAddedEvent(dataId))
+      case _ => // do nothing
+    }
+
     listeners.foreach { ref =>
       ref ! evt
-      if (evt.`type` == ChangeType.CHANGE_REMOVE) {
-        ref ! RemovedConfigEvent()
+      if (evt.changeType.isChangeAdd) {
+        ref ! ConfigListenerCompletedEvent()
       }
     }
     ConfigState(configItem = evt.config)

@@ -2,7 +2,7 @@
 <html class="no-js" lang="en">
 
 <head>
-<title>Config（配置管理） &bull; Fusion DiscoveryX</title>
+<title>ConfigService &bull; Fusion DiscoveryX</title>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <meta name="description" content="discoveryx-docs"/>
@@ -42,7 +42,7 @@
 Version 0.1.0
 </div>
 <div class="nav-header-groups">
-<select class="supergroup" name="Language"><option class="group" value="group-scala">Scala</option></select>
+<select class="supergroup" name="Language"><option class="group" value="group-scala">Scala</option><option class="group" value="group-java">Java</option></select>
 </div>
 </header>
 <nav class="nav-toc">
@@ -55,16 +55,15 @@ Version 0.1.0
     <li><a href="../../api/index.html#目录" class="header">目录</a></li>
     <li><a href="../../api/open/index.html" class="page">开放API</a>
     <ul>
-      <li><a href="../../api/open/index.html#目录" class="header">目录</a></li>
-      <li><a href="../../api/open/config.html#config-配置管理-" class="active page">Config（配置管理）</a>
+      <li><a href="../../api/open/config.html#configservice" class="active page">ConfigService</a>
       <ul>
         <li><a href="../../api/open/config.html#getconfig" class="header">GetConfig</a></li>
         <li><a href="../../api/open/config.html#publishconfig" class="header">PublishConfig</a></li>
         <li><a href="../../api/open/config.html#removeconfig" class="header">RemoveConfig</a></li>
         <li><a href="../../api/open/config.html#listenerconfig" class="header">ListenerConfig</a></li>
       </ul></li>
-      <li><a href="../../api/open/naming.html" class="page">Naming（服务发现）</a></li>
-      <li><a href="../../api/open/grpc.html" class="page">gRPC服务描述定义文件</a></li>
+      <li><a href="../../api/open/naming.html" class="page">NamingService</a></li>
+      <li><a href="../../api/open/grpc.html" class="page">gRPC Service Descriptor</a></li>
     </ul></li>
     <li><a href="../../api/management/index.html" class="page">管理API</a></li>
     <li><a href="../../api/json.html" class="page">JSON 说明</a></li>
@@ -85,7 +84,7 @@ Version 0.1.0
 Version 0.1.0
 </div>
 <div class="nav-header-groups">
-<select class="supergroup" name="Language"><option class="group" value="group-scala">Scala</option></select>
+<select class="supergroup" name="Language"><option class="group" value="group-scala">Scala</option><option class="group" value="group-java">Java</option></select>
 </div>
 </header>
 <nav class="site-nav sticky-sidebar-contents">
@@ -99,16 +98,15 @@ Version 0.1.0
     <li><a href="../../api/index.html#目录" class="header">目录</a></li>
     <li><a href="../../api/open/index.html" class="page">开放API</a>
     <ul>
-      <li><a href="../../api/open/index.html#目录" class="header">目录</a></li>
-      <li><a href="../../api/open/config.html#config-配置管理-" class="active page">Config（配置管理）</a>
+      <li><a href="../../api/open/config.html#configservice" class="active page">ConfigService</a>
       <ul>
         <li><a href="../../api/open/config.html#getconfig" class="header">GetConfig</a></li>
         <li><a href="../../api/open/config.html#publishconfig" class="header">PublishConfig</a></li>
         <li><a href="../../api/open/config.html#removeconfig" class="header">RemoveConfig</a></li>
         <li><a href="../../api/open/config.html#listenerconfig" class="header">ListenerConfig</a></li>
       </ul></li>
-      <li><a href="../../api/open/naming.html" class="page">Naming（服务发现）</a></li>
-      <li><a href="../../api/open/grpc.html" class="page">gRPC服务描述定义文件</a></li>
+      <li><a href="../../api/open/naming.html" class="page">NamingService</a></li>
+      <li><a href="../../api/open/grpc.html" class="page">gRPC Service Descriptor</a></li>
     </ul></li>
     <li><a href="../../api/management/index.html" class="page">管理API</a></li>
     <li><a href="../../api/json.html" class="page">JSON 说明</a></li>
@@ -127,7 +125,7 @@ Version 0.1.0
 <section class="site-content small-12 column">
 <article class="page-content row">
 <div class="small-12 column" id="docs">
-<h1><a href="#config-配置管理-" name="config-配置管理-" class="anchor"><span class="anchor-link"></span></a>Config（配置管理）</h1>
+<h1><a href="#configservice" name="configservice" class="anchor"><span class="anchor-link"></span></a>ConfigService</h1>
 <ul>
   <li>gRPC服务地址：<code>/fusion.discoveryx.grpc.ConfigService</code></li>
   <li>REST URL前缀：<code>/fusion/discoveryx/v1/config</code></li>
@@ -230,8 +228,8 @@ rpc ListenerConfig (fusion.discoveryx.model.ConfigChangeListen) returns (stream 
 <p><strong>响应</strong></p>
 <pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L101-L105" target="_blank" title="Go to snippet source"></a><code class="language-proto">message ConfigChanged {
     fusion.discoveryx.model.ConfigItem config = 1;
-    int32 version = 2;
-    ChangeType change_type = 3;
+    ChangeType change_type = 2;
+    int32 version = 3;
 }</code></pre>
 <pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-common/src/main/protobuf/fusion/discoveryx/model/discoveryx.proto#L20-L27" target="_blank" title="Go to snippet source"></a><code class="language-proto">enum ChangeType {
     // 保存
@@ -250,7 +248,7 @@ rpc ListenerConfig (fusion.discoveryx.model.ConfigChangeListen) returns (stream 
 <a href="../../api/open/index.html"><i class="icon-prev"></i> <span class="link-prev">开放API</span></a>
 </div>
 <div class="nav-next small-6 column clearfix">
-<a class="float-right" href="../../api/open/naming.html">Naming（服务发现） <i class="icon-next"></i></a>
+<a class="float-right" href="../../api/open/naming.html">NamingService <i class="icon-next"></i></a>
 </div>
 </section>
 </div>
@@ -265,10 +263,12 @@ rpc ListenerConfig (fusion.discoveryx.model.ConfigChangeListen) returns (stream 
 <div>discoveryx-docs is Open Source and available under the Apache 2 License.</div>
 <p class="legal">
 &copy; 2019-2020 <a href="https://akka-fusion.github.com/" target="_blank">Akka Fusion</a> |
-<a href="https://akka-fusion.github.com/fusion-discoveryx/" target="_blank">Fusion DiscoveryX</a> |
-<a href="https://akka-fusion.github.com/fusion-schedulerx/" target="_blank">Fusion SchedulerX</a>
+<a href="https://akka-fusion.github.io/fusion-discoveryx/" target="_blank">Fusion DiscoveryX</a> |
+<a href="https://akka-fusion.github.io/fusion-schedulerx/" target="_blank">Fusion SchedulerX</a>
 </p>
 </section>
+
+
 </footer>
 </section>
 </main>

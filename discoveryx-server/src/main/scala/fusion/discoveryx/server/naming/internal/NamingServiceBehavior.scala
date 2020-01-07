@@ -18,10 +18,10 @@ package fusion.discoveryx.server.naming.internal
 
 import akka.actor.typed._
 import akka.actor.typed.scaladsl.AskPattern._
-import akka.actor.typed.scaladsl.{ ActorContext, Behaviors, TimerScheduler }
+import akka.actor.typed.scaladsl.{ ActorContext, Behaviors }
 import akka.cluster.sharding.typed.ShardingEnvelope
-import akka.persistence.typed.{ PersistenceId, RecoveryCompleted }
 import akka.persistence.typed.scaladsl.{ Effect, EventSourcedBehavior }
+import akka.persistence.typed.{ PersistenceId, RecoveryCompleted }
 import akka.stream.scaladsl.{ Sink, Source }
 import akka.util.Timeout
 import fusion.discoveryx.DiscoveryXUtils
@@ -40,8 +40,8 @@ import scala.util.control.NonFatal
 import scala.util.{ Failure, Success }
 
 private[naming] class NamingServiceBehavior(
-    serviceItem: ServiceItem,
-    timers: TimerScheduler[NamingService.Command],
+    namespace: String,
+    serviceName: String,
     context: ActorContext[NamingService.Command]) {
   import NamingService._
   private implicit val system = context.system
@@ -49,8 +49,8 @@ private[naming] class NamingServiceBehavior(
   private var unusedIdx = 0
   private var listeners: Map[ActorRef[Event], ServiceListener] = Map()
 
-  NamingManager.init(context.system) ! ShardingEnvelope(serviceItem.namespace, ServiceCreated(serviceItem.serviceName))
-  context.log.info(s"NamingService started: $serviceItem")
+  NamingManager.init(context.system) ! ShardingEnvelope(namespace, ServiceCreatedEvent(serviceName))
+  context.log.info(s"NamingService started: $namespace@$serviceName")
 
   def eventSourcedBehavior(persistenceId: PersistenceId): EventSourcedBehavior[Command, Event, NamingServiceState] =
     EventSourcedBehavior(persistenceId, NamingServiceState(), commandHandler, eventHandler)
@@ -84,7 +84,7 @@ private[naming] class NamingServiceBehavior(
           case Cmd.Modify(value)        => modifyInstance(state, replyTo, value)
           case Cmd.CreateService(value) => createService(replyTo, value)
           case Cmd.ModifyService(value) => modifyService(replyTo, value)
-          case Cmd.RemoveService(_)     => removeService(replyTo)
+          case Cmd.RemoveService(value) => removeService(replyTo, value)
           case Cmd.Empty                => Effect.none
         }
 
@@ -113,8 +113,11 @@ private[naming] class NamingServiceBehavior(
         }
         Effect.persist(InstanceSaveEvent(evt.instance, evt.instance.healthy))
 
-      case _: StopServiceInstance =>
+      case StopServiceInstance() =>
         Effect.stop()
+
+      case RemoveServiceInstance() =>
+        Effect.persist(RemoveService(namespace, serviceName)).thenStop()
     }
 
   private def eventHandler(state: NamingServiceState, event: Event): NamingServiceState = event match {
@@ -149,6 +152,9 @@ private[naming] class NamingServiceBehavior(
         protectThreshold = value.protectThreshold,
         metadata = value.metadata)
       state.copy(serviceItem = serviceItem)
+
+    case _: RemoveService =>
+      NamingServiceState.defaultInstance
   }
 
   private implicit val timeout: Timeout = 2.seconds
@@ -161,9 +167,7 @@ private[naming] class NamingServiceBehavior(
     for ((ref, _) <- listeners) {
       ref ! ServiceEventStop()
     }
-    NamingManager.init(context.system) ! ShardingEnvelope(
-      serviceItem.namespace,
-      ServiceRemoved(serviceItem.serviceName))
+    NamingManager.init(context.system) ! ShardingEnvelope(namespace, ServiceRemovedEvent(serviceName))
   }
 
   private def processInstancesQueried(
@@ -219,10 +223,10 @@ private[naming] class NamingServiceBehavior(
     Effect.none
   }
 
-  private def removeService(replyTo: ActorRef[NamingReply]): Effect[Event, NamingServiceState] = {
+  private def removeService(replyTo: ActorRef[NamingReply], value: RemoveService): Effect[Event, NamingServiceState] = {
     replyTo ! NamingReply(IntStatus.OK)
     notifyServiceEventListeners(NamingChangeType.SERVICE_REMOVE, NamingReply.Data.Empty)
-    Effect.stop()
+    Effect.persist(value).thenStop()
   }
 
   private def modifyService(replyTo: ActorRef[NamingReply], value: ModifyService): Effect[Event, NamingServiceState] = {
@@ -245,8 +249,8 @@ private[naming] class NamingServiceBehavior(
     val event = NamingServiceEvent(
       ServiceEvent(
         changeType,
-        serviceItem.namespace,
-        serviceItem.serviceName,
+        namespace,
+        serviceName,
         data.serviceInfo.map(si =>
           ServiceItem(si.namespace, si.serviceName, si.groupName, si.protectThreshold, si.metadata)),
         data.instance))
