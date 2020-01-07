@@ -6,6 +6,8 @@
 
 @@dependency[sbt,Gradle,Maven] { group="com.akka-fusion.fusion" artifact="discoveryx-client_$scala.binary_version$" version="$version$" }
 
+@@dependencies{ projectId="discoveryx-client" }
+
 ## 使用
 
 ### gRPC Client配置

@@ -54,9 +54,15 @@ Version 0.1.0
   <li><a href="../deploy/index.html" class="page">部署</a>
   <ul>
     <li><a href="../deploy/package.html" class="page">软件包</a></li>
-    <li><a href="../deploy/single.html#单机部署" class="active page">单机部署</a></li>
+    <li><a href="../deploy/single.html#单机部署" class="active page">单机部署</a>
+    <ul>
+      <li><a href="../deploy/single.html#使用" class="header">使用</a></li>
+      <li><a href="../deploy/single.html#h2-数据库配置" class="header">H2 数据库配置</a></li>
+    </ul></li>
     <li><a href="../deploy/cluster-jdbc.html" class="page">集群部署（使用JDBC持久化）</a></li>
     <li><a href="../deploy/persistence-cassandra.html" class="page">集群部署（使用Cassandra作为存储）</a></li>
+    <li><a href="../deploy/docker.html" class="page">Docker</a></li>
+    <li><a href="../deploy/other-persistence.html" class="page">其它存储机制</a></li>
   </ul></li>
   <li><a href="../releases.html" class="page">发布</a></li>
 </ul>
@@ -86,9 +92,15 @@ Version 0.1.0
   <li><a href="../deploy/index.html" class="page">部署</a>
   <ul>
     <li><a href="../deploy/package.html" class="page">软件包</a></li>
-    <li><a href="../deploy/single.html#单机部署" class="active page">单机部署</a></li>
+    <li><a href="../deploy/single.html#单机部署" class="active page">单机部署</a>
+    <ul>
+      <li><a href="../deploy/single.html#使用" class="header">使用</a></li>
+      <li><a href="../deploy/single.html#h2-数据库配置" class="header">H2 数据库配置</a></li>
+    </ul></li>
     <li><a href="../deploy/cluster-jdbc.html" class="page">集群部署（使用JDBC持久化）</a></li>
     <li><a href="../deploy/persistence-cassandra.html" class="page">集群部署（使用Cassandra作为存储）</a></li>
+    <li><a href="../deploy/docker.html" class="page">Docker</a></li>
+    <li><a href="../deploy/other-persistence.html" class="page">其它存储机制</a></li>
   </ul></li>
   <li><a href="../releases.html" class="page">发布</a></li>
 </ul>
@@ -104,7 +116,25 @@ Version 0.1.0
 <article class="page-content row">
 <div class="small-12 column" id="docs">
 <h1><a href="#单机部署" name="单机部署" class="anchor"><span class="anchor-link"></span></a>单机部署</h1>
-<p>单机部署默认使用嵌入式数据库 <strong>H2</strong>。</p>
+<p><em>请先阅读 <a href="package.html">软件包</a> 。</em></p>
+<h2><a href="#使用" name="使用" class="anchor"><span class="anchor-link"></span></a>使用</h2>
+<p>单机部署默认使用嵌入式数据库 <strong>H2</strong>。Fusion DiscoveryX 将在第一次启动服务时在用户主目录下创建 H2 数据库目录并初始化数据表和用户，默认用户：</p>
+<ul>
+  <li>SN: <code>discoveryx</code></li>
+  <li>PW: <code>discoveryx</code></li>
+</ul>
+<pre><code>unzip discoveryx-server-0.1.0.zip
+cd discoveryx-server-0.1.0
+./bin/discoveryx-server
+</code></pre>
+<h2><a href="#h2-数据库配置" name="h2-数据库配置" class="anchor"><span class="anchor-link"></span></a>H2 数据库配置</h2>
+<p>默认 H2 数据库表将创建在 <code>$HOME</code> 目录，如：</p>
+<pre><code>yangjing@yangbajing:~$ tree fusion-discoveryx/
+fusion-discoveryx/
+└── db.mv.db
+
+0 directories, 1 file
+</code></pre>
 </div>
 </article>
 <div class="row">

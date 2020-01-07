@@ -2,11 +2,11 @@
 <html class="no-js" lang="en">
 
 <head>
-<title>软件包 &bull; Fusion DiscoveryX</title>
+<title>其它存储机制 &bull; Fusion DiscoveryX</title>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <meta name="description" content="discoveryx-docs"/>
-<link rel="canonical" href="https://akka-fusion.github.io/fusion-discoveryx/deploy/package.html"/>
+<link rel="canonical" href="https://akka-fusion.github.io/fusion-discoveryx/deploy/other-persistence.html"/>
 <script type="text/javascript" src="../lib/jquery/jquery.min.js"></script>
 <script type="text/javascript" src="../lib/foundation/dist/js/foundation.min.js"></script>
 <link rel="stylesheet" type="text/css" href="../lib/normalize.css/normalize.css"/>
@@ -53,16 +53,17 @@ Version 0.1.0
   <li><a href="../api/index.html" class="page">API</a></li>
   <li><a href="../deploy/index.html" class="page">部署</a>
   <ul>
-    <li><a href="../deploy/package.html#软件包" class="active page">软件包</a>
-    <ul>
-      <li><a href="../deploy/package.html#下载" class="header">下载</a></li>
-      <li><a href="../deploy/package.html#源码构建" class="header">源码构建</a></li>
-    </ul></li>
+    <li><a href="../deploy/package.html" class="page">软件包</a></li>
     <li><a href="../deploy/single.html" class="page">单机部署</a></li>
     <li><a href="../deploy/cluster-jdbc.html" class="page">集群部署（使用JDBC持久化）</a></li>
     <li><a href="../deploy/persistence-cassandra.html" class="page">集群部署（使用Cassandra作为存储）</a></li>
     <li><a href="../deploy/docker.html" class="page">Docker</a></li>
-    <li><a href="../deploy/other-persistence.html" class="page">其它存储机制</a></li>
+    <li><a href="../deploy/other-persistence.html#其它存储机制" class="active page">其它存储机制</a>
+    <ul>
+      <li><a href="../deploy/other-persistence.html#mongodb" class="header">MongoDB</a></li>
+      <li><a href="../deploy/other-persistence.html#dynamodb" class="header">DynamoDB</a></li>
+      <li><a href="../deploy/other-persistence.html#couchbase" class="header">CouchBase</a></li>
+    </ul></li>
   </ul></li>
   <li><a href="../releases.html" class="page">发布</a></li>
 </ul>
@@ -91,16 +92,17 @@ Version 0.1.0
   <li><a href="../api/index.html" class="page">API</a></li>
   <li><a href="../deploy/index.html" class="page">部署</a>
   <ul>
-    <li><a href="../deploy/package.html#软件包" class="active page">软件包</a>
-    <ul>
-      <li><a href="../deploy/package.html#下载" class="header">下载</a></li>
-      <li><a href="../deploy/package.html#源码构建" class="header">源码构建</a></li>
-    </ul></li>
+    <li><a href="../deploy/package.html" class="page">软件包</a></li>
     <li><a href="../deploy/single.html" class="page">单机部署</a></li>
     <li><a href="../deploy/cluster-jdbc.html" class="page">集群部署（使用JDBC持久化）</a></li>
     <li><a href="../deploy/persistence-cassandra.html" class="page">集群部署（使用Cassandra作为存储）</a></li>
     <li><a href="../deploy/docker.html" class="page">Docker</a></li>
-    <li><a href="../deploy/other-persistence.html" class="page">其它存储机制</a></li>
+    <li><a href="../deploy/other-persistence.html#其它存储机制" class="active page">其它存储机制</a>
+    <ul>
+      <li><a href="../deploy/other-persistence.html#mongodb" class="header">MongoDB</a></li>
+      <li><a href="../deploy/other-persistence.html#dynamodb" class="header">DynamoDB</a></li>
+      <li><a href="../deploy/other-persistence.html#couchbase" class="header">CouchBase</a></li>
+    </ul></li>
   </ul></li>
   <li><a href="../releases.html" class="page">发布</a></li>
 </ul>
@@ -115,45 +117,55 @@ Version 0.1.0
 <section class="site-content small-12 column">
 <article class="page-content row">
 <div class="small-12 column" id="docs">
-<h1><a href="#软件包" name="软件包" class="anchor"><span class="anchor-link"></span></a>软件包</h1>
-<h2><a href="#下载" name="下载" class="anchor"><span class="anchor-link"></span></a>下载</h2>
-<p>在 <a href="https://github.com/akka-fusion/fusion-discoveryx/releases"><a href="https://github.com/akka-fusion/fusion-discoveryx/releases">https://github.com/akka-fusion/fusion-discoveryx/releases</a></a> 下载最新版本，解压缩到目录执行。</p>
-<p><strong>Unix/Linux</strong></p>
-<pre class="prettyprint"><code class="language-shell script">unzip discoveryx-server-[VERSION].zip
-cd discoveryx-server
-./bin/discoveryx-server
-</code></pre>
-<p><strong>Windows</strong></p>
-<pre><code>unzip discoveryx-server-[VERSION].zip
-cd discoveryx-server
-bin/discoveryx-server.bat
-</code></pre>
-<h2><a href="#源码构建" name="源码构建" class="anchor"><span class="anchor-link"></span></a>源码构建</h2>
-<p>下载源码，执行<code>sbt</code>命令。</p>
-<pre><code>git clone https://github.com/akka-fusion/fusion-discoveryx.git
-cd fusion-discoveryx
-sbt
-</code></pre>
-<p>执行 <strong>sbtshell</strong> 命令：<code>discoveryx-server/dist</code>，将在<code>discoveryx-server/target/universal</code>目录生成 discoveryx-server-0.1.0.zip 软件包。</p>
-<pre class="prettyprint"><code class="language-sbtshell">&gt; discoveryx-server/dist
-</code></pre>
-<p>解压生成的 <strong>zip</strong> 软件包（discoveryx-server-0.1.0.zip），执行 <code>bin</code> 目录里的 <code>sh</code> 或 <code>bat</code> 脚本即可运行程序。</p>
+<h1><a href="#其它存储机制" name="其它存储机制" class="anchor"><span class="anchor-link"></span></a>其它存储机制</h1>
+<p>Fusion DiscoveryX 使用 Akka Persistence 作为存储层，且使用 Akka Persistence 来存储所有数据，所以理论上只要实现了 Akka Persistence Plugins 的存储系统都可应用于 Fusion DiscoveryX。</p>
+<p>需要修改 <code>akka.persistence</code> 配置使用想要使用的存储插件，同时，还需要将相应插件依赖的 <strong>jar</strong> 包入到 Fusion DiscoveryX 软件 <code>lib</code> 目录里面。</p>
+<h2><a href="#mongodb" name="mongodb" class="anchor"><span class="anchor-link"></span></a>MongoDB</h2>
+<ul>
+  <li><a href="https://github.com/scullxbones/akka-persistence-mongo">https ://github.com/scullxbones/akka-persistence-mongo</a></li>
+</ul><dl class="dependency"><dt>sbt</dt><dd><pre class="prettyprint"><code class="language-scala">libraryDependencies += "com.github.scullxbones" % "akka-persistence-mongo-rxmongo_2.12" % "2.3.2"</code></pre></dd><dt>Gradle</dt><dd><pre class="prettyprint"><code class="language-gradle">dependencies {
+  compile group: 'com.github.scullxbones', name: 'akka-persistence-mongo-rxmongo_2.12', version: '2.3.2'
+}</code></pre></dd><dt>Maven</dt><dd><pre class="prettyprint"><code class="language-xml">&lt;dependency&gt;
+  &lt;groupId&gt;com.github.scullxbones&lt;/groupId&gt;
+  &lt;artifactId&gt;akka-persistence-mongo-rxmongo_2.12&lt;/artifactId&gt;
+  &lt;version&gt;2.3.2&lt;/version&gt;
+&lt;/dependency&gt;</code></pre></dd></dl>
+<h2><a href="#dynamodb" name="dynamodb" class="anchor"><span class="anchor-link"></span></a>DynamoDB</h2>
+<ul>
+  <li><a href="https://github.com/akka/akka-persistence-dynamodb">https://github.com/akka/akka-persistence-dynamodb</a></li>
+</ul><dl class="dependency"><dt>sbt</dt><dd><pre class="prettyprint"><code class="language-scala">libraryDependencies += "com.typesafe.akka" %% "akka-persistence-dynamodb" % "1.1.1"</code></pre></dd><dt>Gradle</dt><dd><pre class="prettyprint"><code class="language-gradle">dependencies {
+  compile group: 'com.typesafe.akka', name: 'akka-persistence-dynamodb_2.13', version: '1.1.1'
+}</code></pre></dd><dt>Maven</dt><dd><pre class="prettyprint"><code class="language-xml">&lt;dependency&gt;
+  &lt;groupId&gt;com.typesafe.akka&lt;/groupId&gt;
+  &lt;artifactId&gt;akka-persistence-dynamodb_2.13&lt;/artifactId&gt;
+  &lt;version&gt;1.1.1&lt;/version&gt;
+&lt;/dependency&gt;</code></pre></dd></dl>
+<h2><a href="#couchbase" name="couchbase" class="anchor"><span class="anchor-link"></span></a>CouchBase</h2>
+<ul>
+  <li><a href="https://github.com/akka/akka-persistence-couchbase">https://github.com/akka/akka-persistence-couchbase</a></li>
+</ul><dl class="dependency"><dt>sbt</dt><dd><pre class="prettyprint"><code class="language-scala">libraryDependencies += "com.lightbend.akka" %% "akka-persistence-couchbase" % "1.0"</code></pre></dd><dt>Gradle</dt><dd><pre class="prettyprint"><code class="language-gradle">dependencies {
+  compile group: 'com.lightbend.akka', name: 'akka-persistence-couchbase_2.13', version: '1.0'
+}</code></pre></dd><dt>Maven</dt><dd><pre class="prettyprint"><code class="language-xml">&lt;dependency&gt;
+  &lt;groupId&gt;com.lightbend.akka&lt;/groupId&gt;
+  &lt;artifactId&gt;akka-persistence-couchbase_2.13&lt;/artifactId&gt;
+  &lt;version&gt;1.0&lt;/version&gt;
+&lt;/dependency&gt;</code></pre></dd></dl>
 </div>
 </article>
 <div class="row">
 <div class="small-12 column">
 <section class="nav-prev-next row">
 <div class="nav-prev small-6 column">
-<a href="../deploy/index.html"><i class="icon-prev"></i> <span class="link-prev">部署</span></a>
+<a href="../deploy/docker.html"><i class="icon-prev"></i> <span class="link-prev">Docker</span></a>
 </div>
 <div class="nav-next small-6 column clearfix">
-<a class="float-right" href="../deploy/single.html">单机部署 <i class="icon-next"></i></a>
+<a class="float-right" href="../releases.html">发布 <i class="icon-next"></i></a>
 </div>
 </section>
 </div>
 </div>
 <div class="source-github row">
-在此文档中发现错误？该页面的源代码可以在 <a href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-docs/src/main/paradox/deploy/package.md" target="_blank">这里</a> 找到。欢迎随时编辑并提交Pull Request。
+在此文档中发现错误？该页面的源代码可以在 <a href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-docs/src/main/paradox/deploy/other-persistence.md" target="_blank">这里</a> 找到。欢迎随时编辑并提交Pull Request。
 </div>
 
 <footer class="page-footer row clearfix">

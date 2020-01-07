@@ -24,7 +24,6 @@ import org.scalatest.WordSpecLike
 class DefaultNamingClientTest
     extends ScalaTestWithActorTestKit(ConfigFactory.load("application-local.conf"))
     with WordSpecLike {
-  private implicit val ec = system.executionContext
   private val client = DefaultNamingClient(system)
   "DefaultNamingClient" must {
     "url" in {

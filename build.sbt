@@ -52,8 +52,11 @@ lazy val discoveryxDocs = _project("discoveryx-docs")
         "scala.version" -> scalaVersion.value,
         "scala.binary_version" -> scalaBinaryVersion.value,
         "scaladoc.akka.base_url" -> s"http://doc.akka.io/api/$versionAkka",
-        "play.ahc-ws-standalone.version" -> "2.1.2",
         "akka.version" -> versionAkka,
+        "play.ahc-ws-standalone.version" -> "2.1.2",
+        "akka.persistence.couchbase.version" -> "1.0",
+        "akka.persistence.mongo.version" -> "2.3.2",
+        "akka.persistence.dynamodb.version" -> "1.1.1",
         "version" -> version.value))
 
 lazy val discoveryxFunctest = _project("discoveryx-functest")

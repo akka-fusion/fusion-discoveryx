@@ -3,19 +3,20 @@ import sbt._
 object Dependencies {
   val versionScala212 = "2.12.10"
   val versionScala213 = "2.13.1"
-  val versionScalaCollectionCompat = "2.1.2"
-  val versionJava8Compat = "0.9.0"
-  val versionScalameta = "4.2.3"
   val versionScalatest = "3.0.8"
   val versionAkka = "2.6.1"
   val versionAkkaHttp = "10.1.11"
-  val versionConfig = "1.3.4"
   val versionHikariCP = "3.4.1"
-  val versionMySQL = "8.0.16"
+  val versionMySQL = "8.0.18"
+  val versionH2 = "1.4.200"
   val versionPostgres = "42.2.9"
   val versionAlpnAgent = "2.0.9"
-
-  val versionFusion = "2.0.1"
+  val versionPlayAhcWsStandalone = "2.1.2"
+  val versionPlayAhcWs = "2.8.0"
+  val versionAkkaPersistenceCassandra = "0.101"
+  val versionAkkaPersistenceJdbc = "3.5.2"
+  val versionScalapbJson4s = "0.10.0"
+  val versionFusion = "2.0.2"
 
   val _fusionCommon = "com.akka-fusion" %% "fusion-common" % versionFusion
   val _fusionCore = "com.akka-fusion" %% "fusion-core" % versionFusion
@@ -24,7 +25,6 @@ object Dependencies {
 
   val _akkaPersistenceTyped = "com.typesafe.akka" %% "akka-persistence-typed" % versionAkka
   val _akkaPersistenceQuery = "com.typesafe.akka" %% "akka-persistence-query" % versionAkka
-
   val _akkaMultiNodeTestkit = "com.typesafe.akka" %% "akka-multi-node-testkit" % versionAkka
 
   val _akkaClusters = Seq(
@@ -49,7 +49,7 @@ object Dependencies {
 
   val _akkaHttps = Seq(_akkaHttp, _akkaHttp2, _akkaHttpTestkit % Test)
 
-  val _akkaPersistenceCassandras = Seq("com.typesafe.akka" %% "akka-persistence-cassandra" % "0.101").map(
+  val _akkaPersistenceCassandras = Seq("com.typesafe.akka" %% "akka-persistence-cassandra" % versionAkkaPersistenceCassandra).map(
     _.exclude("org.scala-lang", "scala-library")
       .cross(CrossVersion.binary)
       .exclude("com.typesafe.akka", "akka-cluster-tools")
@@ -62,19 +62,19 @@ object Dependencies {
       .cross(CrossVersion.binary))
 
   val _akkaPersistenceJdbc =
-    ("com.github.dnvriend" %% "akka-persistence-jdbc" % "3.5.2")
+    ("com.github.dnvriend" %% "akka-persistence-jdbc" % versionAkkaPersistenceJdbc)
       .excludeAll(ExclusionRule("com.typesafe.akka"))
       .cross(CrossVersion.binary)
 
-  val _scalapbJson4s = "com.thesamet.scalapb" %% "scalapb-json4s" % "0.10.0"
+  val _scalapbJson4s = "com.thesamet.scalapb" %% "scalapb-json4s" % versionScalapbJson4s
 
   val _postgresql = "org.postgresql" % "postgresql" % versionPostgres
   val _mysql = "mysql" % "mysql-connector-java" % versionMySQL
-  val _h2 = "com.h2database" % "h2" % "1.4.200"
+  val _h2 = "com.h2database" % "h2" % versionH2
   val _hikariCP = "com.zaxxer" % "HikariCP" % versionHikariCP
 
   val _alpnAgent = "org.mortbay.jetty.alpn" % "jetty-alpn-agent" % versionAlpnAgent
 
-  val _playWSStandalone = "com.typesafe.play" %% "play-ahc-ws-standalone" % "2.1.2"
-  val _playWS = "com.typesafe.play" %% "play-ahc-ws" % "2.8.0"
+  val _playWSStandalone = "com.typesafe.play" %% "play-ahc-ws-standalone" % versionPlayAhcWsStandalone
+  val _playWS = "com.typesafe.play" %% "play-ahc-ws" % versionPlayAhcWs
 }

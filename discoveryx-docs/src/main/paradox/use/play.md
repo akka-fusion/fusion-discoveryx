@@ -8,6 +8,8 @@
   group="com.akka-fusion.fusion" artifact="discoveryx-client-play-ws_$scala.binary_version$" version="$version$" 
 }
 
+@@dependencies{ projectId="discoveryx-client-play-ws" }
+
 @@@note { title=服务发现 }
 `discoveryx-client-play-ws`基于`discoveryx-client`开发，有关Scala SDK与服务发现配置内容请参阅 @ref[Scala SDK](sdk-scala.md) 和 @ref[在 Akka 中使用](akka.md) 。 
 @@@

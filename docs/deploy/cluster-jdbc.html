@@ -55,8 +55,18 @@ Version 0.1.0
   <ul>
     <li><a href="../deploy/package.html" class="page">软件包</a></li>
     <li><a href="../deploy/single.html" class="page">单机部署</a></li>
-    <li><a href="../deploy/cluster-jdbc.html#集群部署-使用jdbc持久化-" class="active page">集群部署（使用JDBC持久化）</a></li>
+    <li><a href="../deploy/cluster-jdbc.html#集群部署-使用jdbc持久化-" class="active page">集群部署（使用JDBC持久化）</a>
+    <ul>
+      <li><a href="../deploy/cluster-jdbc.html#基本配置" class="header">基本配置</a></li>
+      <li><a href="../deploy/cluster-jdbc.html#postgresql" class="header">PostgreSQL</a></li>
+      <li><a href="../deploy/cluster-jdbc.html#h2" class="header">H2</a></li>
+      <li><a href="../deploy/cluster-jdbc.html#mysql" class="header">MySQL</a></li>
+      <li><a href="../deploy/cluster-jdbc.html#oracle" class="header">Oracle</a></li>
+      <li><a href="../deploy/cluster-jdbc.html#sql-server" class="header">SQL Server</a></li>
+    </ul></li>
     <li><a href="../deploy/persistence-cassandra.html" class="page">集群部署（使用Cassandra作为存储）</a></li>
+    <li><a href="../deploy/docker.html" class="page">Docker</a></li>
+    <li><a href="../deploy/other-persistence.html" class="page">其它存储机制</a></li>
   </ul></li>
   <li><a href="../releases.html" class="page">发布</a></li>
 </ul>
@@ -87,8 +97,18 @@ Version 0.1.0
   <ul>
     <li><a href="../deploy/package.html" class="page">软件包</a></li>
     <li><a href="../deploy/single.html" class="page">单机部署</a></li>
-    <li><a href="../deploy/cluster-jdbc.html#集群部署-使用jdbc持久化-" class="active page">集群部署（使用JDBC持久化）</a></li>
+    <li><a href="../deploy/cluster-jdbc.html#集群部署-使用jdbc持久化-" class="active page">集群部署（使用JDBC持久化）</a>
+    <ul>
+      <li><a href="../deploy/cluster-jdbc.html#基本配置" class="header">基本配置</a></li>
+      <li><a href="../deploy/cluster-jdbc.html#postgresql" class="header">PostgreSQL</a></li>
+      <li><a href="../deploy/cluster-jdbc.html#h2" class="header">H2</a></li>
+      <li><a href="../deploy/cluster-jdbc.html#mysql" class="header">MySQL</a></li>
+      <li><a href="../deploy/cluster-jdbc.html#oracle" class="header">Oracle</a></li>
+      <li><a href="../deploy/cluster-jdbc.html#sql-server" class="header">SQL Server</a></li>
+    </ul></li>
     <li><a href="../deploy/persistence-cassandra.html" class="page">集群部署（使用Cassandra作为存储）</a></li>
+    <li><a href="../deploy/docker.html" class="page">Docker</a></li>
+    <li><a href="../deploy/other-persistence.html" class="page">其它存储机制</a></li>
   </ul></li>
   <li><a href="../releases.html" class="page">发布</a></li>
 </ul>
@@ -104,6 +124,147 @@ Version 0.1.0
 <article class="page-content row">
 <div class="small-12 column" id="docs">
 <h1><a href="#集群部署-使用jdbc持久化-" name="集群部署-使用jdbc持久化-" class="anchor"><span class="anchor-link"></span></a>集群部署（使用JDBC持久化）</h1>
+<h2><a href="#基本配置" name="基本配置" class="anchor"><span class="anchor-link"></span></a>基本配置</h2>
+<p>Fusion DiscoveryX 使用 Akka Persistence 作为存储层，<a href="https://doc.akka.io/docs/akka-persistence-jdbc/current/">akka-persistence-jdbc</a> 为 Akka Persistence 提供了 JDBC 访问插件。</p>
+<pre class="prettyprint"><code class="language-hocon">akka {
+  persistence {
+    journal {
+      plugin = &quot;jdbc-journal&quot;
+      // auto-start-journals = [&quot;jdbc-journal&quot;]
+    }
+    snapshot-store {
+      plugin = &quot;jdbc-snapshot-store&quot;
+      // auto-start-snapshot-stores = [&quot;jdbc-snapshot-store&quot;]
+    }
+  }
+}
+</code></pre>
+<p>Akka Persistence 支持启动时自动回放事件日志和快照恢复。<code>auto-start-journals</code> 和 <code>auto-start-snapshot-stores</code> 设置当 <code>ActorSystem</code> 启动时自动启动 <code>journal</code> 和 <code>snapshot</code> ，这可能会延长系统的启动时间。否则将会在<code>EventSourcedBehavior</code>被创建时才恢复事件日志或快照。</p>
+<h3><a href="#初始化数据库" name="初始化数据库" class="anchor"><span class="anchor-link"></span></a>初始化数据库</h3>
+<p>集群部署需要修改配置文件使用独立的数据库，如：PostgreSQL、MySQL、Oracle、MS SQL Server或 H2(TCP版)。在软件包的 <code>share/jdbc/schema</code> 目录下能找到各数据库的SQL创建脚本，需要在启动服务之前先将表创建好。</p>
+<pre><code>├── h2
+│   └── h2-schema.sql
+├── mysql
+│   └── mysql-schema.sql
+├── oracle
+│   └── oracle-schema.sql
+├── postgres
+│   └── postgres-schema.sql
+└── sqlserver
+    └── sqlserver-schema.sql
+</code></pre>
+<h3><a href="#数据库配置" name="数据库配置" class="anchor"><span class="anchor-link"></span></a>数据库配置</h3>
+<p>Fusion DiscoveryX 使用 <a href="https://doc.akka.io/docs/akka/current/typed/persistence.html">akka-persistence</a> 作为存储层，通过 HOCON 配置文件来管理数据库访问。在配置路径 <code>akka-persistence-jdbc.shared-databases</code> 内添加实际的数据库访问配置。再在 <code>jdbc-journal</code>、<code>jdbc-snapshot-store</code>和<code>jdbc-read-journal</code> 里面通过 <code>use-shared-db</code> 指定实际的数据库访问配置项。</p>
+<p>Fusion DiscoveryX 默认提供了 H2 和 PostgreSQL 数据库的配置，可以通过修改<code>use-shared-db</code>配置项来选择要使用的数据库配置。下面的配置将使用 PostgreSQL 数据库。</p>
+<p><strong>事件日志</strong> 配置 <code>jdbc-journal</code> 使用 <code>postgres</code> 共享数据库配置：</p>
+<pre class="prettyprint"><code class="language-hocon">jdbc-journal {
+  use-shared-db = &quot;postgres&quot;
+}
+</code></pre>
+<p><strong>状态快照存储</strong> 配置 <code>jdbc-snapshot-store</code> 使用 <code>postgres</code> 共享数据库配置：</p>
+<pre class="prettyprint"><code class="language-hocon">jdbc-snapshot-store {
+  use-shared-db = &quot;postgres&quot;
+}
+</code></pre>
+<p><strong>读日志</strong> 配置 <code>jdbc-read-journal</code> 使用 <code>postgres</code> 共享数据库配置：</p>
+<pre class="prettyprint"><code class="language-hocon">jdbc-read-journal {
+  use-shared-db = &quot;postgres&quot;
+}
+</code></pre>
+<h2><a href="#postgresql" name="postgresql" class="anchor"><span class="anchor-link"></span></a>PostgreSQL</h2>
+<p>PostgreSQL 数据库配置示例：</p>
+<pre class="prettyprint"><code class="language-hocon">akka-persistence-jdbc {
+  shared-databases {
+    postgres {
+      profile = &quot;slick.jdbc.PostgresProfile$&quot;
+      db {
+        url = &quot;jdbc:postgresql://localhost:5432/fusion_discoveryx?reWriteBatchedInserts=true&quot;
+        user = &quot;devuser&quot;
+        password = &quot;devPass.2019&quot;
+        driver = &quot;org.postgresql.Driver&quot;
+        numThreads = 5
+        maxConnections = 5
+        minConnections = 1
+      }
+    }
+  }
+}
+</code></pre>
+<h2><a href="#h2" name="h2" class="anchor"><span class="anchor-link"></span></a>H2</h2>
+<p>H2 数据库配置示例：</p>
+<pre class="prettyprint"><code class="language-hocon">akka-persistence-jdbc {
+  shared-databases {
+    h2 {
+      profile = &quot;slick.jdbc.H2Profile$&quot;
+      db {
+        url = &quot;jdbc:h2:~/fusion-discoveryx/db;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;&quot;
+        user = devuser
+        password = devPass.2019
+        numThreads = 5
+        maxConnections = 5
+        minConnections = 1
+      }
+    }
+  }
+}
+</code></pre>
+<h2><a href="#mysql" name="mysql" class="anchor"><span class="anchor-link"></span></a>MySQL</h2>
+<p>MySQL 数据库配置示例：</p>
+<pre class="prettyprint"><code class="language-hocon">akka-persistence-jdbc {
+  shared-databases {
+    slick {
+      profile = &quot;slick.jdbc.MySQLProfile$&quot;
+      db {
+        url = &quot;jdbc:mysql://localhost:3306/mysql?cachePrepStmts=true&amp;cacheCallableStmts=true&amp;cacheServerConfiguration=true&amp;useLocalSessionState=true&amp;elideSetAutoCommits=true&amp;alwaysSendSetIsolation=false&amp;enableQueryTimeouts=false&amp;connectionAttributes=none&amp;verifyServerCertificate=false&amp;useSSL=false&amp;allowPublicKeyRetrieval=true&amp;useUnicode=true&amp;useLegacyDatetimeCode=false&amp;serverTimezone=UTC&amp;rewriteBatchedStatements=true&quot;
+        user = &quot;devuser&quot;
+        password = &quot;devPass.2019&quot;
+        driver = &quot;com.mysql.cj.jdbc.Driver&quot;
+        numThreads = 5
+        maxConnections = 5
+        minConnections = 1
+      }
+    }
+  }
+}
+</code></pre>
+<h2><a href="#oracle" name="oracle" class="anchor"><span class="anchor-link"></span></a>Oracle</h2>
+<p>Oracle 数据库配置示例：</p>
+<pre class="prettyprint"><code class="language-hocon">akka-persistence-jdbc {
+  shared-databases {
+    slick {
+      profile = &quot;slick.jdbc.OracleProfile$&quot;
+      db {
+        url = &quot;jdbc:oracle:thin:@//localhost:1521/xe&quot;
+        user = &quot;system&quot;
+        password = &quot;oracle&quot;
+        driver = &quot;oracle.jdbc.OracleDriver&quot;
+        numThreads = 5
+        maxConnections = 5
+        minConnections = 1
+      }
+    }
+  }
+}
+</code></pre>
+<h2><a href="#sql-server" name="sql-server" class="anchor"><span class="anchor-link"></span></a>SQL Server</h2>
+<p>SQL Server 数据库配置示例：</p>
+<pre class="prettyprint"><code class="language-hocon">akka-persistence-jdbc {
+  shared-databases {
+    slick {
+      profile = &quot;slick.jdbc.SQLServerProfile$&quot;
+      db {
+        url = &quot;jdbc:sqlserver://localhost:1433;databaseName=docker;integratedSecurity=false;&quot;
+        user = &quot;docker&quot;
+        password = &quot;docker&quot;
+        driver = &quot;com.microsoft.sqlserver.jdbc.SQLServerDriver&quot;
+        numThreads = 5
+        maxConnections = 5
+        minConnections = 1
+      }
+    }
+  }
+}
+</code></pre>
 </div>
 </article>
 <div class="row">

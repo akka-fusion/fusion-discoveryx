@@ -19,7 +19,6 @@ package fusion.discoveryx.server.config.route
 import akka.http.scaladsl.model.StatusCodes
 import com.typesafe.scalalogging.StrictLogging
 import fusion.discoveryx.model.{ ConfigGet, ConfigItem, ConfigRemove }
-import fusion.discoveryx.server.DiscoveryXServer
 import fusion.discoveryx.server.protocol.{ ConfigResponse, ListConfig }
 import fusion.discoveryx.server.route.FusionRouteTest
 import fusion.discoveryx.server.util.ProtobufJson4s
@@ -27,8 +26,6 @@ import helloscala.common.IntStatus
 import org.scalatest.WordSpec
 
 class ConfigManagementRouteTest extends WordSpec with FusionRouteTest with StrictLogging {
-  DiscoveryXServer.checkRDBMS(system.settings.config)
-
   lazy private val configRoute = new ConfigRoute(discoveryX.namespaceRef)(discoveryX.system)
   lazy private val route = configRoute.consoleRoute
 

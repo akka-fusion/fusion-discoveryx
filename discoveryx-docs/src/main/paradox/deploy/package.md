@@ -20,7 +20,7 @@ cd discoveryx-server
 bin/discoveryx-server.bat
 ```
 
-## 构建
+## 源码构建
 
 下载源码，执行`sbt`命令。
 
@@ -30,8 +30,14 @@ cd fusion-discoveryx
 sbt
 ```
 
-执行sbtshell命令：`discoveryx-server/dist`，将在`discoveryx-server/target/universal`目录生成`discoveryx-server-[VERSION].zip`软件包，解压缩后即可执行。
+@@@vars
+执行 **sbtshell** 命令：`discoveryx-server/dist`，将在`discoveryx-server/target/universal`目录生成 discoveryx-server-$version$.zip 软件包。
+@@@
 
 ```sbtshell
 > discoveryx-server/dist
 ```
+
+@@@vars
+解压生成的 **zip** 软件包（discoveryx-server-$version$.zip），执行 `bin` 目录里的 `sh` 或 `bat` 脚本即可运行程序。
+@@@

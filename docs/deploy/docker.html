@@ -2,11 +2,11 @@
 <html class="no-js" lang="en">
 
 <head>
-<title>JSON 说明 &bull; Fusion DiscoveryX</title>
+<title>Docker &bull; Fusion DiscoveryX</title>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <meta name="description" content="discoveryx-docs"/>
-<link rel="canonical" href="https://akka-fusion.github.io/fusion-discoveryx/api/json.html"/>
+<link rel="canonical" href="https://akka-fusion.github.io/fusion-discoveryx/deploy/docker.html"/>
 <script type="text/javascript" src="../lib/jquery/jquery.min.js"></script>
 <script type="text/javascript" src="../lib/foundation/dist/js/foundation.min.js"></script>
 <link rel="stylesheet" type="text/css" href="../lib/normalize.css/normalize.css"/>
@@ -50,17 +50,20 @@ Version 0.1.0
   <li><a href="../intro.html" class="page">介绍</a></li>
   <li><a href="../use/index.html" class="page">使用</a></li>
   <li><a href="../design/index.html" class="page">设计</a></li>
-  <li><a href="../api/index.html" class="page">API</a>
+  <li><a href="../api/index.html" class="page">API</a></li>
+  <li><a href="../deploy/index.html" class="page">部署</a>
   <ul>
-    <li><a href="../api/open/index.html" class="page">开放API</a></li>
-    <li><a href="../api/management/index.html" class="page">管理API</a></li>
-    <li><a href="../api/json.html#json-说明" class="active page">JSON 说明</a>
+    <li><a href="../deploy/package.html" class="page">软件包</a></li>
+    <li><a href="../deploy/single.html" class="page">单机部署</a></li>
+    <li><a href="../deploy/cluster-jdbc.html" class="page">集群部署（使用JDBC持久化）</a></li>
+    <li><a href="../deploy/persistence-cassandra.html" class="page">集群部署（使用Cassandra作为存储）</a></li>
+    <li><a href="../deploy/docker.html#docker" class="active page">Docker</a>
     <ul>
-      <li><a href="../api/json.html#protobuf-json转换说明" class="header">Protobuf、JSON转换说明</a></li>
-      <li><a href="../api/json.html#示例" class="header">示例</a></li>
+      <li><a href="../deploy/docker.html#单节点" class="header">单节点</a></li>
+      <li><a href="../deploy/docker.html#集群" class="header">集群</a></li>
     </ul></li>
+    <li><a href="../deploy/other-persistence.html" class="page">其它存储机制</a></li>
   </ul></li>
-  <li><a href="../deploy/index.html" class="page">部署</a></li>
   <li><a href="../releases.html" class="page">发布</a></li>
 </ul>
 </nav>
@@ -85,17 +88,20 @@ Version 0.1.0
   <li><a href="../intro.html" class="page">介绍</a></li>
   <li><a href="../use/index.html" class="page">使用</a></li>
   <li><a href="../design/index.html" class="page">设计</a></li>
-  <li><a href="../api/index.html" class="page">API</a>
+  <li><a href="../api/index.html" class="page">API</a></li>
+  <li><a href="../deploy/index.html" class="page">部署</a>
   <ul>
-    <li><a href="../api/open/index.html" class="page">开放API</a></li>
-    <li><a href="../api/management/index.html" class="page">管理API</a></li>
-    <li><a href="../api/json.html#json-说明" class="active page">JSON 说明</a>
+    <li><a href="../deploy/package.html" class="page">软件包</a></li>
+    <li><a href="../deploy/single.html" class="page">单机部署</a></li>
+    <li><a href="../deploy/cluster-jdbc.html" class="page">集群部署（使用JDBC持久化）</a></li>
+    <li><a href="../deploy/persistence-cassandra.html" class="page">集群部署（使用Cassandra作为存储）</a></li>
+    <li><a href="../deploy/docker.html#docker" class="active page">Docker</a>
     <ul>
-      <li><a href="../api/json.html#protobuf-json转换说明" class="header">Protobuf、JSON转换说明</a></li>
-      <li><a href="../api/json.html#示例" class="header">示例</a></li>
+      <li><a href="../deploy/docker.html#单节点" class="header">单节点</a></li>
+      <li><a href="../deploy/docker.html#集群" class="header">集群</a></li>
     </ul></li>
+    <li><a href="../deploy/other-persistence.html" class="page">其它存储机制</a></li>
   </ul></li>
-  <li><a href="../deploy/index.html" class="page">部署</a></li>
   <li><a href="../releases.html" class="page">发布</a></li>
 </ul>
 </div>
@@ -109,65 +115,32 @@ Version 0.1.0
 <section class="site-content small-12 column">
 <article class="page-content row">
 <div class="small-12 column" id="docs">
-<h1><a href="#json-说明" name="json-说明" class="anchor"><span class="anchor-link"></span></a>JSON 说明</h1>
-<h2><a href="#protobuf-json转换说明" name="protobuf-json转换说明" class="anchor"><span class="anchor-link"></span></a>Protobuf、JSON转换说明</h2>
-<p>REST API使用JSON作为序例化，由Protobuf数据自动序例化为JSON（或反之）。</p>
-<ol>
-  <li>Protobuf里使用下划线定义的字段在序例化为JSON时将自动转换成驼峰格式；</li>
-  <li>当某个字段未设置时，将使用Protobuf里定义的默认值。也就是说客户在提交请求时不需要每个字段都设置，同时，服务端返回结果时未设置的字段将使用默认值返回；</li>
-  <li><code>oneof</code>类型字段在序例化为JSON时将不包含外层的包裹，将直接返回设置的字段。</li>
-</ol>
-<h2><a href="#示例" name="示例" class="anchor"><span class="anchor-link"></span></a>示例</h2>
-<p><strong>protobuf</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/protocol/naming.proto#L214-L222" target="_blank" title="Go to snippet source"></a><code class="language-proto">message NamingResponse {
-    int32 status = 1;
-    string message = 2;
-    oneof data {
-        ListedService listed_service = 3;
-        fusion.discoveryx.model.ServiceInfo service_info = 4;
-        fusion.discoveryx.model.Instance instance = 5;
-    }
-}</code></pre>
-<p><strong>json</strong></p>
-<pre class="prettyprint"><code class="language-json">{
-    &quot;status&quot;:200,
-    &quot;message&quot;:&quot;&quot;,
-    &quot;serviceInfo&quot;:{
-        &quot;namespace&quot;:&quot;namespace&quot;,
-        &quot;serviceName&quot;:&quot;fusion-discoveryx&quot;,
-        &quot;groupName&quot;:&quot;default&quot;,
-        &quot;instances&quot;:[
-            {
-                &quot;instanceId&quot;:&quot;127.0.0.1:8000&quot;,
-                &quot;ip&quot;:&quot;127.0.0.1&quot;,
-                &quot;port&quot;:8000,
-                &quot;weight&quot;:0,
-                &quot;healthy&quot;:true,
-                &quot;enabled&quot;:false,
-                &quot;metadata&quot;:{
-
-                }
-            }
-        ]
-    }
-}
+<h1><a href="#docker" name="docker" class="anchor"><span class="anchor-link"></span></a>Docker</h1>
+<h2><a href="#单节点" name="单节点" class="anchor"><span class="anchor-link"></span></a>单节点</h2>
+<p>Fusion DiscoveryX 提供了 Docker 构建脚本：</p>
+<pre><code>cd fusion-discoveryx/
+sbt &quot;project discoveryx-server&quot; dist
+scripts/dockers/fusion-discoveryx
+docker build -t fusion-discoveryx .
 </code></pre>
+<h2><a href="#集群" name="集群" class="anchor"><span class="anchor-link"></span></a>集群</h2>
+<p>TODO</p>
 </div>
 </article>
 <div class="row">
 <div class="small-12 column">
 <section class="nav-prev-next row">
 <div class="nav-prev small-6 column">
-<a href="../api/management/grpc.html"><i class="icon-prev"></i> <span class="link-prev">gRPC Service Descriptor</span></a>
+<a href="../deploy/persistence-cassandra.html"><i class="icon-prev"></i> <span class="link-prev">集群部署（使用Cassandra作为存储）</span></a>
 </div>
 <div class="nav-next small-6 column clearfix">
-<a class="float-right" href="../deploy/index.html">部署 <i class="icon-next"></i></a>
+<a class="float-right" href="../deploy/other-persistence.html">其它存储机制 <i class="icon-next"></i></a>
 </div>
 </section>
 </div>
 </div>
 <div class="source-github row">
-在此文档中发现错误？该页面的源代码可以在 <a href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-docs/src/main/paradox/api/json.md" target="_blank">这里</a> 找到。欢迎随时编辑并提交Pull Request。
+在此文档中发现错误？该页面的源代码可以在 <a href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-docs/src/main/paradox/deploy/docker.md" target="_blank">这里</a> 找到。欢迎随时编辑并提交Pull Request。
 </div>
 
 <footer class="page-footer row clearfix">

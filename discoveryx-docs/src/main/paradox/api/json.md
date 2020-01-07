@@ -23,12 +23,10 @@ REST API使用JSON作为序例化，由Protobuf数据自动序例化为JSON（�
     "serviceInfo":{
         "namespace":"namespace",
         "serviceName":"fusion-discoveryx",
+        "groupName":"default",
         "instances":[
             {
-                "instanceId":"b9d8b5fc218c5a4852c389fb220288022cb62ae4",
-                "namespace":"namespace",
-                "serviceName":"fusion-discoveryx",
-                "groupName":"default",
+                "instanceId":"127.0.0.1:8000",
                 "ip":"127.0.0.1",
                 "port":8000,
                 "weight":0,

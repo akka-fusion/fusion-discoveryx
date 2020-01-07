@@ -57,6 +57,8 @@ Version 0.1.0
     <li><a href="../deploy/single.html" class="page">单机部署</a></li>
     <li><a href="../deploy/cluster-jdbc.html" class="page">集群部署（使用JDBC持久化）</a></li>
     <li><a href="../deploy/persistence-cassandra.html" class="page">集群部署（使用Cassandra作为存储）</a></li>
+    <li><a href="../deploy/docker.html" class="page">Docker</a></li>
+    <li><a href="../deploy/other-persistence.html" class="page">其它存储机制</a></li>
   </ul></li>
   <li><a href="../releases.html" class="page">发布</a></li>
 </ul>
@@ -89,6 +91,8 @@ Version 0.1.0
     <li><a href="../deploy/single.html" class="page">单机部署</a></li>
     <li><a href="../deploy/cluster-jdbc.html" class="page">集群部署（使用JDBC持久化）</a></li>
     <li><a href="../deploy/persistence-cassandra.html" class="page">集群部署（使用Cassandra作为存储）</a></li>
+    <li><a href="../deploy/docker.html" class="page">Docker</a></li>
+    <li><a href="../deploy/other-persistence.html" class="page">其它存储机制</a></li>
   </ul></li>
   <li><a href="../releases.html" class="page">发布</a></li>
 </ul>
@@ -104,16 +108,55 @@ Version 0.1.0
 <article class="page-content row">
 <div class="small-12 column" id="docs">
 <h1><a href="#部署" name="部署" class="anchor"><span class="anchor-link"></span></a>部署</h1>
+<p>Fusion DiscoveryX 提供 <strong>zip</strong> 包和 <strong>Docker</strong> 镜像两种打包部署方式，高级用户亦可以下载源码自行编译打包以获得更多的定制性。Fusion DiscoveryX 支持单机、集群部署，官方集群部署提供了对 JDBC 、Cassandra 的后端存储支持，用户通过 Akka Persistence Plugins 可以很方便的集成其它存储方式。如：</p>
+<ul>
+  <li>MongoDB: <a href="https://github.com/scullxbones/akka-persistence-mongo">https://github.com/scullxbones/akka-persistence-mongo</a></li>
+  <li>DynamoDB: <a href="https://github.com/akka/akka-persistence-dynamodb">https://github.com/akka/akka-persistence-dynamodb</a></li>
+  <li>CouchBase: <a href="https://github.com/akka/akka-persistence-couchbase">https://github.com/akka/akka-persistence-couchbase</a></li>
+</ul>
 <div class="toc ">
 <ul>
   <li><a href="../deploy/package.html" class="page">软件包</a>
   <ul>
     <li><a href="../deploy/package.html#下载" class="header">下载</a></li>
-    <li><a href="../deploy/package.html#构建" class="header">构建</a></li>
+    <li><a href="../deploy/package.html#源码构建" class="header">源码构建</a></li>
   </ul></li>
-  <li><a href="../deploy/single.html" class="page">单机部署</a></li>
-  <li><a href="../deploy/cluster-jdbc.html" class="page">集群部署（使用JDBC持久化）</a></li>
-  <li><a href="../deploy/persistence-cassandra.html" class="page">集群部署（使用Cassandra作为存储）</a></li>
+  <li><a href="../deploy/single.html" class="page">单机部署</a>
+  <ul>
+    <li><a href="../deploy/single.html#使用" class="header">使用</a></li>
+    <li><a href="../deploy/single.html#h2-数据库配置" class="header">H2 数据库配置</a></li>
+  </ul></li>
+  <li><a href="../deploy/cluster-jdbc.html" class="page">集群部署（使用JDBC持久化）</a>
+  <ul>
+    <li><a href="../deploy/cluster-jdbc.html#基本配置" class="header">基本配置</a>
+    <ul>
+      <li><a href="../deploy/cluster-jdbc.html#初始化数据库" class="header">初始化数据库</a></li>
+      <li><a href="../deploy/cluster-jdbc.html#数据库配置" class="header">数据库配置</a></li>
+    </ul></li>
+    <li><a href="../deploy/cluster-jdbc.html#postgresql" class="header">PostgreSQL</a></li>
+    <li><a href="../deploy/cluster-jdbc.html#h2" class="header">H2</a></li>
+    <li><a href="../deploy/cluster-jdbc.html#mysql" class="header">MySQL</a></li>
+    <li><a href="../deploy/cluster-jdbc.html#oracle" class="header">Oracle</a></li>
+    <li><a href="../deploy/cluster-jdbc.html#sql-server" class="header">SQL Server</a></li>
+  </ul></li>
+  <li><a href="../deploy/persistence-cassandra.html" class="page">集群部署（使用Cassandra作为存储）</a>
+  <ul>
+    <li><a href="../deploy/persistence-cassandra.html#基本配置" class="header">基本配置</a>
+    <ul>
+      <li><a href="../deploy/persistence-cassandra.html#初始化数据库" class="header">初始化数据库</a></li>
+    </ul></li>
+  </ul></li>
+  <li><a href="../deploy/docker.html" class="page">Docker</a>
+  <ul>
+    <li><a href="../deploy/docker.html#单节点" class="header">单节点</a></li>
+    <li><a href="../deploy/docker.html#集群" class="header">集群</a></li>
+  </ul></li>
+  <li><a href="../deploy/other-persistence.html" class="page">其它存储机制</a>
+  <ul>
+    <li><a href="../deploy/other-persistence.html#mongodb" class="header">MongoDB</a></li>
+    <li><a href="../deploy/other-persistence.html#dynamodb" class="header">DynamoDB</a></li>
+    <li><a href="../deploy/other-persistence.html#couchbase" class="header">CouchBase</a></li>
+  </ul></li>
 </ul>
 </div>
 </div>

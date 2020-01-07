@@ -16,6 +16,7 @@
 
 package fusion.discoveryx.server
 
+import akka.actor.typed.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Route
 import akka.{ actor => classic }
@@ -24,8 +25,11 @@ import com.typesafe.scalalogging.StrictLogging
 import fusion.common.config.FusionConfigFactory
 import fusion.core.extension.FusionCore
 import fusion.discoveryx.common.Constants
+import fusion.discoveryx.server.protocol.{ CreateUser, GetUser, UserResponse, UserRole }
 import fusion.discoveryx.server.route.Routes
-import helloscala.common.Configuration
+import fusion.discoveryx.server.user.{ UserEntity, UserManager }
+import fusion.discoveryx.server.user.service.UserServiceImpl
+import helloscala.common.{ Configuration, IntStatus }
 import helloscala.common.util.Utils
 import slick.jdbc.H2Profile
 
@@ -37,7 +41,8 @@ class DiscoveryXServer private (discoveryX: DiscoveryX) extends StrictLogging {
 
   def start(): Unit = {
     import DiscoveryXServer._
-    checkRDBMS(discoveryX.config)
+    tryCheckAndInitRDBMS(discoveryX.config)
+    checkAndInitDefaultUser()(discoveryX.system)
     startHttp()(discoveryX.classicSystem)
   }
 
@@ -62,7 +67,7 @@ object DiscoveryXServer extends StrictLogging {
   def apply(): DiscoveryXServer =
     apply(FusionConfigFactory.arrangeConfig(ConfigFactory.load(), Constants.DISCOVERYX))
 
-  def checkRDBMS(config: Config): Unit = {
+  def tryCheckAndInitRDBMS(config: Config): Unit = {
     val c = Configuration(config)
 
     if (c.get[Option[String]]("akka.persistence.journal.plugin").exists(_.startsWith("jdbc"))) {
@@ -94,10 +99,35 @@ object DiscoveryXServer extends StrictLogging {
     }
   }
 
-  def schemaReader(profile: String): Option[BufferedSource] =
+  private def checkAndInitDefaultUser()(implicit system: ActorSystem[_]): Unit = {
+    import system.executionContext
+    val userService = new UserServiceImpl(UserEntity.init(system), UserManager.init(system))
+    userService
+      .getUser(GetUser(Constants.DISCOVERYX))
+      .recover { case _ => UserResponse(IntStatus.INTERNAL_ERROR) }
+      .foreach {
+        case resp if IntStatus.isSuccess(resp.status) =>
+          logger.info(s"The default account [${Constants.DISCOVERYX}] already exist.")
+        case _ =>
+          userService
+            .createUser(
+              CreateUser(
+                Constants.DISCOVERYX,
+                Constants.DISCOVERYX,
+                "Fusion DiscoveryX Administrator.",
+                UserRole.ADMIN))
+            .onComplete {
+              case Success(value) =>
+                logger.info(s"Initialization default user ${Constants.DISCOVERYX} successful, return is $value.")
+              case Failure(e) =>
+                logger.warn(s"Initialization default user ${Constants.DISCOVERYX} failure, exception: ${e.toString}")
+            }
+      }
+  }
+
+  private def schemaReader(profile: String): Option[BufferedSource] =
     Option(profile match {
-      case "slick.jdbc.H2Profile$"       => scala.io.Source.fromResource("sql/schemas/h2.sql")
-      case "slick.jdbc.PostgresProfile$" => scala.io.Source.fromResource("sql/schemas/postgres.sql")
-      case _                             => null
+      case "slick.jdbc.H2Profile$" => scala.io.Source.fromResource("sql/schemas/h2.sql")
+      case _                       => null
     })
 }

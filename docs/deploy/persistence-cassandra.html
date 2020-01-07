@@ -56,7 +56,12 @@ Version 0.1.0
     <li><a href="../deploy/package.html" class="page">软件包</a></li>
     <li><a href="../deploy/single.html" class="page">单机部署</a></li>
     <li><a href="../deploy/cluster-jdbc.html" class="page">集群部署（使用JDBC持久化）</a></li>
-    <li><a href="../deploy/persistence-cassandra.html#集群部署-使用cassandra作为存储-" class="active page">集群部署（使用Cassandra作为存储）</a></li>
+    <li><a href="../deploy/persistence-cassandra.html#集群部署-使用cassandra作为存储-" class="active page">集群部署（使用Cassandra作为存储）</a>
+    <ul>
+      <li><a href="../deploy/persistence-cassandra.html#基本配置" class="header">基本配置</a></li>
+    </ul></li>
+    <li><a href="../deploy/docker.html" class="page">Docker</a></li>
+    <li><a href="../deploy/other-persistence.html" class="page">其它存储机制</a></li>
   </ul></li>
   <li><a href="../releases.html" class="page">发布</a></li>
 </ul>
@@ -88,7 +93,12 @@ Version 0.1.0
     <li><a href="../deploy/package.html" class="page">软件包</a></li>
     <li><a href="../deploy/single.html" class="page">单机部署</a></li>
     <li><a href="../deploy/cluster-jdbc.html" class="page">集群部署（使用JDBC持久化）</a></li>
-    <li><a href="../deploy/persistence-cassandra.html#集群部署-使用cassandra作为存储-" class="active page">集群部署（使用Cassandra作为存储）</a></li>
+    <li><a href="../deploy/persistence-cassandra.html#集群部署-使用cassandra作为存储-" class="active page">集群部署（使用Cassandra作为存储）</a>
+    <ul>
+      <li><a href="../deploy/persistence-cassandra.html#基本配置" class="header">基本配置</a></li>
+    </ul></li>
+    <li><a href="../deploy/docker.html" class="page">Docker</a></li>
+    <li><a href="../deploy/other-persistence.html" class="page">其它存储机制</a></li>
   </ul></li>
   <li><a href="../releases.html" class="page">发布</a></li>
 </ul>
@@ -104,6 +114,26 @@ Version 0.1.0
 <article class="page-content row">
 <div class="small-12 column" id="docs">
 <h1><a href="#集群部署-使用cassandra作为存储-" name="集群部署-使用cassandra作为存储-" class="anchor"><span class="anchor-link"></span></a>集群部署（使用Cassandra作为存储）</h1>
+<h2><a href="#基本配置" name="基本配置" class="anchor"><span class="anchor-link"></span></a>基本配置</h2>
+<p>Fusion DiscoveryX 使用 Akka Persistence 作为存储层，<a href="https://doc.akka.io/docs/akka-persistence-cassandra/current/">akka-persistence-cassandra</a> 为 Akka Persistence 提供了 JDBC 访问插件。</p>
+<pre class="prettyprint"><code class="language-hocon">akka {
+  persistence {
+    journal {
+      plugin = &quot;cassandra-journal&quot;
+      // auto-start-journals = [&quot;cassandra-journal&quot;]
+    }
+    snapshot-store {
+      plugin = &quot;cassandra-snapshot-store&quot;
+      // auto-start-snapshot-stores = [&quot;cassandra-snapshot-store&quot;]
+    }
+  }
+}
+</code></pre>
+<h3><a href="#初始化数据库" name="初始化数据库" class="anchor"><span class="anchor-link"></span></a>初始化数据库</h3>
+<p>在启动 Fusion DiscoveryX 之前，需要提前建好 Cassandra 数据库表。在软件包的 <code>share/cassandra/schema</code> 目录下能找到 Cassandra 数据库表的创建脚本。</p>
+<pre><code>├── journal-schema.cql
+└── snapshot-schema.cql
+</code></pre>
 </div>
 </article>
 <div class="row">
@@ -113,7 +143,7 @@ Version 0.1.0
 <a href="../deploy/cluster-jdbc.html"><i class="icon-prev"></i> <span class="link-prev">集群部署（使用JDBC持久化）</span></a>
 </div>
 <div class="nav-next small-6 column clearfix">
-<a class="float-right" href="../releases.html">发布 <i class="icon-next"></i></a>
+<a class="float-right" href="../deploy/docker.html">Docker <i class="icon-next"></i></a>
 </div>
 </section>
 </div>
