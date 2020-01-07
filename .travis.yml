@@ -25,8 +25,8 @@ cache:
     - $HOME/.sbt
     - $HOME/.jabba/jdk
 
-git:
-  depth: 1 # Avoid sbt-dynver not seeing the tag
+#git:
+#  depth: 1 # Avoid sbt-dynver not seeing the tag
 
 branches:
   only:
@@ -46,7 +46,7 @@ stages:
 jobs:
   include:
     - stage: build
-      script: test:compile
+      script: sbt test:compile
       name: "Test for Java 11"
     - stage: test-java8
       script: scripts/travis-test-scala12.sh
