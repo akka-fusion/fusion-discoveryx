@@ -1,13 +1,13 @@
 import React, { Component } from 'react';
 import { inject, observer } from 'mobx-react';
 import { Link } from 'react-router-dom';
-import { Button, Divider, Popconfirm, Tabs } from 'antd';
+import { Button, Divider, Popconfirm } from 'antd';
 import qs from 'query-string';
 import PropTypes from 'prop-types';
+import { upStorage } from 'up-utils';
 import SearchTable from '../../../../components/SearchTable';
+import NamespaceChoose from '../../../../components/NamespaceChoose';
 import { CONFIG_MANAGEMENT_CREATE, CONFIG_MANAGEMENT_DETAIL } from '../../../../router/constants';
-
-const { TabPane } = Tabs;
 
 const fields = [
   {
@@ -22,54 +22,43 @@ const fields = [
   },
 ];
 
-@inject(({ store: { configStore, namespaceStore } }) => ({ configStore, namespaceStore }))
+@inject(({ store: { configStore } }) => ({ configStore }))
 @observer
 export default class List extends Component {
-  state = { namespace: null };
-
   searchTableRef = React.createRef();
 
   static propTypes = {
     configStore: PropTypes.object.isRequired,
-    namespaceStore: PropTypes.object.isRequired,
   };
 
   componentDidMount() {}
 
   componentWillUnmount() {
     this.props.configStore.setConfigPage();
-    this.props.namespaceStore.setNamespaceList();
   }
 
   handleDeleteConfig = dataId => () =>
     this.props.configStore.deleteConfig({ dataId }).then(this.searchTableRef.current.fetchData);
 
-  handleTabsChange = namespace => {
+  fetchData = namespace => {
     this.props.configStore.setConfigPage();
     this.searchTableRef.current.handleReset();
     this.searchTableRef.current.fetchData({ namespace, page: 1 });
-    this.setState({ namespace });
   };
 
-  getConfigPage = async params => {
-    const namespace =
-      this.state.namespace ||
-      (await this.props.namespaceStore.getNamespaceList().then(namespaceList => {
-        const $namespace = namespaceList[0]?.namespace;
-        this.setState({ namespace: $namespace });
-        return $namespace;
-      }));
-    return this.props.configStore.getConfigPage({ namespace, ...params });
-  };
+  getConfigPage = params =>
+    this.props.configStore.getConfigPage({
+      namespace: upStorage.getSession('namespace'),
+      ...params,
+    });
 
   render() {
     const {
       configStore: {
         configPage: { page, size, totalElements, data },
       },
-      namespaceStore: { namespaceList },
     } = this.props;
-    const { namespace } = this.state;
+    const namespace = upStorage.getSession('namespace');
 
     const expandChildren = (
       <Link to={`${CONFIG_MANAGEMENT_CREATE}?${qs.stringify({ namespace })}`}>
@@ -116,12 +105,9 @@ export default class List extends Component {
 
     return (
       <div>
-        <Tabs onChange={this.handleTabsChange}>
-          {namespaceList.map(item => (
-            <TabPane tab={item.name} key={item.namespace} />
-          ))}
-        </Tabs>
+        <NamespaceChoose fetchData={this.fetchData} />
         <SearchTable
+          firstFetch={false}
           ref={this.searchTableRef}
           expandChildren={expandChildren}
           callback={this.getConfigPage}
