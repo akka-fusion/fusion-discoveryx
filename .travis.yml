@@ -26,7 +26,7 @@ cache:
     - $HOME/.jabba/jdk
 
 git:
-  depth: false # Avoid sbt-dynver not seeing the tag
+  depth: 1 # Avoid sbt-dynver not seeing the tag
 
 branches:
   only:
@@ -39,8 +39,8 @@ env:
 
 stages:
   - test
-  - paradox
-  - test-java8
+  #- paradox
+  #- test-java8
 
 jobs:
   include:
