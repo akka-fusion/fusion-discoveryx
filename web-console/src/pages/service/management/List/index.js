@@ -2,12 +2,12 @@ import React, { Component } from 'react';
 import { inject, observer } from 'mobx-react';
 import { Link } from 'react-router-dom';
 import qs from 'query-string';
-import { Button, Divider, Form, Input, Modal, Popconfirm, Tabs } from 'antd';
+import { Button, Divider, Form, Input, Modal, Popconfirm } from 'antd';
 import PropTypes from 'prop-types';
+import { upStorage } from 'up-utils';
 import SearchTable from '../../../../components/SearchTable';
+import NamespaceChoose from '../../../../components/NamespaceChoose';
 import { SERVICE_MANAGEMENT_DETAIL } from '../../../../router/constants';
-
-const { TabPane } = Tabs;
 
 const fields = [
   {
@@ -38,49 +38,41 @@ const CollectionCreateForm = Form.create({ name: 'form_in_modal' })(
   },
 );
 
-@inject(({ store: { serviceStore, namespaceStore } }) => ({ serviceStore, namespaceStore }))
+@inject(({ store: { serviceStore } }) => ({ serviceStore }))
 @observer
 export default class List extends Component {
-  static propTypes = {
-    serviceStore: PropTypes.object.isRequired,
-    namespaceStore: PropTypes.object.isRequired,
-  };
-
-  state = { namespace: null };
-
   searchTableRef = React.createRef();
 
   formRef = React.createRef();
+
+  state = { visible: false };
+
+  static propTypes = {
+    serviceStore: PropTypes.object.isRequired,
+  };
 
   componentDidMount() {}
 
   componentWillUnmount() {
     this.props.serviceStore.setServicePage();
-    this.props.namespaceStore.setNamespaceList();
   }
 
   handleDeleteService = serviceName => () =>
     this.props.serviceStore
-      .deleteService({ serviceName, namespace: this.state.namespace })
+      .deleteService({ serviceName, namespace: upStorage.getSession('namespace') })
       .then(this.searchTableRef.current.fetchData);
 
-  handleTabsChange = namespace => {
+  fetchData = namespace => {
     this.props.serviceStore.setServicePage();
     this.searchTableRef.current.handleReset();
     this.searchTableRef.current.fetchData({ namespace, page: 1 });
-    this.setState({ namespace });
   };
 
-  getServicePage = async params => {
-    const namespace =
-      this.state.namespace ||
-      (await this.props.namespaceStore.getNamespaceList().then(namespaceList => {
-        const $namespace = namespaceList[0]?.namespace;
-        this.setState({ namespace: $namespace });
-        return $namespace;
-      }));
-    return this.props.serviceStore.getServicePage({ namespace, ...params });
-  };
+  getServicePage = params =>
+    this.props.serviceStore.getServicePage({
+      namespace: upStorage.getSession('namespace'),
+      ...params,
+    });
 
   showModal = () => {
     this.setState({ visible: true });
@@ -93,7 +85,6 @@ export default class List extends Component {
 
   handleCreate = () => {
     const { form } = this.formRef.current.props;
-    const { namespace } = this.state;
 
     form.validateFields((err, values) => {
       if (err) {
@@ -102,7 +93,7 @@ export default class List extends Component {
       console.log('Received values of form: ', values);
       this.props.serviceStore
         .createService({
-          namespace,
+          namespace: upStorage.getSession('namespace'),
           ...values,
         })
         .then(() => {
@@ -117,7 +108,6 @@ export default class List extends Component {
       serviceStore: {
         servicePage: { page, size, totalElements, data },
       },
-      namespaceStore: { namespaceList },
     } = this.props;
     const { visible } = this.state;
 
@@ -176,12 +166,9 @@ export default class List extends Component {
 
     return (
       <div>
-        <Tabs onChange={this.handleTabsChange}>
-          {namespaceList.map(item => (
-            <TabPane tab={item.name} key={item.namespace} />
-          ))}
-        </Tabs>
+        <NamespaceChoose fetchData={this.fetchData} />
         <SearchTable
+          firstFetch={false}
           ref={this.searchTableRef}
           expandChildren={expandChildren}
           callback={this.getServicePage}

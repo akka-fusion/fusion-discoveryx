@@ -45,6 +45,7 @@ export default class SearchTable extends Component {
     expandChildren: PropTypes.element,
     form: PropTypes.object,
     history: PropTypes.object,
+    firstFetch: PropTypes.bool,
   };
 
   static defaultProps = {
@@ -53,6 +54,7 @@ export default class SearchTable extends Component {
     expandChildren: null,
     form: {},
     history: {},
+    firstFetch: true,
   };
 
   state = {
@@ -60,7 +62,7 @@ export default class SearchTable extends Component {
   };
 
   componentDidMount() {
-    this.fetchData();
+    this.props.firstFetch && this.fetchData();
   }
 
   componentWillUnmount() {}
@@ -94,8 +96,8 @@ export default class SearchTable extends Component {
       ...params,
     });
 
-    Promise.resolve(this.props.callback(newParams))
-      .then(() => {
+    return Promise.resolve(this.props.callback(newParams))
+      .then(data => {
         const {
           tableProps: { dataSource: nextDataSource },
           paginationProps: { page: nextPage },
@@ -107,6 +109,7 @@ export default class SearchTable extends Component {
           return;
         }
         this.props.history.replace({ ...this.props.history.location, state: newParams });
+        return data;
       })
       .finally(() => this.setState({ loading: false }));
   };

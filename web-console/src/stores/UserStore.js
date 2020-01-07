@@ -5,6 +5,7 @@
  * */
 
 import { action, observable } from 'mobx';
+import { upStorage } from 'up-utils';
 import request from '../utils/request';
 import { PAGE_OBJECT } from '../utils/constants';
 
@@ -32,6 +33,7 @@ export default class UserStore {
       },
     });
     this.setAuth(logined);
+    upStorage.setSession('namespace', '');
     return logined;
   };
 

@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import { inject, observer } from 'mobx-react';
 import { Button, Modal, Form, Input, Divider, Popconfirm } from 'antd';
 import PropTypes from 'prop-types';
+import { upStorage } from 'up-utils';
 import SearchTable from '../../../../components/SearchTable';
 
 const CollectionCreateForm = Form.create({ name: 'form_in_modal' })(

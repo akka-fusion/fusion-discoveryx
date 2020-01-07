@@ -51,7 +51,7 @@ export default class App extends Component {
   render() {
     const {
       userStore: {
-        auth: { account },
+        auth: { account = '' },
       },
     } = this.props;
     const dropdownMenu = (
@@ -116,7 +116,7 @@ export default class App extends Component {
             </a>
             <Dropdown overlay={dropdownMenu} placement="bottomRight">
               <Avatar style={{ backgroundColor: '#f56a00', verticalAlign: 'middle' }} size="large">
-                {account}
+                {account[0] || 'U'}
               </Avatar>
             </Dropdown>
           </Header>
@@ -136,7 +136,9 @@ export default class App extends Component {
               </Switch>
             </div>
           </Content>
-          <Footer style={{ textAlign: 'center' }}>Fusion DiscoveryX ©2019 Created by Akka Fusion Team.</Footer>
+          <Footer style={{ textAlign: 'center' }}>
+            Fusion DiscoveryX ©2019 Created by Akka Fusion Team.
+          </Footer>
         </Layout>
       </Layout>
     );
