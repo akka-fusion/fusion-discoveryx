@@ -47,10 +47,10 @@ jobs:
     - stage: test
       script: scripts/travis-test-scala13.sh
       name: "Test for Java 11"
-    - stage: paradox
-      script: scripts/travis-paradox.sh
-      name: "Generate paradox"
-    - stage: test-java8
-      script: scripts/travis-test-scala12.sh
-      env: TRAVIS_JDK=8
-      name: "Test for Java 8"
+#    - stage: paradox
+#      script: scripts/travis-paradox.sh
+#      name: "Generate paradox"
+#    - stage: test-java8
+#      script: scripts/travis-test-scala12.sh
+#      env: TRAVIS_JDK=8
+#      name: "Test for Java 8"
