@@ -88,13 +88,15 @@ class NamingServiceImpl(val namespaceRef: ActorRef[ExistNamespace])(implicit sys
         case Right(value) => value
         case Left(errMsg) => throw HSBadRequestException(errMsg)
       }
-
-      val (ref, source) = ActorSource
-        .actorRef[NamingService.Event]({
-          case _: ServiceEventStop =>
-        }, { changed =>
+      val completionMatcher: PartialFunction[NamingService.Event, Unit] = {
+        case _: ServiceEventStop =>
+      }
+      val failureMatcher: PartialFunction[NamingService.Event, Throwable] = {
+        case changed =>
           throw HSInternalErrorException(s"Throw error: $changed.")
-        }, 2, OverflowStrategy.dropHead)
+      }
+      val (ref, source) = ActorSource
+        .actorRef[NamingService.Event](completionMatcher, failureMatcher, 2, OverflowStrategy.dropHead)
         .preMaterialize()
       serviceInstanceRegion ! ShardingEnvelope(entityId, NamingListenerCommand(ref, in))
       source.mapConcat {
