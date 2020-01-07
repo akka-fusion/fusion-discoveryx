@@ -22,22 +22,27 @@ bin/discoveryx-server.bat
 
 ## 源码构建
 
-下载源码，执行`sbt`命令。
-
 ```
 git clone https://github.com/akka-fusion/fusion-discoveryx.git
 cd fusion-discoveryx
-sbt
+pushd web-console
+yarn && yarn build
+popd
+pushd ../scripts
+./publish-dist.sh
+popd
+sbt "discoveryx-server" dist
 ```
 
 @@@vars
-执行 **sbtshell** 命令：`discoveryx-server/dist`，将在`discoveryx-server/target/universal`目录生成 discoveryx-server-$version$.zip 软件包。
+最终将在 `discoveryx-server/target/universal` 目录生成 discoveryx-server-$version$.zip 软件包。解压生成的 **zip** 软件包（discoveryx-server-$version$.zip），执行 `bin` 目录里的 `sh` 或 `bat` 脚本即可运行程序。
 @@@
 
-```sbtshell
-> discoveryx-server/dist
-```
-
 @@@vars
-解压生成的 **zip** 软件包（discoveryx-server-$version$.zip），执行 `bin` 目录里的 `sh` 或 `bat` 脚本即可运行程序。
+```
+cd discoveryx-server/target/universal
+unzip discoveryx-server-$version$.zip
+cd discoveryx-server-$version$
+./bin/discoveryx-server
+```
 @@@
