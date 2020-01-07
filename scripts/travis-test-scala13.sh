@@ -4,6 +4,6 @@ cd "$BASEDIR"
 
 start test "RUNNING TESTS FOR SCALA 2.13"
 
-runSbt test
+runSbt test:compile
 
 end test "ALL TESTS PASSED"
