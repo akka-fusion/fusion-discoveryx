@@ -38,19 +38,20 @@ env:
     - TRAVIS_JDK=11
 
 stages:
-  - test
-  #- paradox
-  #- test-java8
+  - build
+  - name: test-java8
+    if: (branch = master) AND (NOT (type IN (push, pull_request)))
+  #  - paradox
 
 jobs:
   include:
-    - stage: test
-      script: scripts/travis-test-scala13.sh
+    - stage: build
+      script: test:compile
       name: "Test for Java 11"
+    - stage: test-java8
+      script: scripts/travis-test-scala12.sh
+      env: TRAVIS_JDK=8
+      name: "Test for Java 8"
 #    - stage: paradox
 #      script: scripts/travis-paradox.sh
 #      name: "Generate paradox"
-#    - stage: test-java8
-#      script: scripts/travis-test-scala12.sh
-#      env: TRAVIS_JDK=8
-#      name: "Test for Java 8"
