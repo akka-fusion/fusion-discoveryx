@@ -116,6 +116,7 @@ lazy val discoveryxCommon = _project("discoveryx-common")
     akkaGrpcCodeGeneratorSettings += "server_power_apis",
     libraryDependencies ++= Seq(
         "com.thesamet.scalapb" %% "scalapb-runtime" % scalapb.compiler.Version.scalapbVersion % "protobuf",
+        _akkaDiscovery,
         _fusionCommon))
 
 def _project(name: String, _base: String = null) =
