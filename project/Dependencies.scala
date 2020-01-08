@@ -24,6 +24,7 @@ object Dependencies {
   val _fusionProtobufV3 = "com.akka-fusion" %% "fusion-protobuf-v3" % versionFusion
   val _fusionTestkit = "com.akka-fusion" %% "fusion-testkit" % versionFusion
 
+  val _akkaDiscovery = "com.typesafe.akka" %% "akka-discovery" % versionAkka
   val _akkaPersistenceTyped = "com.typesafe.akka" %% "akka-persistence-typed" % versionAkka
   val _akkaPersistenceQuery = "com.typesafe.akka" %% "akka-persistence-query" % versionAkka
   val _akkaMultiNodeTestkit = "com.typesafe.akka" %% "akka-multi-node-testkit" % versionAkka
