@@ -38,20 +38,21 @@ env:
     - TRAVIS_JDK=11
 
 stages:
-  - build
-  - name: test-java8
-    if: (branch = master)
+  - test
+    if: (branch = master) AND (NOT (type IN (push, pull_request)))
+  - name: test-scala212
+    if: (branch = develop)
   #  - paradox
 
 jobs:
   include:
-    - stage: build
+    - stage: test
       script: sbt test:compile "discoveryx-functest/multi-jvm:testOnly fusion.discoveryx.functest.DiscoveryXMultiTest"
-      name: "test:compile"
-    - stage: test-java8
-      script: scripts/travis-test-scala12.sh
+      name: "Master discoveryx-functest/multi-jvm:testOnly fusion.discoveryx.functest.DiscoveryXMultiTest"
+    - stage: test-scala212
+      script: sbt ";++ 2.12.10 ;test:compile ;discoveryx-functest/multi-jvm:testOnly fusion.discoveryx.functest.DiscoveryXMultiTest"
       env: TRAVIS_JDK=8
-      name: "Test for Java 8"
+      name: "Develop discoveryx-functest/multi-jvm:testOnly fusion.discoveryx.functest.DiscoveryXMultiTest for Java 8"
 #    - stage: paradox
 #      script: scripts/travis-paradox.sh
 #      name: "Generate paradox"
