@@ -1,13 +1,13 @@
 package fusion.discoveryx.functest
 
 import akka.remote.testconductor.RoleName
-import akka.remote.testkit.{ MultiNodeConfig, STMultiNodeSpec, SchudulerXMultiNodeSpec }
+import akka.remote.testkit.{MultiNodeConfig, STMultiNodeSpec, SchudulerXMultiNodeSpec}
 import com.typesafe.config.ConfigFactory
 import fusion.discoveryx.client.DefaultNamingClient
 import fusion.discoveryx.common.Constants
-import fusion.discoveryx.model.{ InstanceQuery, InstanceRegister, ServerStatusQuery }
-import fusion.discoveryx.server.protocol.{ Logined, Namespace }
-import fusion.discoveryx.server.{ DiscoveryX, DiscoveryXServer }
+import fusion.discoveryx.model.{InstanceQuery, InstanceRegister, ServerStatusQuery}
+import fusion.discoveryx.server.protocol.{Logined, Namespace}
+import fusion.discoveryx.server.{DiscoveryX, DiscoveryXServer}
 import helloscala.common.IntStatus
 
 object DiscoveryXMultiTestConfig extends MultiNodeConfig {
@@ -149,6 +149,11 @@ abstract class DiscoveryXMultiTest
         enterBarrier("query-instance")
       }
     }
+  }
+
+  override def beforeAll(): Unit = {
+    os.remove.all(os.home / "fusion-discoveryx")
+    super.beforeAll()
   }
 }
 

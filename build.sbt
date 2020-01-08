@@ -66,7 +66,7 @@ lazy val discoveryxFunctest = _project("discoveryx-functest")
   .settings(
     skip in publish := true,
     jvmOptions in MultiJvm := Seq("-Xmx512M"),
-    libraryDependencies ++= Seq(_akkaMultiNodeTestkit % Test))
+    libraryDependencies ++= Seq(_osLib, _akkaMultiNodeTestkit % Test))
 
 lazy val discoveryxClientPlayWs =
   _project("discoveryx-client-play-ws")

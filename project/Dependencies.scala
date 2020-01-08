@@ -16,6 +16,7 @@ object Dependencies {
   val versionAkkaPersistenceCassandra = "0.101"
   val versionAkkaPersistenceJdbc = "3.5.2"
   val versionScalapbJson4s = "0.10.0"
+  val versionOsLib = "0.6.2"
   val versionFusion = "2.0.2"
 
   val _fusionCommon = "com.akka-fusion" %% "fusion-common" % versionFusion
@@ -67,6 +68,8 @@ object Dependencies {
       .cross(CrossVersion.binary)
 
   val _scalapbJson4s = "com.thesamet.scalapb" %% "scalapb-json4s" % versionScalapbJson4s
+
+  val _osLib = "com.lihaoyi" %% "os-lib" % versionOsLib
 
   val _postgresql = "org.postgresql" % "postgresql" % versionPostgres
   val _mysql = "mysql" % "mysql-connector-java" % versionMySQL
