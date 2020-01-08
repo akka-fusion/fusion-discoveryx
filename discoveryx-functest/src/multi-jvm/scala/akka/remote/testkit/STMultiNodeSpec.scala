@@ -1,11 +1,11 @@
 package akka.remote.testkit
 
 import akka.actor.typed.ActorSystem
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.{ Config, ConfigFactory }
 import fusion.discoveryx.server.DiscoveryX
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.time.{Millis, Span}
-import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
+import org.scalatest.time.{ Millis, Span }
+import org.scalatest._
 
 import scala.language.implicitConversions
 
@@ -13,6 +13,8 @@ trait STMultiNodeSpec
     extends MultiNodeSpecCallbacks
     with WordSpecLike
     with Matchers
+    with OptionValues
+    with EitherValues
     with BeforeAndAfterAll
     with ScalaFutures {
   self: SchudulerXMultiNodeSpec =>

@@ -33,39 +33,39 @@ import helloscala.common.{ Configuration, IntStatus }
 import helloscala.common.util.Utils
 import slick.jdbc.H2Profile
 
+import scala.concurrent.Future
 import scala.io.BufferedSource
 import scala.util.{ Failure, Success }
 
 class DiscoveryXServer private (discoveryX: DiscoveryX) extends StrictLogging {
   FusionCore(discoveryX.system)
 
-  def start(): Unit = {
+  def start(): Future[Http.ServerBinding] = {
     import DiscoveryXServer._
     tryCheckAndInitRDBMS(discoveryX.config)
     checkAndInitDefaultUser()(discoveryX.system)
     startHttp()(discoveryX.classicSystem)
   }
 
-  private def startHttp()(implicit system: classic.ActorSystem): Unit = {
+  private def startHttp()(implicit system: classic.ActorSystem): Future[Http.ServerBinding] = {
     val route = new Routes(discoveryX).init().route
     val config = discoveryX.config
-    Http()
-      .bindAndHandleAsync(
-        Route.asyncHandler(route),
-        config.getString("fusion.http.default.server.host"),
-        config.getInt("fusion.http.default.server.port"))
-      .onComplete {
-        case Success(value)     => logger.info(s"HTTP started, bind to $value")
-        case Failure(exception) => logger.error(s"HTTP start failure. $exception")
-      }(system.dispatcher)
+    val f = Http().bindAndHandleAsync(
+      Route.asyncHandler(route),
+      config.getString("fusion.http.default.server.host"),
+      config.getInt("fusion.http.default.server.port"))
+    f.onComplete {
+      case Success(value)     => logger.info(s"HTTP started, bind to $value")
+      case Failure(exception) => logger.error(s"HTTP start failure. $exception")
+    }(system.dispatcher)
+    f
   }
 }
 
 object DiscoveryXServer extends StrictLogging {
   def apply(discoveryX: DiscoveryX): DiscoveryXServer = new DiscoveryXServer(discoveryX)
   def apply(config: Config): DiscoveryXServer = apply(DiscoveryX.fromMergedConfig(config))
-  def apply(): DiscoveryXServer =
-    apply(FusionConfigFactory.arrangeConfig(ConfigFactory.load(), Constants.DISCOVERYX))
+  def apply(): DiscoveryXServer = apply(FusionConfigFactory.arrangeConfig(ConfigFactory.load(), Constants.DISCOVERYX))
 
   def tryCheckAndInitRDBMS(config: Config): Unit = {
     val c = Configuration(config)

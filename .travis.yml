@@ -40,14 +40,14 @@ env:
 stages:
   - build
   - name: test-java8
-    if: (branch = master) AND (NOT (type IN (push, pull_request)))
+    if: (branch = master)
   #  - paradox
 
 jobs:
   include:
     - stage: build
-      script: sbt test:compile
-      name: "Test for Java 11"
+      script: sbt test:compile "discoveryx-functest/multi-jvm:testOnly fusion.discoveryx.functest.DiscoveryXMultiTest"
+      name: "test:compile"
     - stage: test-java8
       script: scripts/travis-test-scala12.sh
       env: TRAVIS_JDK=8

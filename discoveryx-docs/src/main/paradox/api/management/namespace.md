@@ -1,7 +1,7 @@
 # NamespaceManagerService
 
 - gRPC服务地址：`/fusion.discoveryx.grpc.NamingService`
-- REST URL前缀：`/fusion/discoveryx/console/management`
+- REST URL前缀：`/fusion/discoveryx/console/namespace`
 
 REST URL路径由 **REST URL前缀** + 服务名组织，均使用 **POST** 方法的请求，JSON序例化格式。如查询实例接口访问地址为：`POST /fusion/discoveryx/console/management/ListNamespace`。Protobuf与JSON格式转换请参阅： @ref[JSON 说明](../json.md)。
 

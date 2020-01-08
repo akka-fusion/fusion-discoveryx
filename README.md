@@ -36,6 +36,12 @@ docker-compose -f docker-compose.yml up -d // --build
 > discoveryx-server/testOnly fusion.discoveryx.server.config.route.ConfigManagementRouteTest
 ```
 
+### Multi Node 测试
+
+```sbtshell
+> discoveryx-functest/multi-jvm:testOnly fusion.discoveryx.functest.DiscoveryXMultiTest
+```
+
 ## Package, Deployment
 
 ```
