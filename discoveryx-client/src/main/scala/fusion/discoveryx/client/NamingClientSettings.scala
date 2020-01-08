@@ -16,6 +16,8 @@
 
 package fusion.discoveryx.client
 
+import java.util.concurrent.TimeUnit
+
 import akka.actor.typed.ActorSystem
 import com.typesafe.config.Config
 import fusion.discoveryx.common.Constants
@@ -23,7 +25,6 @@ import fusion.discoveryx.model.{ HealthyCheckMethod, HealthyCheckProtocol }
 import helloscala.common.Configuration
 
 import scala.concurrent.duration._
-import scala.jdk.DurationConverters._
 
 object NamingClientSettings {
   def apply(system: ActorSystem[_]): NamingClientSettings = fromConfig(system.settings.config)
@@ -37,7 +38,8 @@ object NamingClientSettings {
 
 final class NamingClientSettings private (val c: Configuration) {
   val autoRegistration: Boolean = c.getOrElse("auto-registration", false)
-  val heartbeatInterval: FiniteDuration = c.getDuration("heartbeat-interval").toScala
+  val heartbeatInterval: FiniteDuration =
+    FiniteDuration(c.getDuration("heartbeat-interval").toNanos, TimeUnit.NANOSECONDS)
   val oneHealthy: Boolean = c.getBoolean("one-healthy")
   val allHealthy: Boolean = c.getBoolean("all-healthy")
   val namespace: Option[String] = c.get[Option[String]]("namespace")

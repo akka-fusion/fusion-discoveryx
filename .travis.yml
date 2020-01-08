@@ -1,0 +1,57 @@
+language: scala
+
+sudo: false
+
+#scala:
+#  - "2.12.10"
+#  - "2.13.1"
+
+before_install: curl -Ls https://git.io/jabba | bash && . ~/.jabba/jabba.sh
+install: jabba install "adopt@~1.$TRAVIS_JDK.0-0" && jabba use "$_" && java -Xmx32m -version
+
+addons:
+  apt:
+    packages:
+      - graphviz
+
+before_cache:
+  - find $HOME/.ivy2 -name "ivydata-*.properties" -print -delete
+  - find $HOME/.sbt  -name "*.lock"               -print -delete
+
+cache:
+  directories:
+    - $HOME/.cache/coursier
+    - $HOME/.ivy2/cache
+    - $HOME/.sbt
+    - $HOME/.jabba/jdk
+
+#git:
+#  depth: 1 # Avoid sbt-dynver not seeing the tag
+
+branches:
+  only:
+    - master
+    - develop
+
+env:
+  global:
+    - TRAVIS_JDK=11
+
+stages:
+  - build
+  - name: test-java8
+    if: (branch = master)
+  #  - paradox
+
+jobs:
+  include:
+    - stage: build
+      script: sbt test:compile "discoveryx-functest/multi-jvm:testOnly fusion.discoveryx.functest.DiscoveryXMultiTest"
+      name: "test:compile"
+    - stage: test-java8
+      script: scripts/travis-test-scala12.sh
+      env: TRAVIS_JDK=8
+      name: "Test for Java 8"
+#    - stage: paradox
+#      script: scripts/travis-paradox.sh
+#      name: "Generate paradox"

@@ -46,7 +46,7 @@ class NamespaceRoute()(implicit system: ActorSystem[_]) extends SessionRoute {
 
   import fusion.discoveryx.server.util.ProtobufJsonSupport._
 
-  def consoleRoute: Route = pathPrefix("management") {
+  def consoleRoute: Route = pathPrefix("namespace" | "management") {
     validationSession {
       pathPost("ListNamespace") {
         entity(as[ListNamespace]) { in =>

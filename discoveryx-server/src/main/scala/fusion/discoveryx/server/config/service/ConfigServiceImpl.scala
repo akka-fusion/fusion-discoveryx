@@ -56,12 +56,12 @@ class ConfigServiceImpl(namespaceRef: ActorRef[NamespaceRef.ExistNamespace])(imp
 
   override def listenerConfig(in: ConfigChangeListen): Source[ConfigChanged, NotUsed] = {
     val entityId = ConfigEntity.makeEntityId(in.namespace, in.dataId)
+    val completionMatcher: PartialFunction[ConfigEntity.Event, Unit] = { case _: ConfigListenerCompletedEvent => }
+    val failureMatcher: PartialFunction[ConfigEntity.Event, Throwable] = {
+      case changed => throw HSInternalErrorException(s"Throwerror: $changed.")
+    }
     val (ref, source) = ActorSource
-      .actorRef[ConfigEntity.Event](
-        { case _: ConfigListenerCompletedEvent => },
-        changed => throw HSInternalErrorException(s"Throw error: $changed."),
-        2,
-        OverflowStrategy.dropHead)
+      .actorRef[ConfigEntity.Event](completionMatcher, failureMatcher, 2, OverflowStrategy.dropHead)
       .preMaterialize()
     configEntity ! ShardingEnvelope(entityId, RegisterChangeListener(ref, Utils.timeBasedUuid().toString))
     source

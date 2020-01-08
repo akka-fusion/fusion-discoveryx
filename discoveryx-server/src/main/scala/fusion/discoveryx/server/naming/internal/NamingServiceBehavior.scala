@@ -34,6 +34,7 @@ import fusion.discoveryx.server.util.ProtobufJson4s
 import helloscala.common.IntStatus
 import helloscala.common.util.StringUtils
 
+import scala.collection.immutable
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.control.NonFatal
@@ -59,7 +60,7 @@ private[naming] class NamingServiceBehavior(
           cleanup()
         case (_, Terminated(ref)) =>
           try {
-            listeners = listeners.removed(ref.unsafeUpcast[Event])
+            listeners -= ref.unsafeUpcast[Event]
           } catch {
             case NonFatal(_) => // do nothing
           }
@@ -173,7 +174,7 @@ private[naming] class NamingServiceBehavior(
   private def processInstancesQueried(
       state: NamingServiceState,
       replyTo: ActorRef[NamingReply],
-      instances: Seq[Instance],
+      instances: immutable.Seq[Instance],
       availableTimes: Int,
       query: InstanceQuery): Effect[Event, NamingServiceState] = {
     if (instances.isEmpty && availableTimes > 0) {
@@ -199,7 +200,7 @@ private[naming] class NamingServiceBehavior(
     }
   }
 
-  private def nextStateInstance(state: NamingServiceState) = {
+  private def nextStateInstance(state: NamingServiceState): Option[ActorRef[NamingInstance.Command]] = {
     if (unusedIdx < state.healthIds.length) {
       val idx = unusedIdx
       moveUnusedIdx(state)

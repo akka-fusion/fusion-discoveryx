@@ -270,7 +270,7 @@ class UserEntity private (
   private def handleCleanSession(state: UserState, value: CleanSession): UserState = {
     val sessions =
       if (value.token.isEmpty) state.sessions.filter { case (_, activeTime) => settings.isValidSession(activeTime) }
-      else state.sessions.removed(value.token)
+      else state.sessions - value.token
     state.copy(sessions = sessions)
   }
 

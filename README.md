@@ -1,5 +1,7 @@
 # Fusion DiscoveryX
 
+[![Build Status](https://travis-ci.org/akka-fusion/fusion-discoveryx.svg?branch=master)](https://travis-ci.org/akka-fusion/fusion-discoveryx)
+
 服务注册与发现管理系统，基于Akka生态开发。
 
 产品文档：[https://akka-fusion.github.io/fusion-discoveryx/](https://akka-fusion.github.io/fusion-discoveryx/)
@@ -32,6 +34,12 @@ docker-compose -f docker-compose.yml up -d // --build
 
 ```sbtshell
 > discoveryx-server/testOnly fusion.discoveryx.server.config.route.ConfigManagementRouteTest
+```
+
+### Multi Node 测试
+
+```sbtshell
+> discoveryx-functest/multi-jvm:testOnly fusion.discoveryx.functest.DiscoveryXMultiTest
 ```
 
 ## Package, Deployment
