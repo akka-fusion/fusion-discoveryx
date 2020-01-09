@@ -1,3 +1,4 @@
+import fusion.sbt.gen.BuildInfo
 import Commons._
 import Dependencies._
 import Environment._
@@ -28,9 +29,7 @@ ThisBuild / scalafmtOnCompile := true
 
 ThisBuild / sonarUseExternalConfig := true
 
-ThisBuild / resolvers ++= Seq(
-  "Bintray akka-fusion".at("https://akka-fusion.bintray.com/maven"),
-  Resolver.sonatypeRepo("snapshots"))
+ThisBuild / resolvers ++= Seq(Resolver.bintrayRepo("akka-fusion", "maven"), Resolver.jcenterRepo)
 
 lazy val root = Project(id = "fusion-discoveryx", base = file("."))
   .aggregate(discoveryxFunctest, discoveryxClientPlayWs, discoveryxServer, discoveryxClient, discoveryxCommon)
@@ -41,18 +40,17 @@ lazy val discoveryxDocs = _project("discoveryx-docs")
   .enablePlugins(AkkaParadoxPlugin)
   .dependsOn(discoveryxFunctest, discoveryxClientPlayWs, discoveryxServer, discoveryxClient, discoveryxCommon)
   .settings(
-    resolvers += Resolver.jcenterRepo,
     skip in publish := true,
     paradoxGroups := Map("Language" -> Seq("Scala", "Java")),
     sourceDirectory in Compile in paradoxTheme := sourceDirectory.value / "main" / "paradox" / "_template",
     paradoxProperties ++= Map(
         "project.name" -> "Fusion DiscoveryX",
-        "canonical.base_url" -> "http://akka-fusion.github.io/akka-fusion/",
+        "canonical.base_url" -> "http://akka-fusion.github.io/akka-discoveryx/",
         "github.base_url" -> s"https://github.com/akka-fusion/fusion-discoveryx/tree/${version.value}",
         "scala.version" -> scalaVersion.value,
         "scala.binary_version" -> scalaBinaryVersion.value,
-        "scaladoc.akka.base_url" -> s"http://doc.akka.io/api/$versionAkka",
-        "akka.version" -> versionAkka,
+        "scaladoc.akka.base_url" -> s"http://doc.akka.io/api/${BuildInfo.versionAkka}",
+        "akka.version" -> BuildInfo.versionAkka,
         "play.ahc-ws-standalone.version" -> "2.1.2",
         "akka.persistence.couchbase.version" -> "1.0",
         "akka.persistence.mongo.version" -> "2.3.2",
