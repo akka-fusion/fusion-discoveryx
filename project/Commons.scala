@@ -37,7 +37,7 @@ object Commons {
       },
       fork in run := true,
       fork in Test := true,
-      parallelExecution in Test := false) ++ Environment.settings // ++ Formatting.settings
+      parallelExecution in Test := false) ++ Environment.settings
 }
 
 object Publishing {
