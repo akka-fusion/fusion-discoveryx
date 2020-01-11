@@ -178,7 +178,7 @@ private[naming] class NamingInstance(
   private def sendSniffRequest(): Behavior[Command] = {
     val future = instance.protocol match {
       case HealthyCheckProtocol.TCP => SniffUtils.sniffTcp(instance.useTls, instance.ip, instance.port)
-      case HealthyCheckProtocol.UDP => SniffUtils.sniffUdp(instance.ip, instance.port)
+//      case HealthyCheckProtocol.UDP => SniffUtils.sniffUdp(instance.ip, instance.port)
       case HealthyCheckProtocol.HTTP =>
         SniffUtils.sniffHttp(instance.useTls, instance.ip, instance.port, instance.httpPath)
       case other => Future.failed(HSBadRequestException(s"Invalid healthy check protocol: $other."))

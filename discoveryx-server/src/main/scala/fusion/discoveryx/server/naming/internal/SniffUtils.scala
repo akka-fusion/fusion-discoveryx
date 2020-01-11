@@ -18,20 +18,19 @@ package fusion.discoveryx.server.naming.internal
 
 import java.net.InetSocketAddress
 
-import akka.actor.ActorRef
 import akka.actor.typed.ActorSystem
-import akka.actor.typed.scaladsl.adapter._
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.{ HttpMethods, HttpRequest }
-import akka.io.{ IO, UdpConnected }
-import akka.stream.scaladsl.{ Keep, Sink, Source, Tcp }
-import akka.stream.{ CompletionStrategy, OverflowStrategy }
+import akka.http.scaladsl.model.{ HttpMethods, HttpRequest, Uri }
+import akka.stream.scaladsl.{ Sink, Source, Tcp }
 import akka.util.ByteString
 import com.typesafe.scalalogging.StrictLogging
 
 import scala.concurrent.Future
 
 object SniffUtils extends StrictLogging {
+  /**
+   * TODO tls unavailable
+   */
   def sniffTcp(useTls: Boolean, ip: String, port: Int)(implicit system: ActorSystem[_]): Future[Boolean] = {
     // TODO SSLEngine 的创建方式应可优化
     val connection = if (useTls) {
@@ -44,29 +43,37 @@ object SniffUtils extends StrictLogging {
       Tcp(system).outgoingConnection(ip, port)
     }
 
-    Source.single(ByteString.empty).via(connection).map(_ => true).runWith(Sink.head)
+    Source.single(ByteString.empty).via(connection).runWith(Sink.ignore).map(_ => true)(system.executionContext)
   }
 
-  def sniffUdp(ip: String, port: Int)(implicit system: ActorSystem[_]): Future[Boolean] = {
-    val udp = IO(UdpConnected)(system.toClassic)
-
-    val (handler, future) = Source
-      .actorRef[UdpConnected.Event](completionMatcher(udp), failureMatcher, 2, OverflowStrategy.dropHead)
-      .toMat(Sink.ignore)(Keep.both)
-      .run()
-
-    udp ! UdpConnected.Connect(handler, InetSocketAddress.createUnresolved(ip, port))
-
-    future.map(_ => true)(system.executionContext)
-  }
-  private def completionMatcher(udp: ActorRef): PartialFunction[Any, CompletionStrategy] = {
-    case UdpConnected.Connected =>
-      udp ! UdpConnected.Disconnect
-      CompletionStrategy.immediately
-  }
-  private def failureMatcher: PartialFunction[Any, Throwable] = {
-    case UdpConnected.Disconnected => new IllegalStateException()
-  }
+//  /**
+//   * TODO unavailable
+//   */
+//  def sniffUdp(ip: String, port: Int)(implicit system: ActorSystem[_]): Future[Boolean] = {
+//    val udp = IO(UdpConnected)(system.toClassic)
+//
+//    val (handler, source) = Source
+//      .actorRef[UdpConnected.Event](completionMatcher(udp), failureMatcher, 2, OverflowStrategy.dropHead)
+//      .preMaterialize()
+//
+//    val future = source.runWith(Sink.ignore)
+//
+//    udp ! UdpConnected.Connect(handler, InetSocketAddress.createUnresolved(ip, port))
+//
+//    future.map(_ => true)(system.executionContext)
+//  }
+//  private def completionMatcher(udp: ActorRef): PartialFunction[Any, CompletionStrategy] = {
+//    case message: UdpConnected.Message =>
+//      logger.debug(s"Receive UDP message: $message.")
+//      udp ! UdpConnected.Disconnect
+//      CompletionStrategy.immediately
+//    case message =>
+//      logger.debug(s"Receive message: $message.")
+//      CompletionStrategy.immediately
+//  }
+//  private def failureMatcher: PartialFunction[Any, Throwable] = {
+//    case UdpConnected.Disconnected => new IllegalStateException()
+//  }
 
   def sniffHttp(useTls: Boolean, ip: String, port: Int, httpPath: String)(
       implicit system: ActorSystem[_]): Future[Boolean] = {
@@ -74,5 +81,10 @@ object SniffUtils extends StrictLogging {
     val protocol = if (useTls) "https" else "http"
     val path = if (httpPath.isEmpty || httpPath.head != '/') s"/$httpPath" else httpPath
     Http(system).singleRequest(HttpRequest(HttpMethods.GET, s"$protocol://$ip:$port$path")).map(_.status.isSuccess())
+  }
+
+  def sniffHttp(uri: Uri)(implicit system: ActorSystem[_]): Future[Boolean] = {
+    import system.executionContext
+    Http(system).singleRequest(HttpRequest(HttpMethods.GET, uri)).map(_.status.isSuccess())
   }
 }
