@@ -101,7 +101,7 @@ export default class App extends Component {
             }}
           >
             <a
-              href="http://helloscala.com/discoveryx/main/intro.html"
+              href="https://akka-fusion.github.io/fusion-discoveryx/"
               target="_blank"
               rel="noopener noreferrer"
             >

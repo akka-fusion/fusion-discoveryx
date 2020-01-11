@@ -28,7 +28,7 @@ module.exports = {
     disableHostCheck: true,
     proxy: {
       '/fusion': {
-        target: `http://discoveryx.helloscala.com`,
+        target: `http://helloscala.com:48000`,
         changeOrigin: true,
       },
     },
