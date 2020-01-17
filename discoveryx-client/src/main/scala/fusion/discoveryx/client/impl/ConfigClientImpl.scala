@@ -34,7 +34,7 @@ private[client] class ConfigClientImpl(val settings: ConfigClientSettings, val c
   FusionCoordinatedShutdown(system).beforeServiceUnbind("ConfigClient") { () =>
     configClient.close()
   }
-  logger.info(s"NamingClient instanced: $settings")
+  logger.info(s"ConfigClient was instanced, setting is [$settings], class is [$getClass].")
 
   override def serverStatus(in: ServerStatusQuery): Future[ServerStatusBO] = configClient.serverStatus(in)
 

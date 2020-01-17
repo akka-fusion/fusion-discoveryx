@@ -60,7 +60,7 @@ object ConfigEntity {
             context).eventSourcedBehavior()
         case _ =>
           throw HSInternalErrorException(
-            s"Invalid entityId, need '[namespace]${Constants.ENTITY_ID_SEPARATOR}[dataId]'，but ${entityContext.entityId} is ${entityContext.entityId.split(Constants.ENTITY_ID_SEPARATOR).toSeq}")
+            s"Invalid entityId, need [<namespace>${Constants.ENTITY_ID_SEPARATOR}<dataId>]，but entityId value [${entityContext.entityId}] is not [${entityContext.entityId.split(Constants.ENTITY_ID_SEPARATOR).toSeq}]")
       })
 }
 
@@ -73,7 +73,7 @@ class ConfigEntity private (
   private var listeners = List.empty[ActorRef[ConfigEntity.Event]]
   private val configManager = ConfigManager.init(context.system)
 
-  context.log.info(s"Entity startup: persistenceId: $persistenceId")
+  context.log.info(s"ConfigEntity started. PersistenceId is [$persistenceId].")
 
   def eventSourcedBehavior(): EventSourcedBehavior[Command, ChangedConfigEvent, ConfigState] = {
     val settings = ConfigSettings(context.system)
@@ -131,7 +131,7 @@ class ConfigEntity private (
       in: ConfigItem): Effect[ChangedConfigEvent, ConfigState] = {
     if (state.configItem.contains(in)) {
       Effect.reply(replyTo)(
-        ConfigReply(IntStatus.OK, "Not need update.", ConfigReply.Data.Config(state.configItem.get)))
+        ConfigReply(IntStatus.OK, "Don't need update.", ConfigReply.Data.Config(state.configItem.get)))
     } else {
       val event =
         ChangedConfigEvent(Some(in), if (state.configItem.isEmpty) ChangeType.CHANGE_ADD else ChangeType.CHANGE_SAVE)

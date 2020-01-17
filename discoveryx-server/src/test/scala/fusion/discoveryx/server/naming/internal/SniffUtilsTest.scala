@@ -29,10 +29,10 @@ class SniffUtilsTest extends ScalaTestWithActorTestKit with FunSuiteLike {
     result shouldBe true
   }
 
-//  test("testSniffUdp") {
-//    val result = SniffUtils.sniffUdp("172.21.0.1", 137).futureValue
-//    result shouldBe true
-//  }
+  test("testSniffUdp") {
+    val result = SniffUtils.sniffUdp("localhost", 137).futureValue
+    result shouldBe true
+  }
 
   test("testSniffHttp") {
     val result = SniffUtils.sniffHttp("http://gitee.com").futureValue

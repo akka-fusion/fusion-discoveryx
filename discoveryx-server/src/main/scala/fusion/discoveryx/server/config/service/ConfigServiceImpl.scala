@@ -58,7 +58,7 @@ class ConfigServiceImpl(namespaceRef: ActorRef[NamespaceRef.ExistNamespace])(imp
     val entityId = ConfigEntity.makeEntityId(in.namespace, in.dataId)
     val completionMatcher: PartialFunction[ConfigEntity.Event, Unit] = { case _: ConfigListenerCompletedEvent => }
     val failureMatcher: PartialFunction[ConfigEntity.Event, Throwable] = {
-      case changed => throw HSInternalErrorException(s"Throwerror: $changed.")
+      case changed => throw HSInternalErrorException(s"Failure match value is [$changed].")
     }
     val (ref, source) = ActorSource
       .actorRef[ConfigEntity.Event](completionMatcher, failureMatcher, 2, OverflowStrategy.dropHead)
@@ -80,6 +80,6 @@ class ConfigServiceImpl(namespaceRef: ActorRef[NamespaceRef.ExistNamespace])(imp
           configEntity.ask[ConfigReply](replyTo =>
             ShardingEnvelope(ConfigEntity.makeEntityId(namespace, dataId), ConfigEntityCommand(replyTo, cmd)))
         case _ =>
-          Future.successful(ConfigReply(IntStatus.BAD_REQUEST, s"Namespace '$namespace' not exists."))
+          Future.successful(ConfigReply(IntStatus.BAD_REQUEST, s"Namespace [$namespace] not found."))
       }(system.executionContext)
 }

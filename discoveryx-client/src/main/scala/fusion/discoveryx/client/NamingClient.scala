@@ -32,38 +32,38 @@ trait NamingClient extends Extension {
   val client: NamingServiceClient
 
   /**
-   * 查询服务状态
+   * Query service status
    */
   def serverStatus(in: ServerStatusQuery): Future[ServerStatusBO]
 
   /**
-   * 通过默认配置注册实例
+   * Register instance from default configuration.
    */
   def registerOnSettings(): Future[NamingReply]
 
   /**
-   * 添加实例
+   * Register instance
    */
   def registerInstance(in: InstanceRegister): Future[NamingReply]
 
   /**
-   * 添加实例
-   * @param delay 注册实例重试间隔（当实例注册成功开始心跳连接后，若心跳连接断开也将重试）
+   * Register instance
+   * @param delay reconnect interval. Interval between attempts to reconnect after a heartbeat connection is lost.
    */
   def registerInstance(in: InstanceRegister, delay: FiniteDuration): Future[NamingReply]
 
   /**
-   * 修改实例
+   * Modify instance
    */
   def modifyInstance(in: InstanceModify): Future[NamingReply]
 
   /**
-   * 删除实例
+   * Remove instance
    */
   def removeInstance(in: InstanceRemove): Future[NamingReply]
 
   /**
-   * 查询实例
+   * Query instance
    */
   def queryInstance(in: InstanceQuery): Future[NamingReply]
 
@@ -76,10 +76,10 @@ trait NamingClient extends Extension {
 }
 
 object NamingClient {
-  case class InstanceKey( /*namespace: String, serviceName: String, */ instanceId: String)
+  case class InstanceKey(instanceId: String)
   object InstanceKey {
-    def apply(in: Instance): InstanceKey = InstanceKey( /*in.namespace, in.serviceName,*/ in.instanceId)
-    def apply(in: InstanceRemove): InstanceKey = InstanceKey( /*in.namespace, in.serviceName,*/ in.instanceId)
+    def apply(in: Instance): InstanceKey = InstanceKey(in.instanceId)
+    def apply(in: InstanceRemove): InstanceKey = InstanceKey(in.instanceId)
   }
 
   def apply(system: ActorSystem[_]): NamingClient = {

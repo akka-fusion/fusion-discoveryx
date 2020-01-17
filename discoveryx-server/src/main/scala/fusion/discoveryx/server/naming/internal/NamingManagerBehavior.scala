@@ -127,14 +127,14 @@ private[naming] class NamingManagerBehavior(namespace: String, context: ActorCon
         NamingResponse.Data.ServiceInfo(value.data.serviceInfo.get)
       }
     } else {
-      Future.successful(NamingResponse(IntStatus.NOT_FOUND, s"'serviceName' not exist, [${in.serviceName}]."))
+      Future.successful(NamingResponse(IntStatus.NOT_FOUND, s"Service name is [${in.serviceName}], it's not found."))
     }
 
   private def processRemoveService(state: NamingManagerState, in: RemoveService): Future[NamingResponse] =
     if (state.serviceNames.contains(in.serviceName)) {
       askNaming(in.namespace, in.serviceName, NamingReplyCommand.Cmd.RemoveService(in))(_ => NamingResponse.Data.Empty)
     } else {
-      Future.successful(NamingResponse(IntStatus.NOT_FOUND, s"'serviceName' not exist, [${in.serviceName}]."))
+      Future.successful(NamingResponse(IntStatus.NOT_FOUND, s"Service name is [${in.serviceName}], it's not found."))
     }
 
   private def processGetService(state: NamingManagerState, in: GetService): Future[NamingResponse] =
@@ -144,12 +144,15 @@ private[naming] class NamingManagerBehavior(namespace: String, context: ActorCon
           NamingResponse.Data.ServiceInfo(value.data.serviceInfo.get)
       }
     } else {
-      Future.successful(NamingResponse(IntStatus.NOT_FOUND, s"'serviceName' not exist, [${in.serviceName}]."))
+      Future.successful(NamingResponse(IntStatus.NOT_FOUND, s"Service name is [${in.serviceName}], it's not found."))
     }
 
   private def processCreateService(state: NamingManagerState, in: CreateService): Future[NamingResponse] =
     if (state.serviceNames.contains(in.serviceName)) {
-      Future.successful(NamingResponse(IntStatus.CONFLICT, s"'serviceName' already existed, [${in.serviceName}]."))
+      Future.successful(
+        NamingResponse(
+          IntStatus.CONFLICT,
+          s"Service name is conflict, the value [${in.serviceName}] is already exists."))
     } else {
       askNaming(in.namespace, in.serviceName, NamingReplyCommand.Cmd.CreateService(in)) { value =>
         NamingResponse.Data.ServiceInfo(value.data.serviceInfo.get)
@@ -187,7 +190,7 @@ private[naming] class NamingManagerBehavior(namespace: String, context: ActorCon
       Future.successful(
         NamingResponse(
           IntStatus.OK,
-          s"offset: $offset, but NamingService size is ${serviceNames.size}",
+          s"The calculated offset [$offset] is greater than or equal to the length of the NamingService [${serviceNames.size}].",
           NamingResponse.Data.ListedService(ListedService(Nil, page, size, serviceNames.size))))
     }
   }
@@ -197,7 +200,7 @@ private[naming] class NamingManagerBehavior(namespace: String, context: ActorCon
     NamingService.makeEntityId(namespace, serviceName) match {
       case Right(entityId) =>
         namingService.ask[NamingReply](ref => ShardingEnvelope(entityId, NamingReplyCommand(ref, cmd))).map { value =>
-          context.log.debug(s"Send to NamingService return: $value")
+          context.log.debug(s"NamingService return value is [$value].")
           NamingResponse(
             value.status,
             value.message,

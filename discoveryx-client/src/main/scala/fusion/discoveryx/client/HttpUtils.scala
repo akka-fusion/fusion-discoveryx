@@ -34,7 +34,7 @@ final class ResponseAs(val response: Future[HttpResponse])(implicit mat: Materia
   def onSuccessResponseAs[R](implicit um: Unmarshaller[ResponseEntity, R]): Future[R] =
     response.flatMap {
       case resp if resp.status.isSuccess() => Unmarshal(resp.entity).to[R]
-      case resp                            => Future.failed(new IllegalStateException(s"Http response is not success, response is $resp."))
+      case resp                            => Future.failed(new IllegalStateException(s"Http request failed, the response is $resp."))
     }
 }
 

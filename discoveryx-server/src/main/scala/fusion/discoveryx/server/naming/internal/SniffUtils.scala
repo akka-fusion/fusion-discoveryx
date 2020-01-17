@@ -18,10 +18,13 @@ package fusion.discoveryx.server.naming.internal
 
 import java.net.InetSocketAddress
 
+import akka.actor.ActorRef
 import akka.actor.typed.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{ HttpMethods, HttpRequest, Uri }
+import akka.io.{ IO, UdpConnected }
 import akka.stream.scaladsl.{ Sink, Source, Tcp }
+import akka.stream.{ CompletionStrategy, OverflowStrategy }
 import akka.util.ByteString
 import com.typesafe.scalalogging.StrictLogging
 
@@ -46,34 +49,35 @@ object SniffUtils extends StrictLogging {
     Source.single(ByteString.empty).via(connection).runWith(Sink.ignore).map(_ => true)(system.executionContext)
   }
 
-//  /**
-//   * TODO unavailable
-//   */
-//  def sniffUdp(ip: String, port: Int)(implicit system: ActorSystem[_]): Future[Boolean] = {
-//    val udp = IO(UdpConnected)(system.toClassic)
-//
-//    val (handler, source) = Source
-//      .actorRef[UdpConnected.Event](completionMatcher(udp), failureMatcher, 2, OverflowStrategy.dropHead)
-//      .preMaterialize()
-//
-//    val future = source.runWith(Sink.ignore)
-//
-//    udp ! UdpConnected.Connect(handler, InetSocketAddress.createUnresolved(ip, port))
-//
-//    future.map(_ => true)(system.executionContext)
-//  }
-//  private def completionMatcher(udp: ActorRef): PartialFunction[Any, CompletionStrategy] = {
-//    case message: UdpConnected.Message =>
-//      logger.debug(s"Receive UDP message: $message.")
-//      udp ! UdpConnected.Disconnect
-//      CompletionStrategy.immediately
-//    case message =>
-//      logger.debug(s"Receive message: $message.")
-//      CompletionStrategy.immediately
-//  }
-//  private def failureMatcher: PartialFunction[Any, Throwable] = {
-//    case UdpConnected.Disconnected => new IllegalStateException()
-//  }
+  /**
+   * TODO unavailable
+   */
+  def sniffUdp(ip: String, port: Int)(implicit system: ActorSystem[_]): Future[Boolean] = {
+    import akka.actor.typed.scaladsl.adapter._
+    val udp = IO(UdpConnected)(system.toClassic)
+
+    val (handler, source) = Source
+      .actorRef[UdpConnected.Event](completionMatcher(udp), failureMatcher, 2, OverflowStrategy.dropHead)
+      .preMaterialize()
+
+    val future = source.runForeach(event => println(s"Received UDP event: $event. "))
+
+    udp ! UdpConnected.Connect(handler, InetSocketAddress.createUnresolved(ip, port))
+
+    future.map(_ => true)(system.executionContext)
+  }
+  private def completionMatcher(udp: ActorRef): PartialFunction[Any, CompletionStrategy] = {
+    case event: UdpConnected.Event =>
+      logger.debug(s"Received UDP event is [$event].")
+      udp ! UdpConnected.Disconnect
+      CompletionStrategy.immediately
+    case message =>
+      logger.debug(s"Received UDP message is [$message].")
+      CompletionStrategy.immediately
+  }
+  private def failureMatcher: PartialFunction[Any, Throwable] = {
+    case UdpConnected.Disconnected => new IllegalStateException()
+  }
 
   def sniffHttp(useTls: Boolean, ip: String, port: Int, httpPath: String)(
       implicit system: ActorSystem[_]): Future[Boolean] = {

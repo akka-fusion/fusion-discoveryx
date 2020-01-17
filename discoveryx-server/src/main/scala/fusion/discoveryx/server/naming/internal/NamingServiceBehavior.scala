@@ -51,7 +51,7 @@ private[naming] class NamingServiceBehavior(
   private var listeners: Map[ActorRef[Event], ServiceListener] = Map()
 
   NamingManager.init(context.system) ! ShardingEnvelope(namespace, ServiceCreatedEvent(serviceName))
-  context.log.info(s"NamingService started: $namespace@$serviceName")
+  context.log.info(s"NamingService started, entityId is [$namespace${Constants.ENTITY_ID_SEPARATOR}$serviceName].")
 
   def eventSourcedBehavior(persistenceId: PersistenceId): EventSourcedBehavior[Command, Event, NamingServiceState] =
     EventSourcedBehavior(persistenceId, NamingServiceState(), commandHandler, eventHandler)
@@ -283,7 +283,8 @@ private[naming] class NamingServiceBehavior(
                 ref.unsafeUpcast[NamingInstance.Command] :: Nil
               } catch {
                 case NonFatal(e) =>
-                  log.warn(s"unsafeUpcast[NamingInstance.Command] error: ${e.toString}")
+                  log.warn(
+                    s"Call `ref.unsafeUpcast[NamingInstance.Command]` failed, the exception thrown is [${e.toString}].")
                   Nil
               }
             case _ => Nil
@@ -297,7 +298,8 @@ private[naming] class NamingServiceBehavior(
       context.pipeToSelf(future) {
         case Success(value) => InstancesQueried(replyTo, value)
         case Failure(e) =>
-          context.log.warn(s"Query instance error, parameter: $in, exception: ${e.getLocalizedMessage}")
+          context.log.warn(
+            s"Query instance is error, the request parameter is [$in] and the exception thrown is [${e.toString}]")
           InstancesQueried(replyTo, Nil)
       }
     }
@@ -348,16 +350,16 @@ private[naming] class NamingServiceBehavior(
       state: NamingServiceState,
       replyTo: ActorRef[NamingReply],
       in: InstanceRegister): Effect[Event, NamingServiceState] = {
-    val response = DiscoveryXUtils.toInstance(in) match {
+    val reply = DiscoveryXUtils.toInstance(in) match {
       case Right(inst) =>
-        val maybe = NamingServiceStateUtils.findChild(state, context, inst.instanceId)
-        context.log.debug(s"Child actor [NamingInstance]: $maybe. ${state.instances}")
-        maybe match {
+        NamingServiceStateUtils.findChild(state, context, inst.instanceId) match {
           case Some(ref) if settings.allowReplaceRegistration =>
             ref ! NamingInstance.ReplaceInstance(inst)
             NamingReply(IntStatus.OK, data = NamingReply.Data.Instance(inst))
           case Some(_) =>
-            NamingReply(IntStatus.CONFLICT, s"Service instance existed, in: ${ProtobufJson4s.toJsonString(in)}.")
+            NamingReply(
+              IntStatus.CONFLICT,
+              s"Register service instance is conflict, the request parameter is [${ProtobufJson4s.toJsonString(in)}].")
           case _ =>
             spawnNamingInstance(inst)
             NamingReply(IntStatus.OK, data = NamingReply.Data.Instance(inst))
@@ -367,11 +369,11 @@ private[naming] class NamingServiceBehavior(
         NamingReply(IntStatus.BAD_REQUEST, message)
     }
 
-    if (IntStatus.isSuccess(response.status)) {
-      notifyServiceEventListeners(NamingChangeType.INSTANCE_REGISTER, response.data)
+    if (IntStatus.isSuccess(reply.status)) {
+      notifyServiceEventListeners(NamingChangeType.INSTANCE_REGISTER, reply.data)
     }
 
-    replyTo ! response
+    replyTo ! reply
     val evt = ModifyService(
       in.namespace,
       in.serviceName,
@@ -387,6 +389,7 @@ private[naming] class NamingServiceBehavior(
         inst.instanceId)
     } catch {
       case NonFatal(e) =>
-        context.log.error(s"spawnNamingInstance($inst) error.", e)
+        context.log.error(
+          s"Perform method `spawnNamingInstance($inst)` error, the exception thrown is [${e.toString}].")
     }
 }

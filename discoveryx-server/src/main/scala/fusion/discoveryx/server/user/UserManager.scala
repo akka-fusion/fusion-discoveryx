@@ -39,16 +39,15 @@ object UserManager {
   trait Event
 
   val NAME = "UserManager"
-
   def init(system: ActorSystem[_]): ActorRef[UserEntity.Command] =
     ClusterSingleton(system).init(SingletonActor(apply(), NAME))
 
   private def apply(): Behavior[UserEntity.Command] =
-    Behaviors.setup(context => new UserManager(context).eventSourcedBehavior())
+    Behaviors.setup(context => new UserManager(PersistenceId.of(NAME, "userManager"), context).eventSourcedBehavior())
 }
 
 import fusion.discoveryx.server.user.UserManager._
-class UserManager(context: ActorContext[UserEntity.Command]) {
+class UserManager(persistenceId: PersistenceId, context: ActorContext[UserEntity.Command]) {
   private implicit val system = context.system
   private implicit val timeout: Timeout = 5.seconds
   private val settings = ManagementSettings(context.system)
@@ -56,8 +55,8 @@ class UserManager(context: ActorContext[UserEntity.Command]) {
 
   def eventSourcedBehavior(): EventSourcedBehavior[UserEntity.Command, Event, UserManagerState] =
     EventSourcedBehavior[UserEntity.Command, Event, UserManagerState](
-      PersistenceId.of(NAME, "userManager"),
-      UserManagerState.defaultInstance,
+      persistenceId,
+      UserManagerState(),
       commandHandler,
       eventHandler).withRetention(settings.retentionCriteria)
 
@@ -113,7 +112,7 @@ class UserManager(context: ActorContext[UserEntity.Command]) {
       Future.successful(
         UserResponse(
           IntStatus.OK,
-          s"offset: $offset, but UserEntity size is ${state.accounts.size}",
+          s"The calculated offset [$offset] greater than or equal to the length of the UserEntity's accounts [${state.accounts.size}].",
           Data.Listed(ListedUser(Nil, page, size, state.accounts.size))))
     }
   }

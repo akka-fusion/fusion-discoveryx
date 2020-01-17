@@ -21,6 +21,7 @@ import com.typesafe.config.Config;
 import fusion.discoveryx.client.play.javadsl.DiscoveryXPlay;
 import fusion.discoveryx.client.play.javadsl.DiscoveryXPlayWSClient;
 import fusion.discoveryx.client.play.javadsl.DiscoveryXWSClient;
+import fusion.discoveryx.common.Constants;
 import play.Environment;
 import play.inject.Binding;
 import play.inject.Module;
@@ -35,7 +36,7 @@ public class DiscoveryXWSModule extends Module {
     @Override
     public List<Binding<?>> bindings(Environment environment, Config config) {
         return Arrays.asList(bindClass(DiscoveryXPlayWSClient.class).toProvider(DiscoveryXWSPlayClientProvider.class),
-                bindClass(WSClient.class).qualifiedWith("discoveryx").to(DiscoveryXPlayWSClient.class),
+                bindClass(WSClient.class).qualifiedWith(Constants.DISCOVERYX()).to(DiscoveryXPlayWSClient.class),
                 bindClass(WSClient.class).qualifiedWith(DiscoveryXPlay.class).to(DiscoveryXPlayWSClient.class));
     }
 

@@ -157,7 +157,7 @@ private[config] class ConfigManagerBehavior(namespace: String, context: ActorCon
       Future.successful(
         ConfigResponse(
           IntStatus.OK,
-          s"offset: $offset, but ConfigEntity size is ${state.dataIds.size}",
+          s"The calculated offset [$offset] is greater than or equal to the length of the ConfigEntity [${state.dataIds.size}].",
           Data.Listed(ConfigQueried(Nil, namespace, page, size, state.dataIds.size))))
     }
   }

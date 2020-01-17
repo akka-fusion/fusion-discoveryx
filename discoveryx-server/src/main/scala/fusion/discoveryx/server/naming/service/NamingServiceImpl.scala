@@ -47,37 +47,22 @@ class NamingServiceImpl(val namespaceRef: ActorRef[ExistNamespace])(implicit sys
   implicit private val timeout: Timeout = 5.seconds
   override val serviceInstanceRegion: ActorRef[ShardingEnvelope[NamingService.Command]] = NamingService.init(system)
 
-  /**
-   * 查询服务状态
-   */
   override def serverStatus(in: ServerStatusQuery, metadata: Metadata): Future[ServerStatusBO] = {
     Future.successful(ServerStatusBO(IntStatus.OK))
   }
 
-  /**
-   * 添加实例
-   */
   override def registerInstance(in: InstanceRegister, metadata: Metadata): Future[NamingReply] = {
     askNaming(in.namespace, in.serviceName, NamingReplyCommand.Cmd.Register(in))
   }
 
-  /**
-   * 修改实例
-   */
   override def modifyInstance(in: InstanceModify, metadata: Metadata): Future[NamingReply] = {
     askNaming(in.namespace, in.serviceName, NamingReplyCommand.Cmd.Modify(in))
   }
 
-  /**
-   * 删除实例
-   */
   override def removeInstance(in: InstanceRemove, metadata: Metadata): Future[NamingReply] = {
     askNaming(in.namespace, in.serviceName, NamingReplyCommand.Cmd.Remove(in))
   }
 
-  /**
-   * 查询实例
-   */
   override def queryInstance(in: InstanceQuery, metadata: Metadata): Future[NamingReply] = {
     askNaming(in.namespace, in.serviceName, NamingReplyCommand.Cmd.Query(in))
   }
@@ -93,7 +78,7 @@ class NamingServiceImpl(val namespaceRef: ActorRef[ExistNamespace])(implicit sys
       }
       val failureMatcher: PartialFunction[NamingService.Event, Throwable] = {
         case changed =>
-          throw HSInternalErrorException(s"Throw error: $changed.")
+          throw HSInternalErrorException(s"Failure matcher value is [$changed].")
       }
       val (ref, source) = ActorSource
         .actorRef[NamingService.Event](completionMatcher, failureMatcher, 2, OverflowStrategy.dropHead)
@@ -117,13 +102,13 @@ class NamingServiceImpl(val namespaceRef: ActorRef[ExistNamespace])(implicit sys
     try {
       val namespace = metadata
         .getText(Headers.NAMESPACE)
-        .getOrElse(throw HSBadRequestException(s"Request header missing, need '${Headers.NAMESPACE}'."))
+        .getOrElse(throw HSBadRequestException(s"Request header missing, need [${Headers.NAMESPACE}]."))
       val serviceName = metadata
         .getText(Headers.SERVICE_NAME)
-        .getOrElse(throw HSBadRequestException(s"Request header missing, need '${Headers.SERVICE_NAME}'."))
+        .getOrElse(throw HSBadRequestException(s"Request header missing, need [${Headers.SERVICE_NAME}]."))
       val instanceId = metadata
         .getText(Headers.INSTANCE_ID)
-        .getOrElse(throw HSBadRequestException(s"Request header missing, need '${Headers.INSTANCE_ID}'."))
+        .getOrElse(throw HSBadRequestException(s"Request header missing, need [${Headers.INSTANCE_ID}]."))
       val entityId = NamingService.makeEntityId(namespace, serviceName) match {
         case Right(value) => value
         case Left(errMsg) => throw HSBadRequestException(errMsg)
@@ -134,7 +119,7 @@ class NamingServiceImpl(val namespaceRef: ActorRef[ExistNamespace])(implicit sys
       }
     } catch {
       case e: Exception =>
-        logger.warn(s"Receive heartbeat message error: $e")
+        logger.warn(s"Perform method heartbeat error, the exception thrown is [${e.toString}].")
         Source.single(ServerStatusBO(IntStatus.BAD_REQUEST))
     }
   }

@@ -46,7 +46,7 @@ object SessionUtils {
       val token = decodeToken(originalToken)
       SessionUtils.decodeToken(token).split("\\|") match {
         case Array(account, _) => Right(TokenAccount(originalToken, account))
-        case other             => Left(s"Parse account from token failure. parsed value is $other")
+        case other             => Left(s"Parsing account error from token. the parse value is [$other].")
       }
     } catch {
       case NonFatal(e) => Left(e.getLocalizedMessage)

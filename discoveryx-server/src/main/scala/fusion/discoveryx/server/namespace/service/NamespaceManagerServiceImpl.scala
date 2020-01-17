@@ -33,28 +33,24 @@ class NamespaceManagerServiceImpl(managementRef: ActorRef[NamespaceManager.Comma
 
   /**
    * #ListNamespace
-   * 创建命名空间
    */
   override def listNamespace(in: ListNamespace): Future[ManagementResponse] =
     askCommand(Cmd.List(in))
 
   /**
    * #CreateNamespace
-   * 创建命名空间
    */
   override def createNamespace(in: CreateNamespace): Future[ManagementResponse] =
     askCommand(Cmd.Create(in))
 
   /**
    * #ModifyNamespace
-   * 修改命名空间
    */
   override def modifyNamespace(in: ModifyNamespace): Future[ManagementResponse] =
     askCommand(Cmd.Modify(in))
 
   /**
    * #RemoveNamespace
-   * 删除命名空间
    */
   override def removeNamespace(in: RemoveNamespace): Future[ManagementResponse] =
     askCommand(Cmd.Remove(in))

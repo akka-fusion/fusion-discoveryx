@@ -18,8 +18,10 @@ package fusion.discoveryx.server.naming.service
 
 import java.util.concurrent.TimeoutException
 
+import akka.actor.typed.scaladsl.AskPattern._
 import akka.actor.typed.{ ActorRef, Scheduler }
 import akka.cluster.sharding.typed.ShardingEnvelope
+import akka.util.Timeout
 import fusion.discoveryx.model.NamingReply
 import fusion.discoveryx.server.namespace.NamespaceRef.{ ExistNamespace, NamespaceExists }
 import fusion.discoveryx.server.naming.NamingService
@@ -27,8 +29,6 @@ import fusion.discoveryx.server.protocol.NamingReplyCommand
 import helloscala.common.IntStatus
 
 import scala.concurrent.{ ExecutionContext, Future }
-import akka.actor.typed.scaladsl.AskPattern._
-import akka.util.Timeout
 
 trait NamingServiceHelper {
   val serviceInstanceRegion: ActorRef[ShardingEnvelope[NamingService.Command]]
@@ -50,7 +50,7 @@ trait NamingServiceHelper {
           case Left(errMsg) => Future.successful(NamingReply(IntStatus.INTERNAL_ERROR, errMsg))
         }
       case _ =>
-        Future.successful(NamingReply(IntStatus.NOT_FOUND, s"Namespace '$namespace' not exists."))
+        Future.successful(NamingReply(IntStatus.NOT_FOUND, s"Namespace [$namespace] not found."))
     }
   }
 }

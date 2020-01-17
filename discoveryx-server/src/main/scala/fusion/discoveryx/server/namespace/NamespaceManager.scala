@@ -42,12 +42,12 @@ object NamespaceManager {
 
   private final case class InternalUpdateResponse(resp: Replicator.UpdateResponse[ORSet[String]]) extends Command
 
+  val NAME = "Management"
   def init(system: ActorSystem[_]): ActorRef[Command] =
-    ClusterSingleton(system).init(SingletonActor(apply(), "Management"))
+    ClusterSingleton(system).init(SingletonActor(apply(), NAME))
 
   private def apply(): Behavior[Command] =
-    Behaviors.setup(context =>
-      new NamespaceManager(context).eventSourcedBehavior(PersistenceId("Management", "management")))
+    Behaviors.setup(context => new NamespaceManager(context).eventSourcedBehavior(PersistenceId(NAME, "management")))
 }
 
 import fusion.discoveryx.server.namespace.NamespaceManager._
@@ -56,7 +56,7 @@ class NamespaceManager private (context: ActorContext[Command]) {
   private val configManager = ConfigManager.init(context.system)
   private val namingManager = NamingManager.init(context.system)
 
-  // 通过 DistributedData 向所有节点发送当前有校 namespace 集合
+  // Send all current valid namespaces to all nodes with DistributedData.
   private val distributedData = DistributedData(context.system)
   private implicit val node = distributedData.selfUniqueAddress
   private val messageAdapter: ActorRef[UpdateResponse[ORSet[String]]] =
@@ -115,7 +115,7 @@ class NamespaceManager private (context: ActorContext[Command]) {
     val resp = oldState.namespaces
       .find(_.namespace == in.namespace)
       .map(ns => ManagementResponse(IntStatus.OK, data = Data.Namespace(ns)))
-      .getOrElse(ManagementResponse(IntStatus.NOT_FOUND, s"Namespace not found, namespace is ${in.namespace}"))
+      .getOrElse(ManagementResponse(IntStatus.NOT_FOUND, s"Namespace value is [${in.namespace}], but it is not found."))
     Effect.reply(replyTo)(resp)
   }
 
@@ -168,7 +168,7 @@ class NamespaceManager private (context: ActorContext[Command]) {
       in: CreateNamespace): Effect[Event, ManagementState] = {
     if (oldState.namespaces.exists(_.name == in.name)) {
       Effect.reply(replyTo)(
-        ManagementResponse(IntStatus.CONFLICT, s"Name: ${in.name} already exists, duplicate is not allowed."))
+        ManagementResponse(IntStatus.CONFLICT, s"Name is conflict, value [${in.name}] is already exists."))
     } else {
       val namespace = Namespace(Utils.timeBasedUuid().toString, in.name, in.description)
       Effect.persist[Event, ManagementState](namespace).thenReply(replyTo) { _ =>

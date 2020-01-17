@@ -34,16 +34,15 @@ object NamingService {
   trait Command
   trait Event
 
-  object ServiceKey {
-    def unapply(entityId: String): Option[ServiceItem] = entityId.split(Constants.ENTITY_ID_SEPARATOR) match {
-      case Array(namespace, serviceName) =>
-        Some(new ServiceItem(namespace, serviceName, Constants.DEFAULT_GROUP_NAME))
-      case _ => None
-    }
-  }
-
   val NAME = "NamingService"
   val TypeKey: EntityTypeKey[Command] = EntityTypeKey[Command](NAME)
+
+  private def parseEntityId(entityId: String): ServiceItem = entityId.split(Constants.ENTITY_ID_SEPARATOR) match {
+    case Array(namespace, serviceName) => new ServiceItem(namespace, serviceName, Constants.DEFAULT_GROUP_NAME)
+    case _ =>
+      throw HSBadRequestException(
+        s"Create actor failed: entityId invalid, valid format is [<namespace>${Constants.ENTITY_ID_SEPARATOR}<serviceName>].")
+  }
 
   def makeEntityId(namespace: String, serviceName: String): Either[String, String] = {
     try {
@@ -61,10 +60,7 @@ object NamingService {
         .withSettings(ClusterShardingSettings(system).withPassivateIdleEntityAfter(Duration.Zero)))
 
   private def apply(entityContext: EntityContext[Command]): Behavior[Command] = Behaviors.setup[Command] { context =>
-    val serviceItem = ServiceKey
-      .unapply(entityContext.entityId)
-      .getOrElse(throw HSBadRequestException(
-        s"${context.self} create child error. entityId invalid, need '[namespace] [serviceName]' format."))
+    val serviceItem = parseEntityId(entityContext.entityId)
     new NamingServiceBehavior(serviceItem.namespace, serviceItem.serviceName, context)
       .eventSourcedBehavior(PersistenceId.of(entityContext.entityTypeKey.name, entityContext.entityId))
   }

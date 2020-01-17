@@ -28,7 +28,8 @@ object NamingManager {
   trait Command extends NamingService.Command
   trait Event
 
-  val TypeKey: EntityTypeKey[Command] = EntityTypeKey("NamingManager")
+  val NAME = "NamingManager"
+  val TypeKey: EntityTypeKey[Command] = EntityTypeKey(NAME)
 
   def init(system: ActorSystem[_]): ActorRef[ShardingEnvelope[Command]] = {
     ClusterSharding(system).init(

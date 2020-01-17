@@ -29,9 +29,11 @@ class DiscoveryPersistenceQuery private (system: ActorSystem[_]) extends StrictL
         PersistenceQuery(system).readJournalFor[CassandraReadJournal](CassandraReadJournal.Identifier)
       case s if s.startsWith("jdbc") =>
         PersistenceQuery(system).readJournalFor[JdbcReadJournal](JdbcReadJournal.Identifier)
-      case s => throw new ExceptionInInitializerError(s"无效的akka-persistence：$s！只支持：cassandra-journal、jdbc-journal。")
+      case s =>
+        throw new ExceptionInInitializerError(
+          s"The configuration key `akka-persistence` has an invalid value [$s], only support `cassandra-journal`, `jdbc-journal`.")
     }
-    logger.debug(s"ReadJournal is $reader")
+    logger.debug(s"ReadJournal is [$reader].")
     reader
   }
 }

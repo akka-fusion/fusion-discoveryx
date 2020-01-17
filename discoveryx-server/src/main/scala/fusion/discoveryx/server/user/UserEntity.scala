@@ -118,7 +118,7 @@ class UserEntity private (
           } yield {
             UserResponse(IntStatus.OK, data = Data.Logined(Logined(token, user.account, user.name)))
           }
-          maybe.getOrElse(UserResponse(IntStatus.INTERNAL_ERROR, "Save user session failure."))
+          maybe.getOrElse(UserResponse(IntStatus.INTERNAL_ERROR, "Failed to save user session."))
         }
       case Some(_) =>
         Effect.reply(replyTo)(UserResponse(IntStatus.UNAUTHORIZED, "Password invalid."))
@@ -160,13 +160,13 @@ class UserEntity private (
       replyTo: ActorRef[UserResponse],
       value: CreateUser): Effect[Event, UserState] = oldState.user match {
     case Some(user) =>
-      Effect.reply(replyTo)(UserResponse(IntStatus.CONFLICT, s"User exists, account is ${user.account}"))
+      Effect.reply(replyTo)(UserResponse(IntStatus.CONFLICT, s"User is already exists, account is ${user.account}"))
     case _ =>
       Effect.persist[Event, UserState](value).thenReply(replyTo) {
         case UserState(Some(user), _, _) =>
           userManager ! CreatedUserAccount(user.account)
           UserResponse(IntStatus.OK, data = Data.User(user))
-        case _ => UserResponse(IntStatus.INTERNAL_ERROR, "Create user failure.")
+        case _ => UserResponse(IntStatus.INTERNAL_ERROR, "Create user failed.")
       }
   }
 
@@ -219,7 +219,7 @@ class UserEntity private (
       value: CheckSession): Effect[Event, UserState] = {
     checkSession(oldState, value.token) match {
       case IntStatus.NOT_FOUND =>
-        Effect.reply(replyTo)(UserResponse(IntStatus.UNAUTHORIZED, "token not exists."))
+        Effect.reply(replyTo)(UserResponse(IntStatus.UNAUTHORIZED, "Token is not exists."))
       case IntStatus.OK =>
         Effect.persist(CheckSession(value.token)).thenReply(replyTo)(_ => UserResponse(IntStatus.OK))
       case IntStatus.UNAUTHORIZED =>

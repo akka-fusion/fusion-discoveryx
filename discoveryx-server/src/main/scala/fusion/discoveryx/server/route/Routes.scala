@@ -39,7 +39,7 @@ class Routes(discoveryX: DiscoveryX) extends StrictLogging {
   private var grpcHandlers: List[PartialFunction[HttpRequest, Future[HttpResponse]]] = Nil
 
   def init(): Routes = {
-    logger.debug(s"Cluster roles: $roles.")
+    logger.debug(s"Cluster roles are $roles.")
     if (roles(Constants.MANAGEMENT)) {
       val u = new UserRoute()
       val n = new NamespaceRoute()

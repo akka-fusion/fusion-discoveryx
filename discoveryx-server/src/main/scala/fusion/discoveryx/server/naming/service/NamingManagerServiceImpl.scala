@@ -41,47 +41,40 @@ class NamingManagerServiceImpl(val namespaceRef: ActorRef[ExistNamespace])(impli
 
   /**
    * #ListService
-   * 查询服务列表
    */
   override def listService(in: ListService): Future[NamingResponse] = askManager(in.namespace, Cmd.ListService(in))
 
   /**
    * #GetService
-   * 查询单个服务
    */
   override def getService(in: GetService): Future[NamingResponse] = askManager(in.namespace, Cmd.GetService(in))
 
   /**
    * # CreateService
-   * 创建服务
    */
   override def createService(in: CreateService): Future[NamingResponse] =
     askManager(in.namespace, Cmd.CreateService(in))
 
   /**
    * # ModifyService
-   * 创建服务
    */
   override def modifyService(in: ModifyService): Future[NamingResponse] =
     askManager(in.namespace, Cmd.ModifyService(in))
 
   /**
    * # RemoveService
-   * 删除服务
    */
   override def removeService(in: RemoveService): Future[NamingResponse] =
     askManager(in.namespace, Cmd.RemoveService(in))
 
   /**
    * #ModifyInstance
-   * 修改实例
    */
   override def modifyInstance(in: InstanceModify): Future[NamingReply] =
     askNaming(in.namespace, in.serviceName, NamingReplyCommand.Cmd.Modify(in))
 
   /**
    * #RemoveInstance
-   * 删除实例
    */
   override def removeInstance(in: InstanceRemove): Future[NamingReply] =
     askNaming(in.namespace, in.serviceName, NamingReplyCommand.Cmd.Remove(in))
@@ -93,6 +86,6 @@ class NamingManagerServiceImpl(val namespaceRef: ActorRef[ExistNamespace])(impli
         case NamespaceExists(true) =>
           namingManager.ask[NamingResponse](replyTo => ShardingEnvelope(namespace, NamingManagerCommand(replyTo, cmd)))
         case _ =>
-          Future.successful(NamingResponse(IntStatus.NOT_FOUND, s"Namespace '$namespace' not exists."))
+          Future.successful(NamingResponse(IntStatus.NOT_FOUND, s"Namespace [$namespace] not found."))
       }(system.executionContext)
 }

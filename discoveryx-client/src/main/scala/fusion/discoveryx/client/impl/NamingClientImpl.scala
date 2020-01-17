@@ -41,7 +41,7 @@ private[client] class NamingClientImpl(val settings: NamingClientSettings, val c
     with StrictLogging {
   import NamingClient._
   private var heartbeatInstances = Map[InstanceKey, Cancellable]()
-  logger.info(s"NamingClient instanced: $settings")
+  logger.info(s"NamingClient was instanced, setting is $settings, class is [$getClass].")
 
   FusionCoordinatedShutdown(system).beforeServiceUnbind("NamingClient") { () =>
     for ((_, cancellable) <- heartbeatInstances if !cancellable.isCancelled) {
@@ -54,12 +54,14 @@ private[client] class NamingClientImpl(val settings: NamingClientSettings, val c
 
   override def registerOnSettings(): Future[NamingReply] =
     try {
-      val namespace = settings.namespace.getOrElse(throw new IllegalArgumentException("'namespace' not set."))
-      val serviceName = settings.serviceName.getOrElse(throw new IllegalArgumentException("'service-name' not set."))
+      val namespace =
+        settings.namespace.getOrElse(throw new IllegalArgumentException("Configuration key `namespace` is not set."))
+      val serviceName = settings.serviceName.getOrElse(
+        throw new IllegalArgumentException("Configuration key `service-name` is not set."))
       val ip = settings.ip
         .orElse(NetworkUtils.firstOnlineInet4Address().map(_.getHostAddress))
-        .getOrElse(throw new IllegalArgumentException("'ip' not set."))
-      val port = settings.port.getOrElse(throw new IllegalArgumentException("'port' not set."))
+        .getOrElse(throw new IllegalArgumentException("Configuration key `ip` is not set."))
+      val port = settings.port.getOrElse(throw new IllegalArgumentException("Configuration key `port` is not set."))
       val in = InstanceRegister(
         namespace,
         serviceName,
@@ -99,25 +101,26 @@ private[client] class NamingClientImpl(val settings: NamingClientSettings, val c
         val key = InstanceKey(inst)
         heartbeatInstances.get(key).foreach(_.cancel())
         heartbeatInstances = heartbeatInstances.updated(key, cancellable)
-        logger.info(s"注册实例成功，开始心跳调度。${settings.heartbeatInterval} | $inst")
+        logger.info(
+          s"The instance registration is successful, and heartbeat scheduling starts. Heartbeat interval is [${settings.heartbeatInterval}], and instance is [$inst].")
         heartbeat(source, in, inst.instanceId)
-          .runForeach(bo => logger.debug(s"Received heartbeat response: $bo"))
+          .runForeach(bo => logger.debug(s"Received heartbeat response is [$bo]."))
           .failed
           .foreach { e =>
             if (heartbeatInstances.contains(key)) {
               heartbeatInstancesOnRemoves(key)
               logger.error(
-                s"Heartbeat connection is abnormally disconnect, try again in $delay. exception throw: ${e.getLocalizedMessage}")
+                s"Heartbeat connection is abnormally disconnect, try again after [$delay]. The exception is thrown as [${e.getLocalizedMessage}].")
               retryRegisterInstance(in, delay)
             } else {
               logger.error(
-                s"Heartbeat connection is abnormally disconnect, exited. exception throw: ${e.getLocalizedMessage}")
+                s"Heartbeat connection is abnormally disconnect, the exception is thrown as [${e.getLocalizedMessage}].")
             }
           }
       case Success(reply) =>
-        logger.warn(s"注册实例错误，返回：$reply")
+        logger.warn(s"The instance registration failed，the response is [$reply].")
       case Failure(exception) =>
-        logger.error(s"注册实例失败：$exception")
+        logger.error(s"The instance registration failed, the exception is thrown as [$exception].")
     }
   }
 
@@ -143,7 +146,7 @@ private[client] class NamingClientImpl(val settings: NamingClientSettings, val c
     val in = InstanceQuery(namespace, serviceName, oneHealthy = true)
     queryInstance(in).map(_.data.serviceInfo.flatMap(si =>
       if (si.instances.isEmpty) {
-        logger.warn(s"There is no healthy service instance, service is '$namespace@$serviceName'.")
+        logger.warn(s"There is no healthy service instance, request service is [$namespace@$serviceName].")
         None
       } else {
         Some(si.instances.head)
@@ -169,7 +172,7 @@ private[client] class NamingClientImpl(val settings: NamingClientSettings, val c
   }
 
   @inline private def unsafeNamespace: String =
-    settings.namespace.getOrElse(throw new IllegalArgumentException("Configuration parameter 'namespace' not set."))
+    settings.namespace.getOrElse(throw new IllegalArgumentException("Configuration key `namespace` is not set."))
 
   private def heartbeat(
       in: Source[InstanceHeartbeat, NotUsed],

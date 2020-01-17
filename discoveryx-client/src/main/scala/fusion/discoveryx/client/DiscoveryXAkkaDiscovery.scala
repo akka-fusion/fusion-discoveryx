@@ -32,7 +32,7 @@ class DiscoveryXAkkaDiscovery(system: ExtendedActorSystem) extends ServiceDiscov
   private val client =
     NamingClient(NamingClientSettings.fromConfig(system.settings.config, config.getString("setting")), system.toTyped)
   private val namespace = client.settings.namespace
-    .getOrElse(throw new ExceptionInInitializerError("Configuration parameter 'namespace' not set."))
+    .getOrElse(throw new ExceptionInInitializerError("Configuration key `namespace` is not set."))
   private val groupName = client.settings.groupName.getOrElse("")
 
   override def lookup(lookup: Lookup, resolveTimeout: FiniteDuration): Future[Resolved] = {

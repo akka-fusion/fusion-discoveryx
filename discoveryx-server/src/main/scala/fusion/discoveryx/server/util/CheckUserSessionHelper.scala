@@ -50,7 +50,7 @@ class CheckUserSessionHelper(userEntity: ActorRef[ShardingEnvelope[UserEntity.Co
       .flatMap {
         case resp if resp.status == IntStatus.OK => func(ta)
         case resp =>
-          logger.debug(s"Check session error: $resp")
+          logger.debug(s"Check session error, response is [$resp].")
           Future.successful(failureResult)
       }
       .recover { case _ => failureResult }
@@ -65,7 +65,7 @@ class CheckUserSessionHelper(userEntity: ActorRef[ShardingEnvelope[UserEntity.Co
           Cookie.parseFromValueString(value) match {
             case Right(cookie) => SessionUtils.tokenFromCookie(cookie)
             case Left(errors) =>
-              logger.debug(s"Parse session from cookie error: $errors.")
+              logger.debug(s"Parsing session error from cookies, the errors are [$errors].")
               None
           }
         }
@@ -75,7 +75,7 @@ class CheckUserSessionHelper(userEntity: ActorRef[ShardingEnvelope[UserEntity.Co
       checkUserSession(token, failureResult)(func)
     } catch {
       case NonFatal(e) =>
-        logger.error(s"Parse session token from header error: ${e.toString}")
+        logger.error(s"Parsing session error from headers, the exception thrown is [${e.toString}].")
         Future.successful(failureResult)
     }
 }

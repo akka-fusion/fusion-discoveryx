@@ -40,7 +40,7 @@ class ConfigManagerServiceImpl(namespaceRef: ActorRef[NamespaceRef.ExistNamespac
 
   /**
    * #ListConfig
-   * 查询配置列表（不返回配置内容）
+   * Query config list. Will not return config content.
    */
   override def listConfig(in: ListConfig): Future[ConfigResponse] = askConfig(in.namespace, Cmd.List(in))
 
@@ -51,6 +51,6 @@ class ConfigManagerServiceImpl(namespaceRef: ActorRef[NamespaceRef.ExistNamespac
         case NamespaceExists(true) =>
           configManager.ask[ConfigResponse](replyTo => ShardingEnvelope(namespace, ConfigManagerCommand(replyTo, cmd)))
         case _ =>
-          Future.successful(ConfigResponse(IntStatus.BAD_REQUEST, s"Namespace '$namespace' not exists."))
+          Future.successful(ConfigResponse(IntStatus.BAD_REQUEST, s"Namespace [$namespace] not found."))
       }(system.executionContext)
 }

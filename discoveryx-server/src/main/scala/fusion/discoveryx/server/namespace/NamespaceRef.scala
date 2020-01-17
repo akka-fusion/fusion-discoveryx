@@ -31,8 +31,8 @@ object NamespaceRef {
 
   final case class NamespaceExists(exists: Boolean)
 
-  val Key: ORSetKey[String] = ORSetKey("Namespace")
   val NAME = "Namespace"
+  val Key: ORSetKey[String] = ORSetKey(NAME)
 
   def apply(): Behavior[Command] = DistributedData.withReplicatorMessageAdapter[Command, ORSet[String]] {
     replicatorAdapter =>
@@ -42,12 +42,12 @@ object NamespaceRef {
             case chg @ Replicator.GetSuccess(Key) =>
               InternalNamespaceExists(chg.get(Key).contains(namespace), replyTo)
             case _ =>
-              ctx.log.warn(s"ORSet $Key not exists.")
+              ctx.log.warn(s"ORSet key is [$Key], it's not found.")
               InternalNamespaceExists(false, replyTo)
           })
           Behaviors.same
 
-        case (ctx, InternalNamespaceExists(exists, replyTo)) =>
+        case (_, InternalNamespaceExists(exists, replyTo)) =>
           replyTo ! NamespaceExists(exists)
           Behaviors.same
       }

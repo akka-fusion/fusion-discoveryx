@@ -27,10 +27,10 @@ import fusion.core.extension.FusionCore
 import fusion.discoveryx.common.Constants
 import fusion.discoveryx.server.protocol.{ CreateUser, GetUser, UserResponse, UserRole }
 import fusion.discoveryx.server.route.Routes
-import fusion.discoveryx.server.user.{ UserEntity, UserManager }
 import fusion.discoveryx.server.user.service.UserServiceImpl
-import helloscala.common.{ Configuration, IntStatus }
+import fusion.discoveryx.server.user.{ UserEntity, UserManager }
 import helloscala.common.util.Utils
+import helloscala.common.{ Configuration, IntStatus }
 import slick.jdbc.H2Profile
 
 import scala.concurrent.Future
@@ -55,8 +55,8 @@ class DiscoveryXServer private (discoveryX: DiscoveryX) extends StrictLogging {
       config.getString("fusion.http.default.server.host"),
       config.getInt("fusion.http.default.server.port"))
     f.onComplete {
-      case Success(value)     => logger.info(s"HTTP started, bind to $value")
-      case Failure(exception) => logger.error(s"HTTP start failure. $exception")
+      case Success(value) => logger.info(s"HTTP service is started, bind to $value")
+      case Failure(e)     => logger.error(s"HTTP service failed to start.", e)
     }(system.dispatcher)
     f
   }
@@ -86,7 +86,7 @@ object DiscoveryXServer extends StrictLogging {
           session.withStatement() { stmt =>
             val sql = buffer.getLines().mkString("\n")
             logger.whenDebugEnabled {
-              logger.debug(s"Init Database Schemas from Config: $cc\nSQL: $sql")
+              logger.debug(s"Initialize database schema from configuration. $cc\n$sql")
             }
             stmt.execute(sql)
           }
@@ -118,9 +118,10 @@ object DiscoveryXServer extends StrictLogging {
                 UserRole.ADMIN))
             .onComplete {
               case Success(value) =>
-                logger.info(s"Initialization default user ${Constants.DISCOVERYX} successful, return is $value.")
+                logger.info(s"Initialize default user [${Constants.DISCOVERYX}] successful, return is [$value].")
               case Failure(e) =>
-                logger.warn(s"Initialization default user ${Constants.DISCOVERYX} failure, exception: ${e.toString}")
+                logger.warn(
+                  s"Initialize default user [${Constants.DISCOVERYX}] failed, the exception thrown as ${e.toString}")
             }
       }
   }

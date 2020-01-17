@@ -14,7 +14,7 @@ option (scalapb.options) = {
 
 service ConfigManagerService {
     // #ListConfig
-    // 查询配置列表（不返回配置内容）
+    // Query configs（Will not return config content）
     rpc ListConfig (fusion.discoveryx.server.protocol.ListConfig) returns (fusion.discoveryx.server.protocol.ConfigResponse) {
     }
     // #ListConfig
@@ -22,44 +22,44 @@ service ConfigManagerService {
 
 service NamingManagerService {
     // #ListService
-    // 查询服务列表
+    // Query services
     rpc ListService (fusion.discoveryx.server.protocol.ListService) returns (fusion.discoveryx.server.protocol.NamingResponse) {
     }
     // #ListService
 
     // #GetService
-    // 查询单个服务
+    // Get one service
     rpc GetService (fusion.discoveryx.server.protocol.GetService) returns (fusion.discoveryx.server.protocol.NamingResponse) {
     }
     // #GetService
 
     // #CreateService
-    // 创建服务
+    // Create a service
     rpc CreateService (fusion.discoveryx.server.protocol.CreateService) returns (fusion.discoveryx.server.protocol.NamingResponse) {
     }
     // #CreateService
 
     // #ModifyService
-    // 创建服务
+    // Modify a service
     rpc ModifyService (fusion.discoveryx.server.protocol.ModifyService) returns (fusion.discoveryx.server.protocol.NamingResponse) {
     }
     // #ModifyService
 
     // #RemoveService
-    // 删除服务
+    // Remove a service
     rpc RemoveService (fusion.discoveryx.server.protocol.RemoveService) returns (fusion.discoveryx.server.protocol.NamingResponse) {
     }
     // #RemoveService
 
 
     // #ModifyInstance
-    // 修改实例
+    // Modify a instance
     rpc ModifyInstance (fusion.discoveryx.model.InstanceModify) returns (fusion.discoveryx.model.NamingReply) {
     }
     // #ModifyInstance
 
     // #RemoveInstance
-    // 删除实例
+    // Remove a instance
     rpc RemoveInstance (fusion.discoveryx.model.InstanceRemove) returns (fusion.discoveryx.model.NamingReply) {
     }
     // #RemoveInstance
@@ -68,25 +68,25 @@ service NamingManagerService {
 
 service NamespaceManagerService {
     // #ListNamespace
-    // 创建命名空间
+    // Query namespaces
     rpc ListNamespace (fusion.discoveryx.server.protocol.ListNamespace) returns (fusion.discoveryx.server.protocol.ManagementResponse) {
     }
     // #ListNamespace
 
     // #CreateNamespace
-    // 创建命名空间
+    // Create a namespace
     rpc CreateNamespace (fusion.discoveryx.server.protocol.CreateNamespace) returns (fusion.discoveryx.server.protocol.ManagementResponse) {
     }
     // #CreateNamespace
 
     // #ModifyNamespace
-    // 修改命名空间
+    // Modify a namespace
     rpc ModifyNamespace (fusion.discoveryx.server.protocol.ModifyNamespace) returns (fusion.discoveryx.server.protocol.ManagementResponse) {
     }
     // #ModifyNamespace
 
     // #RemoveNamespace
-    // 删除命名空间
+    // Remove a namespace
     rpc RemoveNamespace (fusion.discoveryx.server.protocol.RemoveNamespace) returns (fusion.discoveryx.server.protocol.ManagementResponse) {
     }
     // #RemoveNamespace

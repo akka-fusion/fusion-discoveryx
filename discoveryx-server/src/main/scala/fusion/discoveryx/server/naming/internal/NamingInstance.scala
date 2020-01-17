@@ -30,9 +30,10 @@ import scala.concurrent.duration._
 import scala.util.{ Failure, Success }
 
 /**
- * NamingService 需要判断 NamingInstance actor 是否存在
+ * NamingService needs to watch the NamingInstance lifecycle.
  *
- * NamingInstance 由 NamingService 启动，既所有Instance都会在同一个节点内，且消息只有自身或 NamingService 可访问，所有其消息不需要实例化。
+ * NamingInstance is started by NamingService, that is, all instances will be in the same node, and the message can only
+ * be accessed by itself and NamingService. All its messages do not need to be serialized.
  */
 object NamingInstance {
   trait Command
@@ -78,9 +79,11 @@ private[naming] class NamingInstance(
 
     serviceRef ! InstanceActorEvent(context.self, instance, changeType)
 
-    context.log.debug(
-      s"NamingInstance actor become type: $changeType. unreachableTimeout: $unreachableTimeout, healthyCheckInterval: $healthyCheckInterval, instance: ${ProtobufJson4s
-        .toJsonString(instance)}.")
+    if (context.log.isDebugEnabled) {
+      val instJsonString = ProtobufJson4s.toJsonString(instance)
+      context.log.debug(
+        s"NamingInstance actor's become type is [$changeType], unreachableTimeout is [$unreachableTimeout], healthyCheckInterval is [$healthyCheckInterval], instance is [$instJsonString].")
+    }
 
     instance.healthyCheckMethod match {
       case HealthyCheckMethod.SERVER_SNIFF => activeSniff()
@@ -181,19 +184,19 @@ private[naming] class NamingInstance(
 //      case HealthyCheckProtocol.UDP => SniffUtils.sniffUdp(instance.ip, instance.port)
       case HealthyCheckProtocol.HTTP =>
         SniffUtils.sniffHttp(instance.useTls, instance.ip, instance.port, instance.httpPath)
-      case other => Future.failed(HSBadRequestException(s"Invalid healthy check protocol: $other."))
+      case other => Future.failed(HSBadRequestException(s"Health check protocol is [$other], it's invalid."))
     }
 
     context.pipeToSelf(future) {
       case Success(value) =>
         if (!value) {
           context.log.warn(
-            s"Sniff '${instance.protocol.name.toLowerCase()}://${instance.ip}:${instance.port}' failure, return false.")
+            s"Sniffing address [${instance.protocol.name.toLowerCase()}://${instance.ip}:${instance.port}] completed, return value is false.")
         }
         SniffResult(value)
       case Failure(e) =>
-        context.log.warn(
-          s"Sniff '${instance.protocol.name.toLowerCase()}://${instance.ip}:${instance.port}' failure, exception: ${e.getLocalizedMessage}.")
+        context.log.warn(s"Sniffing address [${instance.protocol.name
+          .toLowerCase()}://${instance.ip}:${instance.port}] failed, the exception thrown is [${e.toString}].")
         SniffResult(false)
     }
 

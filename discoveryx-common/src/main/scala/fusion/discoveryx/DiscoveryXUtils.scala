@@ -26,10 +26,12 @@ import scala.util.control.NonFatal
 object DiscoveryXUtils {
   val VALID_NAMES: Set[Char] = Set('.', '-', '_', ':') ++ ('0' to '9') ++ ('a' to 'z') ++ ('A' to 'Z')
 
-  def checkString(v: String, field: String): Either[String, String] = {
-    if (StringUtils.isEmpty(v)) Left(s"'$field' cannot be empty.")
+  private def checkString(v: String, field: String): Either[String, String] = {
+    if (StringUtils.isEmpty(v)) Left(s"Field `$field` cannot be empty.")
     else if (v.forall(VALID_NAMES)) Right(v)
-    else Left(s"'$field' allows only English letters, numbers, dots, underscores, underscores and colons.")
+    else
+      Left(
+        s"Field `$field` allows only English letters, numbers, dots, underscores, dashes and colons, current value is [$v].")
   }
 
   @inline def requireString(v: String, field: String): String = checkString(v, field) match {
@@ -37,9 +39,14 @@ object DiscoveryXUtils {
     case Right(value) => value
   }
 
+  @inline final def require(requirement: Boolean, message: => Any): Unit = {
+    if (!requirement)
+      throw HSBadRequestException(s"requirement failed: $message.")
+  }
+
   private def makeInstanceId(ip: String, port: Int): String = {
     requireString(ip, "ip")
-    require(port > 0, s"'port' must be greater than 0, current value is $port.")
+    require(port > 0, s"Field `port` must be greater than 0, current value is [$port].")
     //DigestUtils.sha1Hex(namespace + serviceName + ip + port)
     s"$ip:$port"
   }

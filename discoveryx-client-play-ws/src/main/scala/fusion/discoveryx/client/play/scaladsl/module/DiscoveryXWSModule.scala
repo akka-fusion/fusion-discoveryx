@@ -18,6 +18,7 @@ package fusion.discoveryx.client.play.scaladsl.module
 
 import akka.actor.typed.ActorSystem
 import fusion.discoveryx.client.play.scaladsl.{ DiscoveryXPlay, DiscoveryXPlayWSClient, DiscoveryXWSClient }
+import fusion.discoveryx.common.Constants
 import javax.inject.{ Inject, Provider, Singleton }
 import play.api.inject.{ SimpleModule, bind }
 import play.api.libs.ws.WSClient
@@ -26,7 +27,7 @@ import play.shaded.ahc.org.asynchttpclient.AsyncHttpClient
 class DiscoveryXWSModule
     extends SimpleModule(
       bind[DiscoveryXPlayWSClient].toProvider[DiscoveryXPlayWSClientProvider],
-      bind[WSClient].qualifiedWith("discoveryx").to[DiscoveryXPlayWSClient],
+      bind[WSClient].qualifiedWith(Constants.DISCOVERYX).to[DiscoveryXPlayWSClient],
       bind[WSClient].qualifiedWith[DiscoveryXPlay].to[DiscoveryXPlayWSClient])
 
 @Singleton
