@@ -16,20 +16,36 @@
 
 package fusion.discoveryx.server
 
+import akka.actor.typed.scaladsl.AskPattern._
 import akka.actor.typed.scaladsl.adapter._
-import akka.actor.typed.{ ActorRef, ActorSystem, Behavior }
+import akka.actor.typed.{ ActorRef, ActorSystem, Behavior, Props }
+import akka.util.Timeout
 import akka.{ actor => classic }
 import com.typesafe.config.Config
 import fusion.common.config.FusionConfigFactory
-import fusion.common.{ FusionActorRefFactory, FusionProtocol }
+import fusion.common.{ FusionProtocol, SpawnFactory }
 import fusion.discoveryx.DiscoveryXSettings
 import fusion.discoveryx.common.Constants
 import fusion.discoveryx.server.namespace.NamespaceRef
 
-class DiscoveryX(val settings: DiscoveryXSettings, val config: Config, val system: ActorSystem[FusionProtocol.Command])
-    extends FusionActorRefFactory {
+import scala.concurrent.Await
+import scala.concurrent.duration._
+
+class DiscoveryX(
+    val settings: DiscoveryXSettings,
+    val config: Config,
+    implicit val system: ActorSystem[FusionProtocol.Command])
+    extends SpawnFactory {
   val namespaceRef: ActorRef[NamespaceRef.ExistNamespace] = spawn(NamespaceRef(), NamespaceRef.NAME)
   def classicSystem: classic.ActorSystem = system.toClassic
+
+  override def spawn[T](behavior: Behavior[T], props: Props): ActorRef[T] = spawn(behavior, "", props)
+
+  override def spawn[T](behavior: Behavior[T], name: String, props: Props): ActorRef[T] = {
+    implicit val timeout: Timeout = 5.seconds
+    val f = system.ask[ActorRef[T]](replyTo => FusionProtocol.Spawn(behavior, name, props, replyTo))
+    Await.result(f, timeout.duration)
+  }
 }
 
 object DiscoveryX {

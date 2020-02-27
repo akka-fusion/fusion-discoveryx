@@ -135,7 +135,7 @@ Version 0.1.0
 <p>REST URL路径由 <strong>REST URL前缀</strong> + 服务名组织，均使用 <strong>POST</strong> 方法的请求，JSON序例化格式。如查询配置列表接口访问地址为：<code>POST /fusion/discoveryx/management/config/ListConfig</code>。Protobuf与JSON格式转换请参阅： <a href="../json.html">JSON 说明</a>。</p>
 <h2><a href="#listconfig" name="listconfig" class="anchor"><span class="anchor-link"></span></a>ListConfig</h2>
 <p><strong>gRPC</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/grpc/server.proto#L17-L19" target="_blank" title="Go to snippet source"></a><code class="language-proto">// 查询配置列表（不返回配置内容）
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/grpc/server.proto#L17-L19" target="_blank" title="Go to snippet source"></a><code class="language-proto">// Query configs（Will not return config content）
 rpc ListConfig (fusion.discoveryx.server.protocol.ListConfig) returns (fusion.discoveryx.server.protocol.ConfigResponse) {
 }</code></pre>
 <p><strong>请求</strong></p>

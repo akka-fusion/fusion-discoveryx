@@ -129,15 +129,22 @@ cd discoveryx-server
 bin/discoveryx-server.bat
 </code></pre>
 <h2><a href="#源码构建" name="源码构建" class="anchor"><span class="anchor-link"></span></a>源码构建</h2>
-<p>下载源码，执行<code>sbt</code>命令。</p>
 <pre><code>git clone https://github.com/akka-fusion/fusion-discoveryx.git
 cd fusion-discoveryx
-sbt
+pushd web-console
+yarn &amp;&amp; yarn build
+popd
+pushd ../scripts
+./publish-dist.sh
+popd
+sbt &quot;discoveryx-server&quot; dist
 </code></pre>
-<p>执行 <strong>sbtshell</strong> 命令：<code>discoveryx-server/dist</code>，将在<code>discoveryx-server/target/universal</code>目录生成 discoveryx-server-0.1.0.zip 软件包。</p>
-<pre class="prettyprint"><code class="language-sbtshell">&gt; discoveryx-server/dist
+<p>最终将在 <code>discoveryx-server/target/universal</code> 目录生成 discoveryx-server-0.1.0.zip 软件包。解压生成的 <strong>zip</strong> 软件包（discoveryx-server-0.1.0.zip），执行 <code>bin</code> 目录里的 <code>sh</code> 或 <code>bat</code> 脚本即可运行程序。</p>
+<pre><code>cd discoveryx-server/target/universal
+unzip discoveryx-server-0.1.0.zip
+cd discoveryx-server-0.1.0
+./bin/discoveryx-server
 </code></pre>
-<p>解压生成的 <strong>zip</strong> 软件包（discoveryx-server-0.1.0.zip），执行 <code>bin</code> 目录里的 <code>sh</code> 或 <code>bat</code> 脚本即可运行程序。</p>
 </div>
 </article>
 <div class="row">

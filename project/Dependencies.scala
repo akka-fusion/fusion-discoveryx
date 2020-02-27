@@ -2,18 +2,11 @@ import fusion.sbt.gen.BuildInfo
 import sbt._
 
 object Dependencies {
-  val versionScala212 = "2.12.10"
-  val versionScala213 = "2.13.1"
   val versionH2 = "1.4.200"
   val versionPlayAhcWsStandalone = "2.1.2"
   val versionPlayAhcWs = "2.8.0"
   val versionAkkaPersistenceCassandra = "0.101"
   val versionAkkaPersistenceJdbc = "3.5.2"
-
-  val _fusionCommon = "com.akka-fusion" %% "fusion-common" % BuildInfo.version
-  val _fusionCore = "com.akka-fusion" %% "fusion-core" % BuildInfo.version
-  val _fusionProtobufV3 = "com.akka-fusion" %% "fusion-protobuf-v3" % BuildInfo.version
-  val _fusionTestkit = "com.akka-fusion" %% "fusion-testkit" % BuildInfo.version
 
   val _akkaDiscovery = "com.typesafe.akka" %% "akka-discovery" % BuildInfo.versionAkka
   val _akkaPersistenceTyped = "com.typesafe.akka" %% "akka-persistence-typed" % BuildInfo.versionAkka
@@ -42,17 +35,18 @@ object Dependencies {
 
   val _akkaHttps = Seq(_akkaHttp, _akkaHttp2, _akkaHttpTestkit % Test)
 
-  val _akkaPersistenceCassandras = Seq("com.typesafe.akka" %% "akka-persistence-cassandra" % versionAkkaPersistenceCassandra).map(
-    _.exclude("org.scala-lang", "scala-library")
-      .cross(CrossVersion.binary)
-      .exclude("com.typesafe.akka", "akka-cluster-tools")
-      .cross(CrossVersion.binary)
-      .exclude("com.typesafe.akka", "akka-cluster-tools")
-      .cross(CrossVersion.binary)
-      .exclude("com.typesafe.akka", "akka-persistence")
-      .cross(CrossVersion.binary)
-      .exclude("com.typesafe.akka", "akka-persistence-query")
-      .cross(CrossVersion.binary))
+  val _akkaPersistenceCassandras =
+    Seq("com.typesafe.akka" %% "akka-persistence-cassandra" % versionAkkaPersistenceCassandra).map(
+      _.exclude("org.scala-lang", "scala-library")
+        .cross(CrossVersion.binary)
+        .exclude("com.typesafe.akka", "akka-cluster-tools")
+        .cross(CrossVersion.binary)
+        .exclude("com.typesafe.akka", "akka-cluster-tools")
+        .cross(CrossVersion.binary)
+        .exclude("com.typesafe.akka", "akka-persistence")
+        .cross(CrossVersion.binary)
+        .exclude("com.typesafe.akka", "akka-persistence-query")
+        .cross(CrossVersion.binary))
 
   val _akkaPersistenceJdbc =
     ("com.github.dnvriend" %% "akka-persistence-jdbc" % versionAkkaPersistenceJdbc)

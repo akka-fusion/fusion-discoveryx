@@ -130,12 +130,12 @@ Version 0.1.0
 <h1><a href="#namespacemanagerservice" name="namespacemanagerservice" class="anchor"><span class="anchor-link"></span></a>NamespaceManagerService</h1>
 <ul>
   <li>gRPC服务地址：<code>/fusion.discoveryx.grpc.NamingService</code></li>
-  <li>REST URL前缀：<code>/fusion/discoveryx/console/management</code></li>
+  <li>REST URL前缀：<code>/fusion/discoveryx/console/namespace</code></li>
 </ul>
 <p>REST URL路径由 <strong>REST URL前缀</strong> + 服务名组织，均使用 <strong>POST</strong> 方法的请求，JSON序例化格式。如查询实例接口访问地址为：<code>POST /fusion/discoveryx/console/management/ListNamespace</code>。Protobuf与JSON格式转换请参阅： <a href="../json.html">JSON 说明</a>。</p>
 <h2><a href="#listnamespace" name="listnamespace" class="anchor"><span class="anchor-link"></span></a>ListNamespace</h2>
 <p><strong>gRPC</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/grpc/server.proto#L71-L73" target="_blank" title="Go to snippet source"></a><code class="language-proto">// 创建命名空间
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/grpc/server.proto#L71-L73" target="_blank" title="Go to snippet source"></a><code class="language-proto">// Query namespaces
 rpc ListNamespace (fusion.discoveryx.server.protocol.ListNamespace) returns (fusion.discoveryx.server.protocol.ManagementResponse) {
 }</code></pre>
 <p><strong>请求</strong></p>
@@ -177,7 +177,7 @@ message Namespace {
 }</code></pre>
 <h2><a href="#createnamespace" name="createnamespace" class="anchor"><span class="anchor-link"></span></a>CreateNamespace</h2>
 <p><strong>gRPC</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/grpc/server.proto#L77-L79" target="_blank" title="Go to snippet source"></a><code class="language-proto">// 创建命名空间
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/grpc/server.proto#L77-L79" target="_blank" title="Go to snippet source"></a><code class="language-proto">// Create a namespace
 rpc CreateNamespace (fusion.discoveryx.server.protocol.CreateNamespace) returns (fusion.discoveryx.server.protocol.ManagementResponse) {
 }</code></pre>
 <p><strong>请求</strong></p>
@@ -213,7 +213,7 @@ message Namespace {
 }</code></pre>
 <h2><a href="#modifynamespace" name="modifynamespace" class="anchor"><span class="anchor-link"></span></a>ModifyNamespace</h2>
 <p><strong>gRPC</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/grpc/server.proto#L83-L85" target="_blank" title="Go to snippet source"></a><code class="language-proto">// 修改命名空间
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/grpc/server.proto#L83-L85" target="_blank" title="Go to snippet source"></a><code class="language-proto">// Modify a namespace
 rpc ModifyNamespace (fusion.discoveryx.server.protocol.ModifyNamespace) returns (fusion.discoveryx.server.protocol.ManagementResponse) {
 }</code></pre>
 <p><strong>请求</strong></p>
@@ -253,7 +253,7 @@ message Namespace {
 <h2><a href="#removenamespace" name="removenamespace" class="anchor"><span class="anchor-link"></span></a>RemoveNamespace</h2>
 <p>删除命名空间将导致此命名空间下所有配置（Config）和服务（Naming）不可用， <strong>慎重</strong>！</p>
 <p><strong>gRPC</strong></p>
-<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/grpc/server.proto#L89-L91" target="_blank" title="Go to snippet source"></a><code class="language-proto">// 删除命名空间
+<pre class="prettyprint"><a class="icon go-to-source" href="https://github.com/yangbajing/fusion-discoveryx/tree/master/discoveryx-server/src/main/protobuf/fusion/discoveryx/server/grpc/server.proto#L89-L91" target="_blank" title="Go to snippet source"></a><code class="language-proto">// Remove a namespace
 rpc RemoveNamespace (fusion.discoveryx.server.protocol.RemoveNamespace) returns (fusion.discoveryx.server.protocol.ManagementResponse) {
 }</code></pre>
 <p><strong>请求</strong></p>

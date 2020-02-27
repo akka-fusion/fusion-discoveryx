@@ -21,15 +21,15 @@ ThisBuild / buildEnv := {
     .getOrElse(BuildEnv.Development)
 }
 
-ThisBuild / scalaVersion := versionScala213
+ThisBuild / scalaVersion := BuildInfo.versionScala213
 
-ThisBuild / crossScalaVersions := Seq(versionScala212, versionScala213)
+ThisBuild / crossScalaVersions := Seq(BuildInfo.versionScala212, BuildInfo.versionScala213)
 
 ThisBuild / scalafmtOnCompile := true
 
 ThisBuild / sonarUseExternalConfig := true
 
-ThisBuild / resolvers ++= Seq(Resolver.bintrayRepo("akka-fusion", "maven"), Resolver.jcenterRepo)
+ThisBuild / resolvers ++= Seq(Resolver.bintrayRepo("helloscala", "maven"), Resolver.jcenterRepo)
 
 lazy val root = Project(id = "fusion-discoveryx", base = file("."))
   .aggregate(discoveryxFunctest, discoveryxClientPlayWs, discoveryxServer, discoveryxClient, discoveryxCommon)
@@ -95,8 +95,8 @@ lazy val discoveryxServer = _project("discoveryx-server")
         _mysql % Provided,
         _h2,
         _hikariCP,
-        _fusionProtobufV3,
-        _fusionCore,
+        fusionProtobufV3,
+        fusionCore,
         _akkaPersistenceQuery,
         _akkaPersistenceJdbc,
         _akkaPersistenceTyped) ++ _akkaHttps ++ _akkaClusters ++ _akkaPersistenceCassandras)
@@ -115,10 +115,10 @@ lazy val discoveryxCommon = _project("discoveryx-common")
     libraryDependencies ++= Seq(
         "com.thesamet.scalapb" %% "scalapb-runtime" % scalapb.compiler.Version.scalapbVersion % "protobuf",
         _akkaDiscovery,
-        _fusionCommon))
+        fusionCommon))
 
 def _project(name: String, _base: String = null) =
   Project(id = name, base = file(if (_base eq null) name else _base))
     .enablePlugins(AutomateHeaderPlugin)
     .settings(basicSettings: _*)
-    .settings(libraryDependencies ++= Seq(_fusionTestkit % Test))
+    .settings(libraryDependencies ++= Seq(fusionTestkit % Test))

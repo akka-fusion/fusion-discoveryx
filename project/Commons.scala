@@ -9,9 +9,9 @@ object Commons {
 
   def basicSettings =
     Seq(
-      organization := "com.akka-fusion.fusion",
-      organizationName := "akka-fusion.com",
-      organizationHomepage := Some(url("https://github.com/akka-fusion/fusion-discoveryx")),
+      organization := "com.helloscala.fusion",
+      organizationName := "helloscala.com",
+      organizationHomepage := Some(url("https://fusion.helloscala.com/")),
       homepage := Some(url("https://akka-fusion.github.io/fusion-discoveryx")),
       startYear := Some(2019),
       licenses += ("Apache-2.0", new URL("https://www.apache.org/licenses/LICENSE-2.0.txt")),
