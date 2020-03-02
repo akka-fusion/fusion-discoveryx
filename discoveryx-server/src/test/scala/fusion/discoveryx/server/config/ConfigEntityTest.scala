@@ -27,7 +27,7 @@ import fusion.discoveryx.common.Constants
 import fusion.discoveryx.model._
 import fusion.discoveryx.server.protocol.ConfigEntityCommand
 import fusion.discoveryx.server.util.ProtobufJson4s
-import org.scalatest.WordSpecLike
+import org.scalatest.wordspec.AnyWordSpecLike
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -37,7 +37,7 @@ class ConfigEntityTest
       ActorTestKit(
         Constants.DISCOVERYX,
         FusionConfigFactory.arrangeConfig(ConfigFactory.load("application-test.conf"), Constants.DISCOVERYX, "akka")))
-    with WordSpecLike {
+    with AnyWordSpecLike {
   override implicit def timeout: Timeout = 10.seconds
   override implicit val patience: PatienceConfig = PatienceConfig(timeout.duration, 15.millis)
 

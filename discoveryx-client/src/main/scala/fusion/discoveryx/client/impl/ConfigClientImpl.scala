@@ -20,7 +20,7 @@ import akka.NotUsed
 import akka.actor.typed.ActorSystem
 import akka.stream.scaladsl.Source
 import com.typesafe.scalalogging.StrictLogging
-import fusion.common.extension.FusionCoordinatedShutdown
+import fusion.core.extension.FusionCore
 import fusion.discoveryx.client.{ ConfigClient, ConfigClientSettings }
 import fusion.discoveryx.grpc.ConfigServiceClient
 import fusion.discoveryx.model._
@@ -31,7 +31,7 @@ private[client] class ConfigClientImpl(val settings: ConfigClientSettings, val c
     implicit system: ActorSystem[_])
     extends ConfigClient
     with StrictLogging {
-  FusionCoordinatedShutdown(system).beforeServiceUnbind("ConfigClient") { () =>
+  FusionCore(system).shutdowns.beforeServiceUnbind("ConfigClient") { () =>
     configClient.close()
   }
   logger.info(s"ConfigClient was instanced, setting is [$settings], class is [$getClass].")

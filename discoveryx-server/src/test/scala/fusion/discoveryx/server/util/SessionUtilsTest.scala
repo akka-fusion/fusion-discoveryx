@@ -19,9 +19,9 @@ package fusion.discoveryx.server.util
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
-import org.scalatest.WordSpec
+import org.scalatest.wordspec.AnyWordSpec
 
-class SessionUtilsTest extends WordSpec {
+class SessionUtilsTest extends AnyWordSpec {
   "SessionUtilsTest" should {
     "tokenFromCookie" in {
       val str = URLEncoder.encode("abCD0/|_=-", StandardCharsets.UTF_8)

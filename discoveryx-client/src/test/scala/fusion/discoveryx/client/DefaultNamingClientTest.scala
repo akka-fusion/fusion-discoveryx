@@ -19,11 +19,11 @@ package fusion.discoveryx.client
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import com.typesafe.config.ConfigFactory
 import fusion.discoveryx.model.InstanceQuery
-import org.scalatest.WordSpecLike
+import org.scalatest.wordspec.AnyWordSpecLike
 
 class DefaultNamingClientTest
     extends ScalaTestWithActorTestKit(ConfigFactory.load("application-local.conf"))
-    with WordSpecLike {
+    with AnyWordSpecLike {
   private val client = DefaultNamingClient(system)
   "DefaultNamingClient" must {
     "url" in {

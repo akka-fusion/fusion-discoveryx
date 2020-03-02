@@ -22,7 +22,7 @@ import akka.actor.typed.ActorSystem
 import akka.http.scaladsl.model.Uri
 import akka.stream.scaladsl.Source
 import com.typesafe.scalalogging.StrictLogging
-import fusion.common.extension.FusionCoordinatedShutdown
+import fusion.core.extension.FusionCore
 import fusion.discoveryx.client.{ NamingClient, NamingClientSettings }
 import fusion.discoveryx.common.{ Constants, Headers }
 import fusion.discoveryx.grpc.NamingServiceClient
@@ -43,7 +43,7 @@ private[client] class NamingClientImpl(val settings: NamingClientSettings, val c
   private var heartbeatInstances = Map[InstanceKey, Cancellable]()
   logger.info(s"NamingClient was instanced, setting is $settings, class is [$getClass].")
 
-  FusionCoordinatedShutdown(system).beforeServiceUnbind("NamingClient") { () =>
+  FusionCore(system).shutdowns.beforeServiceUnbind("NamingClient") { () =>
     for ((_, cancellable) <- heartbeatInstances if !cancellable.isCancelled) {
       cancellable.cancel
     }

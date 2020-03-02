@@ -115,10 +115,10 @@ lazy val discoveryxCommon = _project("discoveryx-common")
     libraryDependencies ++= Seq(
         "com.thesamet.scalapb" %% "scalapb-runtime" % scalapb.compiler.Version.scalapbVersion % "protobuf",
         _akkaDiscovery,
-        fusionCommon))
+        fusionCore))
 
 def _project(name: String, _base: String = null) =
   Project(id = name, base = file(if (_base eq null) name else _base))
-    .enablePlugins(AutomateHeaderPlugin)
+    .enablePlugins(FusionPlugin, AutomateHeaderPlugin)
     .settings(basicSettings: _*)
     .settings(libraryDependencies ++= Seq(fusionTestkit % Test))

@@ -19,11 +19,12 @@ package fusion.discoveryx.client
 import java.util.concurrent.TimeUnit
 
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
-import fusion.discoveryx.model.{ Instance, InstanceQuery, InstanceRegister, InstanceRemove, ServerStatusQuery }
+import fusion.discoveryx.model._
 import helloscala.common.IntStatus
-import org.scalatest.{ OptionValues, WordSpecLike }
+import org.scalatest.OptionValues
+import org.scalatest.wordspec.AnyWordSpecLike
 
-class NamingClientTest extends ScalaTestWithActorTestKit with WordSpecLike with OptionValues {
+class NamingClientTest extends ScalaTestWithActorTestKit with AnyWordSpecLike with OptionValues {
   private val settings = NamingClientSettings(system)
   private val namingClient = NamingClient(settings, system)
   private val namespace = settings.namespace.getOrElse("890cd0cd-22d8-11ea-8bfe-5254002e9e52")
