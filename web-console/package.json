@@ -105,7 +105,7 @@
     "enquire.js": "^2.1.6",
     "http-status-codes": "^1.4.0",
     "lint-staged": "^9.5.0",
-    "lodash": "^4.17.11",
+    "lodash": "^4.17.21",
     "mobx": "^5.15.0",
     "mobx-react": "^6.1.4",
     "moment": "^2.22.2",
